@@ -1,0 +1,16 @@
+Daniel Nguyen | z5363586
+
+Week 1
+Group formed and named 3900M16AThecarrothead. 
+Selected Terry Thoroughgood as the Scrum Master.
+Selected Daniel Nguyen as the Project Leader.
+Made a priority list of the projects the team wants to take. P16, P18, P2.
+Briefly discussed technology stack and software tools each group member is familar with.
+
+Week 2
+As a team, we have decided to use NextJS for the frontend and Flask for the backend.
+Terry and I will be working on the frontend while Akul, Daniel Wang and Victor Tang will be working on the backend.
+We have been given P16 as our project and are planning to meet the client this week with other groups.
+We have also starting the project backlog and aim to start writing the project proposal.
+
+Week 3
