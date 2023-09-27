@@ -1,0 +1,13 @@
+Daniel Wang | z5363596
+
+Week 1
+Decided on Scrum Master, Terry Thoroughgood and Project Leader, Daniel Nguyen.
+Unanimous agreement on P16 as the preference capstone project, backups as P18 and P2.
+
+Week 2
+In-depth discussion of team members abilities and what roles people should undertake, 
+as well as a surface level decision of the technology stack the capstone project
+should be made in based on the aforementioned. Decision being a NextJS frontend, operated
+by Daniel Nguyen and Terry Thoroughgood and, Python Flask backend operated by myself,
+Akul Anand and, Victor Tang. Along with a surface level discussion of what DBMS
+the backend team should use.
