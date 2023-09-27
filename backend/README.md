@@ -30,10 +30,10 @@ screw with some other developer's tables/data while you're prototyping something
 Luckily, this is super easy with [railway](https://railway.app/), follow
 the first couple steps [here](https://dev.to/ngoakor12/connect-a-railway-databasepostgresql-with-node-postgres-in-express-15lf) to setup the database,
 and you're already halfway done! Now, the quick and dirty solution, is to copy 
-the DATABASE_URL environment variable as you saw in the aforementioned tutorial to 
+the `DATABASE_URL` environment variable as you saw in the aforementioned tutorial to 
 a .env file (that you can create yourself) in the `backend` directory. Run
-`prisma db push` and mow, every time you add to the database through prisma in 
-python code, or delete it will be reflected in the database (which you can
+`prisma db push` and now, every time you add to the database through prisma in 
+python code or delete, it will be reflected in the database (which you can
 view in a nice GUI all in railway).
 If you want a more integrated way of interacting with the database with all of
 railway's fancy toolkit contact @K0FFE1NE about it.
