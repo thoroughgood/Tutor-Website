@@ -1,0 +1,8 @@
+# python related
+.venv
+__pycache__/
+
+# .env file for secrets
+.env
+
+
