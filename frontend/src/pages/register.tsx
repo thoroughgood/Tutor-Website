@@ -10,7 +10,6 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form"
 import { useForm } from "react-hook-form"
@@ -26,26 +25,29 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import Link from "next/link"
+import { Label } from "@/components/ui/label"
 
-const formSchema = z
-  .object({
-    name: z
-      .string()
-      .min(1, {
-        message: "Name is too short",
-      })
-      .max(50),
-    email: z.string().email(),
-    password: z.string().min(1, {
-      message: "Password is too short",
-    }), // TODO: refine this
-    confirmPassword: z.string(),
-    accountType: z.enum(["tutor", "student"]),
-  })
-  .refine(({ password, confirmPassword }) => password == confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  })
+const formSchema = z.object({
+  name: z
+    .string()
+    .min(1, {
+      message: "Name is too short",
+    })
+    .max(50),
+  email: z.string().email(),
+  accountType: z.enum(["tutor", "student"]),
+  password: z.string().min(1, {
+    message: "Password is too short",
+  }), // TODO: refine this
+  // confirmPassword: z.string(),
+})
+// .refine(({ password, confirmPassword }) => password == confirmPassword, {
+//   message: "Passwords do not match",
+//   path: ["confirmPassword"],
+// })
+
+// README: confirm password decreases UX without much benefit to password input accuracy
+// Commented out confirm passwords for better UX/UI
 
 export default function Register() {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -55,7 +57,7 @@ export default function Register() {
     console.log(values)
   }
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-lg border-none shadow-none">
       <CardHeader>
         <CardTitle>Register</CardTitle>
         <CardDescription>Create an account.</CardDescription>
@@ -69,7 +71,7 @@ export default function Register() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <Label>Full Name</Label>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -107,7 +109,7 @@ export default function Register() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <Label>Email</Label>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -120,7 +122,7 @@ export default function Register() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <Label>Password</Label>
                   <FormControl>
                     <Input {...field} type="password" />
                   </FormControl>
@@ -128,24 +130,26 @@ export default function Register() {
                 </FormItem>
               )}
             />
-            <FormField
+            {/* <FormField
               control={form.control}
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
+                  <Label>Confirm Password</Label>
                   <FormControl>
                     <Input {...field} type="password" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
-            />
-            <div className="flex w-full justify-between gap-4">
+            /> */}
+            <div>
+              <Button role="submit" className="w-full">
+                Submit
+              </Button>
               <Button asChild variant="link" className="px-0">
                 <Link href={"/login"}>Login instead</Link>
               </Button>
-              <Button role="submit">Submit</Button>
             </div>
           </form>
         </Form>
