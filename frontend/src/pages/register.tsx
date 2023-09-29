@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/select"
 import Link from "next/link"
 import { Label } from "@/components/ui/label"
+import { Loader2 } from "lucide-react"
+import { useState } from "react"
 
 const formSchema = z.object({
   name: z
@@ -53,18 +55,24 @@ export default function Register() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   })
+  const [submitLoading, setSubmitLoading] = useState(false)
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    setSubmitLoading(true)
     console.log(values)
   }
   return (
-    <Card className="w-full max-w-lg border-none shadow-none">
-      <CardHeader>
+    <Card className="w-full max-w-lg">
+      <CardHeader className="text-center">
         <CardTitle>Register</CardTitle>
         <CardDescription>Create an account.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={form.handleSubmit(onSubmit)}
+            noValidate
+          >
             <div className="grid grid-cols-2 items-end gap-4">
               <FormField
                 control={form.control}
@@ -111,7 +119,7 @@ export default function Register() {
                 <FormItem>
                   <Label>Email</Label>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} type="email" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -143,9 +151,16 @@ export default function Register() {
                 </FormItem>
               )}
             /> */}
-            <div>
-              <Button role="submit" className="w-full">
-                Submit
+            <div className="mt-4">
+              <Button role="submit" className="w-full" disabled={submitLoading}>
+                {submitLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading
+                  </>
+                ) : (
+                  "Submit"
+                )}
               </Button>
               <Button asChild variant="link" className="px-0">
                 <Link href={"/login"}>Login instead</Link>
