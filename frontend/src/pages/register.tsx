@@ -51,7 +51,7 @@ const formSchema = z.object({
 //   path: ["confirmPassword"],
 // })
 
-// README: confirm password decreases UX without much benefit to password input accuracy
+// NOTE: confirm password decreases UX without much benefit to password input accuracy
 // Commented out confirm passwords for better UX/UI
 
 const authService = new HTTPAuthService()
@@ -142,16 +142,7 @@ export default function Register() {
 
 // scary interface
 interface CustomFormFieldProps {
-  form: UseFormReturn<
-    {
-      name: string
-      email: string
-      accountType: "tutor" | "student"
-      password: string
-    },
-    any,
-    undefined
-  >
+  form: UseFormReturn<z.infer<typeof formSchema>, any, undefined>
   name: keyof z.infer<typeof formSchema>
   label: string
   inputType?: string
