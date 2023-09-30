@@ -3,6 +3,7 @@ import { ThemeToggle } from "@/components/themeToggle"
 import useUser from "@/hooks/useUser"
 import Image from "next/image"
 import { useRouter } from "next/router"
+import { Toaster } from "react-hot-toast"
 
 interface LayoutProps {
   children: React.ReactNode
@@ -13,6 +14,7 @@ export default function Layout({ children }: LayoutProps) {
   if (router.pathname.match(/register|login/i)) {
     return (
       <div className="flex h-screen w-screen">
+        <Toaster />
         <ThemeToggle />
         <div className="grid w-full place-content-center">{children}</div>
         <Image
@@ -31,6 +33,7 @@ export default function Layout({ children }: LayoutProps) {
   }
   return (
     <div className="flex h-screen w-screen overflow-hidden">
+      <Toaster />
       <Sidebar />
       {children}
     </div>

@@ -11,7 +11,7 @@ export interface RegisterBody {
 export class HTTPAuthService {
   private backendURL: string
   private errorHandlerCallback = async (resp: WretchError) => {
-    const error = await resp.json()
+    const error = JSON.parse(resp.message)
     throw new Error(error.error)
   }
   constructor() {
@@ -21,10 +21,9 @@ export class HTTPAuthService {
     const resp = wretch(`${this.backendURL}/register`)
       .json(registerBody)
       .post()
+      .notFound(this.errorHandlerCallback)
       .badRequest(this.errorHandlerCallback)
       .error(415, this.errorHandlerCallback)
-    const data = resp.json()
-    console.log(data)
-    return data
+    return await resp.json()
   }
 }

@@ -29,6 +29,8 @@ import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import LoadingButton from "@/components/loadingButton"
 import { HTTPAuthService } from "@/service/authService"
+import { getErrorMessage } from "@/lib/utils"
+import toast from "react-hot-toast"
 
 const formSchema = z.object({
   name: z
@@ -39,7 +41,7 @@ const formSchema = z.object({
     .max(50),
   email: z.string().email(),
   accountType: z.enum(["tutor", "student"]),
-  password: z.string().min(1, {
+  password: z.string().min(8, {
     message: "Password is too short",
   }), // TODO: refine this
   // confirmPassword: z.string(),
@@ -60,8 +62,12 @@ export default function Register() {
   const [submitLoading, setSubmitLoading] = useState(false)
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitLoading(true)
-    const id = await authService.register(values)
-    console.log(id)
+    try {
+      const id = await authService.register(values)
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    }
+    setSubmitLoading(false)
   }
   return (
     <Card className="w-full max-w-lg">
