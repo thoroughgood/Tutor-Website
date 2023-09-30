@@ -28,6 +28,7 @@ import Link from "next/link"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import LoadingButton from "@/components/loadingButton"
+import { HTTPAuthService } from "@/service/authService"
 
 const formSchema = z.object({
   name: z
@@ -51,14 +52,16 @@ const formSchema = z.object({
 // README: confirm password decreases UX without much benefit to password input accuracy
 // Commented out confirm passwords for better UX/UI
 
+const authService = new HTTPAuthService()
 export default function Register() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   })
   const [submitLoading, setSubmitLoading] = useState(false)
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitLoading(true)
-    console.log(values)
+    const id = await authService.register(values)
+    console.log(id)
   }
   return (
     <Card className="w-full max-w-lg">
