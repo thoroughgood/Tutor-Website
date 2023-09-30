@@ -1,9 +1,10 @@
-from flask import Blueprint
-from prisma.models import User
+from flask import Blueprint, jsonify
+from prisma.models import Admin
 
 example = Blueprint("example", __name__)
 
-@example.route('/', methods=['GET'])
-async def index():
-    user = User.prisma().find_first()
-    return dict(user)
+
+@example.route("/", methods=["GET"])
+def index():
+    admin = Admin.prisma().find_first()
+    return dict(admin), 200

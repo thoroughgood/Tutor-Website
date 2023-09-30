@@ -1,6 +1,7 @@
 # python virtual env
 .venv
 __pycache__/
+flask_session
 
 # .env file for secrets
 .env

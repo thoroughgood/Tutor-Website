@@ -20,6 +20,10 @@ Whenever you work on the backend in the future, you should be loaded up in this
 venv. There won't really be much in the way of reprecussions if you don't, other
 than nothing working and random python files bloating your file system.
 
+You'll also need to generate a secret key to put inside a .env file (that you can create yourself) 
+in the `backend` directory. Just generate via the repl or google a solution 
+and assign it to the `SECRET_KEY` variable in .env.
+
 Now you're essentially ready to go... except for all the prisma/database
 setup you need to do.
 
@@ -31,10 +35,9 @@ Luckily, this is super easy with [railway](https://railway.app/), follow
 the first couple steps [here](https://dev.to/ngoakor12/connect-a-railway-databasepostgresql-with-node-postgres-in-express-15lf) to setup the database,
 and you're already halfway done! Now, the quick and dirty solution, is to copy 
 the `DATABASE_URL` environment variable as you saw in the aforementioned tutorial to 
-a .env file (that you can create yourself) in the `backend` directory. Run
-`prisma db push` and now, every time you add to the database through prisma in 
-python code or delete, it will be reflected in the database (which you can
-view in a nice GUI all in railway).
+the .env file in the `backend` directory. Run `prisma db push` and now, 
+every time you add to the database through prisma in python code or delete, 
+it will be reflected in the database (which you can view in a nice GUI all in railway).
 If you want a more integrated way of interacting with the database with all of
 railway's fancy toolkit contact @K0FFE1NE about it.
 
