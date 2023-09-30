@@ -12,7 +12,7 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form"
-import { useForm } from "react-hook-form"
+import { UseFormReturn, useForm } from "react-hook-form"
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Input } from "@/components/ui/input"
@@ -26,8 +26,8 @@ import {
 } from "@/components/ui/select"
 import Link from "next/link"
 import { Label } from "@/components/ui/label"
-import { Loader2 } from "lucide-react"
 import { useState } from "react"
+import LoadingButton from "@/components/loadingButton"
 
 const formSchema = z.object({
   name: z
@@ -74,19 +74,7 @@ export default function Register() {
             noValidate
           >
             <div className="grid grid-cols-2 items-end gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <Label>Full Name</Label>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <CustomFormField form={form} name="name" label="Full Name" />
               <FormField
                 control={form.control}
                 name="accountType"
@@ -112,56 +100,26 @@ export default function Register() {
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
+            <CustomFormField
               name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <Label>Email</Label>
-                  <FormControl>
-                    <Input {...field} type="email" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              form={form}
+              inputType="email"
+              label="Email"
             />
-            <FormField
-              control={form.control}
+            <CustomFormField
               name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <Label>Password</Label>
-                  <FormControl>
-                    <Input {...field} type="password" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              form={form}
+              label="Password"
+              inputType="password"
             />
-            {/* <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <Label>Confirm Password</Label>
-                  <FormControl>
-                    <Input {...field} type="password" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
             <div className="mt-4">
-              <Button role="submit" className="w-full" disabled={submitLoading}>
-                {submitLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Loading
-                  </>
-                ) : (
-                  "Submit"
-                )}
-              </Button>
+              <LoadingButton
+                role="submit"
+                className="w-full"
+                isLoading={submitLoading}
+              >
+                Submit
+              </LoadingButton>
               <Button asChild variant="link" className="px-0">
                 <Link href={"/login"}>Login instead</Link>
               </Button>
@@ -170,5 +128,48 @@ export default function Register() {
         </Form>
       </CardContent>
     </Card>
+  )
+}
+
+// scary interface
+interface CustomFormFieldProps {
+  form: UseFormReturn<
+    {
+      name: string
+      email: string
+      accountType: "tutor" | "student"
+      password: string
+    },
+    any,
+    undefined
+  >
+  name: keyof z.infer<typeof formSchema>
+  label: string
+  inputType?: string
+}
+
+/**
+ * Reusable basic custom form field
+ */
+function CustomFormField({
+  label,
+  form,
+  name,
+  inputType,
+}: CustomFormFieldProps) {
+  return (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <Label>{label}</Label>
+          <FormControl>
+            <Input {...field} type={inputType} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   )
 }
