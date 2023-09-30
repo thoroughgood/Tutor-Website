@@ -17,7 +17,7 @@ def error_generator(error: str, status_code: int) -> Tuple[Response, int]:
 def error_decorator(f):
     def wrapped(*args, **kwargs):
         try:
-            f(*args, **kwargs)
+            return f(*args, **kwargs)
         except ExpectedError as e:
             msg, code = e.args
             return error_generator(msg, code)
