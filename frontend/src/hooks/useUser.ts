@@ -1,4 +1,4 @@
-import { UserContext } from "@/components/UserProvider"
+import { UserContext } from "@/components/userProvider"
 import { useContext } from "react"
 
 export default function useUser() {
