@@ -70,7 +70,7 @@ export default function Register() {
     setSubmitLoading(false)
   }
   return (
-    <Card className="w-full max-w-lg">
+    <Card className="w-screen max-w-md">
       <CardHeader className="text-center">
         <CardTitle>Register</CardTitle>
         <CardDescription>Create an account.</CardDescription>
