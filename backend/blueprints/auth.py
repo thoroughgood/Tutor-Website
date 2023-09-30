@@ -3,40 +3,34 @@ from prisma.models import Tutor, Student, Admin
 from re import fullmatch
 from uuid import uuid4
 from hashlib import sha256
+from helpers.error_handlers import error_decorator, expected_error_wrapper
 
 auth = Blueprint("auth", __name__)
 
 
 @auth.route("/register", methods=["POST"])
+@error_decorator
 def register():
-    args = request.get_json(silent=True)
-    if not args:
-        return (
-            jsonify({"error": "content-type was not json or data was malformed"}),
-            415,
-        )
+    args = request.get_json()
 
     if not "name" in args or len(str(args["name"]).lower().strip()) == 0:
-        return jsonify({"error": "name field missing"}), 400
+        expected_error_wrapper("name field was missing", 400)
 
     if not "email" in args or not fullmatch(
         r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
         str(args["email"]).lower().strip(),
     ):
-        return jsonify({"error": "email field is invalid"}), 400
+        expected_error_wrapper("email field is invalid", 400)
 
     if not "password" in args or len(str(args["password"]).lower().strip()) < 8:
-        return (
-            jsonify({"error": "password field must be at least 8 characters long"}),
-            400,
-        )
+        expected_error_wrapper("password field must be at least 8 characters long", 400)
 
     new_user_id = None
     if "accountType" in args:
         student = Student.prisma().find_first(where={"email": args["email"]})
         tutor = Tutor.prisma().find_first(where={"email": args["email"]})
         if student or tutor:
-            return jsonify({"error": "user already exists with this email"}), 400
+            expected_error_wrapper("user already exists with this email", 400)
 
         match str(args["accountType"]).lower().strip():
             case "student":
@@ -71,12 +65,9 @@ def register():
                     }
                 )
             case _:
-                return (
-                    jsonify({"error": "accountType must be 'student' or 'tutor'"}),
-                    400,
-                )
+                expected_error_wrapper("accountType must be 'student' or 'tutor'", 400)
     else:
-        return jsonify({"error": "accountType field missing"}), 400
+        expected_error_wrapper("accountType field missing", 400)
 
     session["user_id"] = new_user_id
 

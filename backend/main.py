@@ -6,10 +6,12 @@ import os
 
 from blueprints.example import example
 from blueprints.auth import auth
+from helpers.my_request import MyRequest
 
 prisma = Prisma(auto_register=True)
 prisma.connect()
 
+Flask.request_class = MyRequest
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", default="not very secret")
 # ? Consider moving to redis in the future?
