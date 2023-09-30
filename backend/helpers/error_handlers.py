@@ -3,15 +3,12 @@ from flask import Response, jsonify, logging
 
 
 class ExpectedError(Exception):
-    pass
+    def __init__(self, error_msg: str, status_code: int):
+        self.args = error_msg, status_code
 
 
-def expected_error_wrapper(error: str, status_code: int):
-    raise ExpectedError(error, status_code)
-
-
-def error_generator(error: str, status_code: int) -> Tuple[Response, int]:
-    return jsonify({"error": error}), status_code
+def error_generator(error_msg: str, status_code: int) -> Tuple[Response, int]:
+    return jsonify({"error": error_msg}), status_code
 
 
 def error_decorator(f):
