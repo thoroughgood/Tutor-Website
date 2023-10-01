@@ -14,3 +14,8 @@ We have been given P16 as our project and are planning to meet the client this w
 We have also starting the project backlog and aim to start writing the project proposal.
 
 Week 3
+Finished my part of the proposal, the system design and admin + tutor storyboard. 
+Initialised and setup frontend code, including Nextjs, Eslint, Shadcn and TailwindCSS. 
+Organised meeting with Daniel Wang (Backend Lead) to discuss basic API documentation for sprint 1.
+Also drafted ER diagram with Daniel Wang for the database. 
+

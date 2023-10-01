@@ -12,7 +12,7 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form"
-import { useForm } from "react-hook-form"
+import { UseFormReturn, useForm } from "react-hook-form"
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Input } from "@/components/ui/input"
@@ -26,6 +26,11 @@ import {
 } from "@/components/ui/select"
 import Link from "next/link"
 import { Label } from "@/components/ui/label"
+import { useState } from "react"
+import LoadingButton from "@/components/loadingButton"
+import { HTTPAuthService } from "@/service/authService"
+import { getErrorMessage } from "@/lib/utils"
+import toast from "react-hot-toast"
 
 const formSchema = z.object({
   name: z
@@ -36,7 +41,7 @@ const formSchema = z.object({
     .max(50),
   email: z.string().email(),
   accountType: z.enum(["tutor", "student"]),
-  password: z.string().min(1, {
+  password: z.string().min(8, {
     message: "Password is too short",
   }), // TODO: refine this
   // confirmPassword: z.string(),
@@ -46,39 +51,39 @@ const formSchema = z.object({
 //   path: ["confirmPassword"],
 // })
 
-// README: confirm password decreases UX without much benefit to password input accuracy
+// NOTE: confirm password decreases UX without much benefit to password input accuracy
 // Commented out confirm passwords for better UX/UI
 
+const authService = new HTTPAuthService()
 export default function Register() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   })
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values)
+  const [submitLoading, setSubmitLoading] = useState(false)
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setSubmitLoading(true)
+    try {
+      const id = await authService.register(values)
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    }
+    setSubmitLoading(false)
   }
   return (
-    <Card className="w-full max-w-lg border-none shadow-none">
-      <CardHeader>
+    <Card className="w-screen max-w-md">
+      <CardHeader className="text-center">
         <CardTitle>Register</CardTitle>
         <CardDescription>Create an account.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={form.handleSubmit(onSubmit)}
+            noValidate
+          >
             <div className="grid grid-cols-2 items-end gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <Label>Full Name</Label>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <CustomFormField form={form} name="name" label="Full Name" />
               <FormField
                 control={form.control}
                 name="accountType"
@@ -104,49 +109,26 @@ export default function Register() {
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
+            <CustomFormField
               name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <Label>Email</Label>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              form={form}
+              inputType="email"
+              label="Email"
             />
-            <FormField
-              control={form.control}
+            <CustomFormField
               name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <Label>Password</Label>
-                  <FormControl>
-                    <Input {...field} type="password" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              form={form}
+              label="Password"
+              inputType="password"
             />
-            {/* <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <Label>Confirm Password</Label>
-                  <FormControl>
-                    <Input {...field} type="password" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
-            <div>
-              <Button role="submit" className="w-full">
+            <div className="mt-4">
+              <LoadingButton
+                role="submit"
+                className="w-full"
+                isLoading={submitLoading}
+              >
                 Submit
-              </Button>
+              </LoadingButton>
               <Button asChild variant="link" className="px-0">
                 <Link href={"/login"}>Login instead</Link>
               </Button>
@@ -155,5 +137,39 @@ export default function Register() {
         </Form>
       </CardContent>
     </Card>
+  )
+}
+
+// scary interface
+interface CustomFormFieldProps {
+  form: UseFormReturn<z.infer<typeof formSchema>, any, undefined>
+  name: keyof z.infer<typeof formSchema>
+  label: string
+  inputType?: string
+}
+
+/**
+ * Reusable basic custom form field
+ */
+function CustomFormField({
+  label,
+  form,
+  name,
+  inputType,
+}: CustomFormFieldProps) {
+  return (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <Label>{label}</Label>
+          <FormControl>
+            <Input {...field} type={inputType} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   )
 }
