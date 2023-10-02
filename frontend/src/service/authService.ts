@@ -8,6 +8,11 @@ export interface RegisterBody {
   accountType: "admin" | "tutor" | "student"
 }
 
+export interface LoginBody {
+  name: string
+  password: string
+}
+
 export class HTTPAuthService {
   private backendURL: string
   private errorHandlerCallback = async (resp: WretchError) => {
@@ -20,6 +25,16 @@ export class HTTPAuthService {
   async register(registerBody: RegisterBody) {
     const resp = wretch(`${this.backendURL}/register`)
       .json(registerBody)
+      .post()
+      .notFound(this.errorHandlerCallback)
+      .badRequest(this.errorHandlerCallback)
+      .error(415, this.errorHandlerCallback)
+    return await resp.json()
+  }
+
+  async login(loginBody: LoginBody) {
+    const resp = wretch(`${this.backendURL}/login`)
+      .json(loginBody)
       .post()
       .notFound(this.errorHandlerCallback)
       .badRequest(this.errorHandlerCallback)
