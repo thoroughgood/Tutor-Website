@@ -63,7 +63,8 @@ export default function Register() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitLoading(true)
     try {
-      const id = await authService.register(values)
+      const { id } = await authService.register(values)
+      console.log(id)
     } catch (error) {
       toast.error(getErrorMessage(error))
     }

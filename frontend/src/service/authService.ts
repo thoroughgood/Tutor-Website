@@ -17,13 +17,15 @@ export class HTTPAuthService {
   constructor() {
     this.backendURL = process.env.BACKEND_URL || "http://127.0.0.1:5000"
   }
-  async register(registerBody: RegisterBody) {
+  async register(registerBody: RegisterBody): Promise<{ id: string }> {
+    console.log("register")
     const resp = wretch(`${this.backendURL}/register`)
       .json(registerBody)
       .post()
       .notFound(this.errorHandlerCallback)
       .badRequest(this.errorHandlerCallback)
       .error(415, this.errorHandlerCallback)
+    console.log("fin wrtech")
     return await resp.json()
   }
 }
