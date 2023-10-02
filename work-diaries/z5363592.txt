@@ -1,0 +1,20 @@
+Terry Thoroughgood z5363592
+
+Week 1
+
+In week 1 we met up together to form our group TheCarrothead, I was selected as the scrum master
+and we compiled a list of projects that we would be happy doing, picking p16, p18 and p2 prioritised in highest to lowest order
+
+Week 2
+
+In week 2 we started becoming familiar with the Jira website that we were going to use and set up our page.
+Decided on using NextJS for front end, python (flask) for backend. We divided our roles up into frontend and backend, with myself and Daniel Nguyen.
+Daniel Wang, Victor and Akul are going to work on the backend, but I think these roles are not super strictly divided as there are more backend developers,
+we may sometimes ask for some help but in general those are the roles we are going to work with. We started filling out our project backlog with user stories.
+Our client set up a meeting on zoom, which one of our members was able to participate in and we asked some questions with regards to the specifications required.
+
+Week 3
+
+In week 3 we began setting up our backend and frontend to get a start on our assignment. A basic api document was created for our first sprint. We also finalised 
+our proposal, and then set up a meeting to create all our child issues. We've started sorting out the work with everyone and assigning tasks as well in the leadup
+to our first demo.
