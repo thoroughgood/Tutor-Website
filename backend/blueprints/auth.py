@@ -75,3 +75,38 @@ def register():
     session["user_id"] = new_user_id
 
     return jsonify({"id": new_user_id}), 200
+
+def login():
+    args = request.get_json()
+
+    if not "name" in args or len(str(args["name"]).lower().strip()) == 0:
+        raise ExpectedError("name field was missing", 400)
+
+    if not "email" in args or not fullmatch(
+        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
+        str(args["email"]).lower().strip(),
+    ):
+        raise ExpectedError("email field is invalid", 400)
+
+    if not "password" in args or len(str(args["password"]).lower().strip()) < 8:
+        raise ExpectedError("password field must be at least 8 characters long", 400)
+
+    if "accountType" in args:
+        student = Student.prisma().find_first(where={"email": args["email"]})
+        tutor = Tutor.prisma().find_first(where={"email": args["email"]})
+        if student and student.hashedPassword == sha256(str(args["password"]).encode()).hexdigest():
+            session["user_id"] = student.id
+            return jsonify({"id": student.id}), 200
+        elif tutor and tutor.hashedPassword == sha256(str(args["password"]).encode()).hexdigest():
+            session["user_id"] = tutor.id
+            return jsonify({"id": tutor.id}), 200
+        else:
+            raise ExpectedError("Invalid login attempt", 400)
+    else:
+        raise ExpectedError("accountType field missing", 400)
+
+def logout():
+    if not session["user_id"]:
+        raise ExpectedError("User not logged in", 400)
+    session["user_id"] = None
+    return jsonify({"message": "User logged out"}), 200
