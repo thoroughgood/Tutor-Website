@@ -5,7 +5,7 @@ from prisma import Prisma
 import os
 
 from blueprints.example import example
-from blueprints.auth import auth
+from blueprints.auth import auth, register, login, logout
 from helpers.my_request import MyRequest
 
 prisma = Prisma(auto_register=True)
@@ -30,13 +30,13 @@ app.register_blueprint(auth, url_prefix="/")
 def hello_world():
     return "Hello world!", 200
 @app.route("/register", methods=['POST'])
-def register():
+def app_register():
     return register()
 @app.route("/login", methods=['POST'])
-def login():
+def app_login():
     return login()
 @app.route("/logout", methods=['POST'])
-def logout():
+def app_logout():
     return logout()
 
 
