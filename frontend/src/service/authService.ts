@@ -9,7 +9,7 @@ export interface RegisterBody {
 }
 
 export interface LoginBody {
-  name: string
+  email: string
   password: string
 }
 
