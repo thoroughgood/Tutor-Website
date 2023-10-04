@@ -76,11 +76,13 @@ def register():
 
     return jsonify({"id": new_user_id}), 200
 
+@auth.route("/login", methods=["POST"])
+@error_decorator
 def login():
     args = request.get_json()
 
-    if not "name" in args or len(str(args["name"]).lower().strip()) == 0:
-        raise ExpectedError("name field was missing", 400)
+    if session["user_id"] != None:
+        raise ExpectedError("A user is already logged in", 400)
 
     if not "email" in args or not fullmatch(
         r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
@@ -96,17 +98,19 @@ def login():
         tutor = Tutor.prisma().find_first(where={"email": args["email"]})
         if student and student.hashedPassword == sha256(str(args["password"]).encode()).hexdigest():
             session["user_id"] = student.id
-            return jsonify({"id": student.id}), 200
+            return jsonify({"message": "User logged in"}), 200
         elif tutor and tutor.hashedPassword == sha256(str(args["password"]).encode()).hexdigest():
             session["user_id"] = tutor.id
-            return jsonify({"id": tutor.id}), 200
+            return jsonify({"message": "User logged in"}), 200
         else:
             raise ExpectedError("Invalid login attempt", 400)
     else:
         raise ExpectedError("accountType field missing", 400)
 
+@auth.route("/logout", methods=["POST"])
+@error_decorator
 def logout():
     if not session["user_id"]:
-        raise ExpectedError("User not logged in", 400)
+        raise ExpectedError("No user is logged in", 400)
     session["user_id"] = None
     return jsonify({"message": "User logged out"}), 200

@@ -29,18 +29,6 @@ app.register_blueprint(auth, url_prefix="/")
 @app.route("/")
 def hello_world():
     return "Hello world!", 200
-@app.route("/register", methods=['POST'])
-def app_register():
-    return register()
-@app.route("/login", methods=['POST'])
-def app_login():
-    return login()
-@app.route("/logout", methods=['POST'])
-def app_logout():
-    return logout()
-
-
-
 
 if __name__ == "__main__":
     app.run(debug=True, port=os.getenv("PORT", default=5000), host="0.0.0.0")
