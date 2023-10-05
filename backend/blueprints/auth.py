@@ -98,12 +98,12 @@ def login():
         tutor = Tutor.prisma().find_first(where={"email": args["email"]})
         if student and student.hashedPassword == sha256(str(args["password"]).encode()).hexdigest():
             session["user_id"] = student.id
-            return jsonify({"message": "User logged in"}), 200
+            return jsonify({"id": student.id}), 200
         elif tutor and tutor.hashedPassword == sha256(str(args["password"]).encode()).hexdigest():
             session["user_id"] = tutor.id
-            return jsonify({"message": "User logged in"}), 200
+            return jsonify({"id": tutor.id}), 200
         else:
-            raise ExpectedError("Invalid login attempt", 400)
+            raise ExpectedError("Invalid login attempt", 401)
     else:
         raise ExpectedError("accountType field missing", 400)
 
@@ -113,4 +113,4 @@ def logout():
     if not session["user_id"]:
         raise ExpectedError("No user is logged in", 400)
     session["user_id"] = None
-    return jsonify({"message": "User logged out"}), 200
+    return jsonify({"success": True}), 200
