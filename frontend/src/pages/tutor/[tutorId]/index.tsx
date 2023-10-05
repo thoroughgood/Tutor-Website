@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import ProfileHeader from "@/components/profileHeader"
 import { MockProfileService } from "@/service/profileService"
 import { useRouter } from "next/router"
 import { useQuery } from "react-query"
@@ -13,17 +13,9 @@ export default function TutorProfile() {
   })
 
   return (
-    <div className="p-12">
-      <div className="flex">
-        <Avatar className="h-40 w-40 text-5xl">
-          {data?.profilePicture && <AvatarImage src={data.profilePicture} />}
-          <AvatarFallback>
-            {data?.name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
-          </AvatarFallback>
-        </Avatar>
+    <div className="relative w-full">
+      <div className="h-full w-full p-12">
+        <ProfileHeader name={data?.name} accountType="Tutor" />
       </div>
     </div>
   )
