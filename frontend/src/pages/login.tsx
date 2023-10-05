@@ -25,10 +25,12 @@ import { HTTPAuthService } from "@/service/authService"
 import { getErrorMessage } from "@/lib/utils"
 import toast from "react-hot-toast"
 import router from "next/router"
+import useUser from "@/hooks/useUser"
 
 //this is a template, z.object will condense the information parsed into it as a readable json format, and formaSchema is basically from the form
 
 const formSchema = z.object({
+  accountType: z.enum(["tutor", "student", "admin"]),
   email: z.string().email(),
   password: z.string(),
 })
@@ -42,11 +44,17 @@ export default function Login() {
   })
   //need to identify if it is loading for shadcn framework
   const [submitLoading, setSubmitLoading] = useState(false)
+  //deconstructor
+  const { setUser } = useUser()
   //when the form is submitted we call this async to submit the form
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitLoading(true)
     try {
       const id = await authService.login(values)
+      setUser({
+        userId: String(id),
+        userType: values.accountType,
+      })
       router.push("/dashboard")
     } catch (error) {
       toast.error(getErrorMessage(error))

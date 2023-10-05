@@ -18,11 +18,10 @@ interface AuthResponse {
 }
 
 interface HTTPAuth {
-  register: (RegisterBody: RegisterBody) => Promise<AuthResponse>
   login: (LoginBody: LoginBody) => Promise<AuthResponse>
 }
 
-export class HTTPAuthService {
+export class HTTPAuthService implements HTTPAuth {
   private backendURL: string
   private errorHandlerCallback = async (resp: WretchError) => {
     const error = JSON.parse(resp.message)
@@ -46,7 +45,7 @@ export class HTTPAuthService {
       loginBody.email === "terrythoroughgood@email.com" &&
       loginBody.password === "goodpassword"
     ) {
-      return 5363592
+      return { id: "35353" }
     }
     throw new Error("something went wrong")
   }
