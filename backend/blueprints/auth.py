@@ -114,3 +114,23 @@ def logout():
         raise ExpectedError("No user is logged in", 400)
     session["user_id"] = None
     return jsonify({"success": True}), 200
+
+@auth.route("/resetpassword", methods=["PUT"])
+@error_decorator
+def resetpassword():
+    args = request.get_json()
+    
+    admin = Admin.prisma().find_first(where={"id": session["user_id"]})
+    if not admin and session["user_id"] != args["id"]:
+        raise ExpectedError("Insufficient permission to modify this profile", 403)
+
+    student = Student.prisma().find_first(where={"id": args["id"]})
+    if not student:
+        raise ExpectedError("Profile does not exist", 404)
+    
+    if not "password" in args or len(str(args["password"]).lower().strip()) < 8:
+        raise ExpectedError("password field must be at least 8 characters long", 400)
+    
+    student.hashedPassword == sha256(str(args["password"]).encode()).hexdigest()
+
+    return jsonify({"success": True})
