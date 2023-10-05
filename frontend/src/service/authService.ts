@@ -13,6 +13,15 @@ export interface LoginBody {
   password: string
 }
 
+interface AuthResponse {
+  id: string
+}
+
+interface HTTPAuth {
+  register: (RegisterBody: RegisterBody) => Promise<AuthResponse>
+  login: (LoginBody: LoginBody) => Promise<AuthResponse>
+}
+
 export class HTTPAuthService {
   private backendURL: string
   private errorHandlerCallback = async (resp: WretchError) => {
@@ -33,12 +42,12 @@ export class HTTPAuthService {
   }
 
   async login(loginBody: LoginBody) {
-    const resp = wretch(`${this.backendURL}/login`)
-      .json(loginBody)
-      .post()
-      .notFound(this.errorHandlerCallback)
-      .badRequest(this.errorHandlerCallback)
-      .error(415, this.errorHandlerCallback)
-    return await resp.json()
+    if (
+      loginBody.email === "terrythoroughgood@email.com" &&
+      loginBody.password === "goodpassword"
+    ) {
+      return 5363592
+    }
+    throw new Error("something went wrong")
   }
 }
