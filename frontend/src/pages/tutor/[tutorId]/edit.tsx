@@ -8,6 +8,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormMessage,
@@ -35,7 +36,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 const authService = new HTTPAuthService()
 
 const formSchema = z.object({
-  name: z.string(),
+  name: z
+    .string()
+    .min(1, {
+      message: "Name is too short",
+    })
+    .max(50),
   bio: z.string(),
   email: z.string(),
   profilePicture: z.string().optional(),
@@ -56,6 +62,7 @@ export default function Edit() {
   })
   const [submitLoading, setSubmitLoading] = useState(false)
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    //need to modify to convert from image to base64URI values.profilePicture
     setSubmitLoading(true)
     try {
       //will need to create a mock implementation of the edit api/return values
@@ -85,7 +92,7 @@ export default function Edit() {
                 noValidate
               >
                 <div className="grid grid-cols-2 items-end gap-4">
-                  <CustomFormField form={form} name="name" label="Full Name" />
+                  <CustomFormField form={form} name="name" label="Name" />
                   <FormField
                     control={form.control}
                     name="name"
@@ -114,22 +121,61 @@ export default function Edit() {
                 <CustomFormField
                   name="bio"
                   form={form}
-                  inputType="email"
-                  label="Email"
+                  inputType="string"
+                  label="Bio"
+                  formDescription="Let us learn about you!"
                 />
                 <CustomFormField
                   name="email"
                   form={form}
-                  label="Password"
-                  inputType="password"
+                  label="Email"
+                  inputType="email"
+                  formDescription="For personal contact."
                 />
+                <CustomFormField
+                  name="profilePicture"
+                  form={form}
+                  label="Profile Picture"
+                  inputType="file"
+                  formDescription="Show us what represents you."
+                />
+                <CustomFormField
+                  name="location"
+                  form={form}
+                  label="Location"
+                  inputType="string"
+                  formDescription="You don't have to let us know!"
+                />
+                <CustomFormField
+                  name="phoneNumber"
+                  form={form}
+                  label="Phone Number"
+                  inputType="string"
+                  formDescription=";)"
+                />
+                <CustomFormField
+                  name="courseOfferings"
+                  form={form}
+                  label="Course Offerings"
+                  inputType="string"
+                  formDescription="Tell us what you're comfortable tutoring."
+                />
+                {/* come back to check on this -> need multiple inputs*/}
+                <CustomFormField
+                  name="timeAvailable"
+                  form={form}
+                  label="Available Times"
+                  inputType="String"
+                  formDescription="Let us know when you're free."
+                />
+
                 <div className="mt-4">
                   <LoadingButton
                     role="submit"
                     className="w-full"
                     isLoading={submitLoading}
                   >
-                    Submit
+                    Edit
                   </LoadingButton>
                 </div>
               </form>
@@ -145,6 +191,7 @@ export default function Edit() {
     name: keyof z.infer<typeof formSchema>
     label: string
     inputType?: string
+    formDescription?: string
   }
 
   function CustomFormField({
@@ -152,8 +199,24 @@ export default function Edit() {
     form,
     name,
     inputType,
+    formDescription,
   }: CustomFormFieldProps) {
-    return (
+    return formDescription ? (
+      <FormField
+        control={form.control}
+        name={name}
+        render={({ field }) => (
+          <FormItem>
+            <Label>{label}</Label>
+            <FormControl>
+              <Input {...field} type={inputType} />
+            </FormControl>
+            <FormDescription>{formDescription}</FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    ) : (
       <FormField
         control={form.control}
         name={name}
