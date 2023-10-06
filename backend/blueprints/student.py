@@ -3,7 +3,7 @@ from prisma.models import Tutor, Student, Admin
 from re import fullmatch
 from uuid import uuid4
 from hashlib import sha256
-from helpers.error_handlers import (
+from backend.helpers.error_handlers import (
     ExpectedError,
     error_decorator,
 )
@@ -12,12 +12,12 @@ student = Blueprint("student", __name__)
 
 ################### CLARIFY ON ARGS ERROR CHECKING ###############
 
-@student.route("/student/profile", methods=["GET, PUT, DELETE"])
+@student.route("/", methods=["GET"])
 @error_decorator
 def get_profile():
     args = request.get_json()
 
-    student = Student.prisma().find_unique(where={"email": args["email"]})
+    student = Student.prisma().find_unique(where={"id": args["id"]})
 
     if not student:
         raise ExpectedError("Profile does not exist", 404)
@@ -31,43 +31,58 @@ def get_profile():
         "phoneNumber": student.phoneNumber
     })
 
+@student.route("/", methods=["PUT"])
+@error_decorator
 def modify_profile():
     args = request.get_json()
 
-    admin = Admin.prisma().find_first(where={"id": session["user_id"]})
+    admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
     if not admin and session["user_id"] != args["id"]:
         raise ExpectedError("Insufficient permission to modify this profile", 403)
 
-    student = Student.prisma().find_unique(where={"email": args["email"]})
+    student = Student.prisma().find_unique(where={"id": args["id"]})
     if not student:
         raise ExpectedError("Profile does not exist", 404)
+
+    if "name" not in args or len(str(args["name"]).lower().strip()) == 0:
+        name = student.name
+    if "bio" not in args:
+        bio = student.bio
+    if "profilePicture" not in args:
+        profilePicture = student.profilePicture
+    if "location" not in args:  
+        location = student.location
+    if "phoneNumber" not in args:
+        phoneNumber = student.phoneNumber
     
     Student.prisma().update(
-        where = {"email": student.email},
+        where = {"id": student.id},
         data = {
-            "name": args["name"],
-            "bio": args["bio"],
-            "profilePicture": args["profilePicture"],
-            "location": args["location"],
-            "phoneNumber": args["phoneNumber"]
+            "name": name,
+            "bio": bio,
+            "profilePicture": profilePicture,
+            "location": location,
+            "phoneNumber": phoneNumber
         }
     )
 
     return jsonify({"success": True}) 
 
+@student.route("/", methods=["DELETE"])
+@error_decorator
 def delete_profile():
     args = request.get_json()
 
-    admin = Admin.prisma().find_first(where={"id": session["user_id"]})
+    admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
     if not admin and session["user_id"] != args["id"]:
         raise ExpectedError("Insufficient permission to delete this profile", 403)
     
-    student = Student.prisma().find_unique(where={"email": args["email"]})
+    student = Student.prisma().find_unique(where={"id": args["id"]})
 
     if not student:
         raise ExpectedError("Profile does not exist", 404)
 
-    Student.prisma().delete(where={"email": args["email"]})
+    Student.prisma().delete(where={"id": args["id"]})
 
     return jsonify({"success": True})
     
