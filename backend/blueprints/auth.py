@@ -10,7 +10,6 @@ from helpers.error_handlers import (
 
 auth = Blueprint("auth", __name__)
 
-
 @auth.route("/register", methods=["POST"])
 @error_decorator
 def register():
@@ -30,8 +29,8 @@ def register():
 
     new_user_id = None
     if "accountType" in args:
-        student = Student.prisma().find_first(where={"email": args["email"]})
-        tutor = Tutor.prisma().find_first(where={"email": args["email"]})
+        student = Student.prisma().find_unique(where={"email": args["email"]})
+        tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
         if student or tutor:
             raise ExpectedError("user already exists with this email", 400)
 
@@ -94,8 +93,8 @@ def login():
         raise ExpectedError("password field must be at least 8 characters long", 400)
 
     if "accountType" in args:
-        student = Student.prisma().find_first(where={"email": args["email"]})
-        tutor = Tutor.prisma().find_first(where={"email": args["email"]})
+        student = Student.prisma().find_unique(where={"email": args["email"]})
+        tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
         if student and student.hashedPassword == sha256(str(args["password"]).encode()).hexdigest():
             session["user_id"] = student.id
             return jsonify({"id": student.id}), 200
@@ -115,17 +114,18 @@ def logout():
     session["user_id"] = None
     return jsonify({"success": True}), 200
 
-@auth.route("/resetpassword", methods=["POST"])
+@auth.route("/resetpassword", methods=["PUT"])
 @error_decorator
 def resetpassword():
+    
     args = request.get_json()
 
     admin = Admin.prisma().find_first(where={"id": session["user_id"]})
     if not admin and session["user_id"] != args["id"]:
         raise ExpectedError("Insufficient permission to modify this profile", 403)
 
-    student = Student.prisma().find_first(where={"id": args["id"]})
-    tutor = Tutor.prisma().find_first(where={"id": args["id"]})
+    student = Student.prisma().find_unique(where={"email": args["email"]})
+    tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
     if not student and not tutor:
         raise ExpectedError("Profile does not exist", 404)
     
@@ -134,16 +134,41 @@ def resetpassword():
     
     if student:
         student.hashedPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
-        # Student.prisma.update()
+        newPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
+        Student.prisma().update(
+            where = {"email": student.email},
+            data = {"hashedPassword": newPassword}
+        )
     if tutor:
         newPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
-        tutor = Tutor.prisma().update(
-            where = {
-                "id": tutor.id
-            },
-            data = {
-                "password": newPassword
-            }
+        Tutor.prisma().update(
+            where = {"id": tutor.id},
+            data = {"hashedPassword": newPassword}
         )
 
     return jsonify({"success": True})
+
+# @auth.route("/delete", methods=["DELETE"])
+# @error_decorator
+# def delete():
+#     args = request.get_json()
+
+#     admin = Admin.prisma().find_first(where={"id": session["user_id"]})
+#     if not admin and session["user_id"] != args["id"]:
+#         raise ExpectedError("Insufficient permission to modify this profile", 403)
+
+#     student = Student.prisma().find_unique(where={"email": args["email"]})
+#     tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
+#     admin = Admin.prisma().find_unique(where={"email": args["email"]})
+#     if not student and not tutor and not admin:
+#         raise ExpectedError("Profile does not exist", 404)
+
+#     if student:
+#         Student.prisma().delete(where={"email": student.email})
+#     if tutor:
+#         Tutor.prisma().delete(where={"email": tutor.email})
+#     if admin:
+#         Admin.prisma().delete(where={"email": admin.email})
+
+
+#     return jsonify({"success": True})
