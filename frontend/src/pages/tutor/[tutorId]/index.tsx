@@ -12,10 +12,22 @@ export default function TutorProfile() {
     queryFn: () => profileService.getTutorProfile(tutorId),
   })
 
+  if (!data) {
+    return <div>loading</div>
+  }
+
   return (
     <div className="relative w-full">
       <div className="h-full w-full p-12">
-        <ProfileHeader name={data?.name} accountType="Tutor" />
+        <ProfileHeader
+          className="mx-auto max-w-xl"
+          name={data.name}
+          accountType="Tutor"
+          email={data.email}
+          profilePicture={data.profilePicture}
+          phoneNumber={data.phoneNumber}
+          location={data.location}
+        />
       </div>
     </div>
   )
