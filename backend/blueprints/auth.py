@@ -93,15 +93,14 @@ def resetpassword():
     
     if "newPassword" not in args or len(str(args["newPassword"]).lower().strip()) < 8:
         raise ExpectedError("password field must be at least 8 characters long", 400)
-    
+
+    newPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
     if student:
-        newPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
         Student.prisma().update(
             where = {"id": student.id},
             data = {"hashedPassword": newPassword}
         )
     if tutor:
-        newPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
         Tutor.prisma().update(
             where = {"id": tutor.id},
             data = {"hashedPassword": newPassword}
