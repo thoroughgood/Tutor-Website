@@ -93,8 +93,8 @@ def login():
         raise ExpectedError("password field must be at least 8 characters long", 400)
 
     if "accountType" in args:
-        student = Student.prisma().find_unique(where={"email": args["email"]})
-        tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
+        student = Student.prisma().find_unique(where={"id": args["id"]})
+        tutor = Tutor.prisma().find_unique(where={"id": args["id"]})
         if student and student.hashedPassword == sha256(str(args["password"]).encode()).hexdigest():
             session["user_id"] = student.id
             return jsonify({"id": student.id}), 200
