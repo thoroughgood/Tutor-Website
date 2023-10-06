@@ -75,3 +75,37 @@ def register():
     session["user_id"] = new_user_id
 
     return jsonify({"id": new_user_id}), 200
+
+@auth.route("/resetpassword", methods=["PUT"])
+@error_decorator
+def resetpassword():
+    
+    args = request.get_json()
+
+    admin = Admin.prisma().find_first(where={"id": session["user_id"]})
+    if not admin and session["user_id"] != args["id"]:
+        raise ExpectedError("Insufficient permission to modify this profile", 403)
+
+    student = Student.prisma().find_unique(where={"email": args["email"]})
+    tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
+    if not student and not tutor:
+        raise ExpectedError("Profile does not exist", 404)
+    
+    if "newPassword" not in args or len(str(args["newPassword"]).lower().strip()) < 8:
+        raise ExpectedError("password field must be at least 8 characters long", 400)
+    
+    if student:
+        student.hashedPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
+        newPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
+        Student.prisma().update(
+            where = {"email": student.email},
+            data = {"hashedPassword": newPassword}
+        )
+    if tutor:
+        newPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
+        Tutor.prisma().update(
+            where = {"id": tutor.id},
+            data = {"hashedPassword": newPassword}
+        )
+
+    return jsonify({"success": True})
