@@ -86,8 +86,8 @@ def resetpassword():
     if not admin and session["user_id"] != args["id"]:
         raise ExpectedError("Insufficient permission to modify this profile", 403)
 
-    student = Student.prisma().find_unique(where={"email": args["email"]})
-    tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
+    student = Student.prisma().find_unique(where={"id": args["id"]})
+    tutor = Tutor.prisma().find_unique(where={"id": args["id"]})
     if not student and not tutor:
         raise ExpectedError("Profile does not exist", 404)
     
@@ -95,10 +95,9 @@ def resetpassword():
         raise ExpectedError("password field must be at least 8 characters long", 400)
     
     if student:
-        student.hashedPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
         newPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
         Student.prisma().update(
-            where = {"email": student.email},
+            where = {"id": student.id},
             data = {"hashedPassword": newPassword}
         )
     if tutor:
