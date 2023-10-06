@@ -17,7 +17,7 @@ student = Blueprint("student", __name__)
 def get_profile():
     args = request.get_json()
 
-    student = Student.prisma().find_first(where={"id": args["id"]})
+    student = Student.prisma().find_unique(where={"email": args["email"]})
 
     if not student:
         raise ExpectedError("Profile does not exist", 404)
@@ -38,15 +38,20 @@ def modify_profile():
     if not admin and session["user_id"] != args["id"]:
         raise ExpectedError("Insufficient permission to modify this profile", 403)
 
-    student = Student.prisma().find_first(where={"id": args["id"]})
+    student = Student.prisma().find_unique(where={"email": args["email"]})
     if not student:
         raise ExpectedError("Profile does not exist", 404)
-
-    student.name = args["name"]
-    student.bio = args["bio"]
-    student.profilePicture = args["profilePicture"]
-    student.location = args["location"]
-    student.phoneNumber = args["phoneNumber"]
+    
+    Student.prisma().update(
+        where = {"email": student.email},
+        data = {
+            "name": args["name"],
+            "bio": args["bio"],
+            "profilePicture": args["profilePicture"],
+            "location": args["location"],
+            "phoneNumber": args["phoneNumber"]
+        }
+    )
 
     return jsonify({"success": True}) 
 
@@ -57,12 +62,12 @@ def delete_profile():
     if not admin and session["user_id"] != args["id"]:
         raise ExpectedError("Insufficient permission to delete this profile", 403)
     
-    student = Student.prisma().find_first(where={"id": args["id"]})
+    student = Student.prisma().find_unique(where={"email": args["email"]})
 
     if not student:
         raise ExpectedError("Profile does not exist", 404)
 
-    Student.prisma().delete(where={"id": args["id"]})
+    Student.prisma().delete(where={"email": args["email"]})
 
     return jsonify({"success": True})
     
