@@ -64,9 +64,9 @@ def search():
             valid &= rating_calc(tutor.rating) >= args["rating"]
 
         if "courseOfferings" in args:
-            args_offerings = [offerings.lower() for offerings in args["offerings"]]
+            args_offerings = [offerings.upper() for offerings in args["offerings"]]
             valid &= all(
-                offerings.name.name.lower() in args_offerings
+                offerings.name.name in args_offerings
                 for offerings in tutor.courseOfferings
             )
 
