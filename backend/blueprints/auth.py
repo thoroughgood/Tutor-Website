@@ -30,8 +30,8 @@ def register():
 
     new_user_id = None
     if "accountType" in args:
-        student = Student.prisma().find_first(where={"email": args["email"]})
-        tutor = Tutor.prisma().find_first(where={"email": args["email"]})
+        student = Student.prisma().find_unique(where={"email": args["email"]})
+        tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
         if student or tutor:
             raise ExpectedError("user already exists with this email", 400)
 
