@@ -12,6 +12,10 @@ interface ProfileHeaderProps {
   email: string | null
   profilePicture: string | null
 }
+/**
+ * Reusable componenet for student/tutor profiles
+ * Can handle NULL values for location, phoneNumber, email and profilePicture.
+ */
 export default function ProfileHeader({
   name,
   accountType,
@@ -28,9 +32,9 @@ export default function ProfileHeader({
         className,
       )}
     >
-      <Avatar className="h-40 w-40 text-5xl">
+      <Avatar className="h-40 w-40 border-2 text-5xl ">
         {profilePicture && <AvatarImage src={profilePicture} />}
-        <AvatarFallback className="border-2">
+        <AvatarFallback>
           {name
             .split(" ")
             .map((n) => n[0])

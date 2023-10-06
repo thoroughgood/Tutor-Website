@@ -16,6 +16,9 @@ export interface TutorProfile {
   }[]
 }
 
+/**
+ * ProfileService provides operations relating to tutor/student profiles
+ */
 export interface ProfileService {
   getTutorProfile: (tutorId: string) => Promise<TutorProfile>
   setTutorProfile: (

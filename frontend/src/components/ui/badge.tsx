@@ -15,21 +15,45 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
+        random: "border-transparent",
       },
     },
     defaultVariants: {
       variant: "default",
     },
-  }
+  },
 )
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
+function Badge({ className, variant, children, ...props }: BadgeProps) {
+  let hashStyle = {}
+  if (variant === "random") {
+    const hashKey = JSON.stringify({
+      child: children?.toString().toLowerCase(),
+    })
+      .split("")
+      .reduce((prev, curr, i) => prev + curr.charCodeAt(0) * (i * 2), 0)
+    const colorHue = hashKey % 255
+    const bgColor = `hsl(${colorHue}, 100%, 93%)`
+    const textColor = `hsl(${colorHue}, 100%, 30%)`
+    hashStyle = {
+      color: textColor,
+      backgroundColor: bgColor,
+      borderColor: `hsl(${colorHue}, 50%, 70%)`,
+    }
+  }
+
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <div
+      style={hashStyle}
+      className={cn(badgeVariants({ variant }), className)}
+      {...props}
+    >
+      {children}
+    </div>
   )
 }
 
