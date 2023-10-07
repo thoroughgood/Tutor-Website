@@ -104,12 +104,12 @@ def login():
         else:
             raise ExpectedError("Invalid login attempt", 401)
     else:
-        raise ExpectedError("accountType field missing", 400)
+        raise ExpectedError("accountType must be 'student' or 'tutor'", 400)
 
 @auth.route("/logout", methods=["POST"])
 @error_decorator
 def logout():
     if not session["user_id"]:
         raise ExpectedError("No user is logged in", 400)
-    session["user_id"] = None
+    session["user_id"].pop()
     return jsonify({"success": True}), 200
