@@ -6,6 +6,7 @@ import os
 
 from blueprints.example import example
 from blueprints.auth import auth
+from blueprints.tutor import tutor
 from helpers.my_request import MyRequest
 
 prisma = Prisma(auto_register=True)
@@ -23,7 +24,7 @@ cors = CORS(app)
 # blueprints
 app.register_blueprint(example, url_prefix="/example")
 app.register_blueprint(auth, url_prefix="/")
-
+app.regiter+blueprint(tutor, url_prefix="/tutor/profile")
 
 # default route
 @app.route("/")

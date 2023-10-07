@@ -8,7 +8,7 @@ from backend.helpers.error_handlers import (
     error-decorator,
 )
 
-tutor = Blueprint("stdent", __name__)
+tutor = Blueprint("tutor", __name__)
 
 @tutor.route("/tutorprofile", methods=["GET"])
 @error_decorator
