@@ -29,6 +29,7 @@ import router from "next/router"
 //this is a template, z.object will condense the information parsed into it as a readable json format, and formaSchema is basically from the form
 
 const formSchema = z.object({
+  accountType: z.enum(["tutor", "student"]),
   email: z.string().email(),
   password: z.string(),
 })
@@ -92,6 +93,7 @@ export default function Login() {
   )
 }
 
+//#TODO: change to generic types and push it into components directory
 // scary interface
 interface CustomFormFieldProps {
   form: UseFormReturn<z.infer<typeof formSchema>, any, undefined>
@@ -103,6 +105,7 @@ interface CustomFormFieldProps {
 /**
  * Reusable basic custom form field
  */
+//#TODO: change to generic types and push it into components directory
 function CustomFormField({
   label,
   form,

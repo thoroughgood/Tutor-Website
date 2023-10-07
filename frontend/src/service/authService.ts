@@ -17,7 +17,7 @@ interface AuthResponse {
   id: string
 }
 
-interface HTTPAuth {
+interface MockAuthService {
   register: (RegisterBody: RegisterBody) => Promise<AuthResponse>
   login: (LoginBody: LoginBody) => Promise<AuthResponse>
 }
@@ -46,7 +46,7 @@ export class HTTPAuthService {
       loginBody.email === "terrythoroughgood@email.com" &&
       loginBody.password === "goodpassword"
     ) {
-      return 5363592
+      return { id: 5363592 }
     }
     throw new Error("something went wrong")
   }
