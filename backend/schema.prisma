@@ -63,7 +63,7 @@ model Subject {
 model TutorAvailability {
   id        String   @id
   tutor     Tutor    @relation(fields: [tutorId], references: [id])
-  tutorId   String   @unique
+  tutorId   String   
   startTime DateTime
   endTime   DateTime
 }
@@ -71,9 +71,9 @@ model TutorAvailability {
 model Rating {
   id          String @id
   score       Int
-  createdById String @unique
+  createdById String 
   createdFor  Tutor  @relation(fields: [tutorId], references: [id])
-  tutorId     String @unique
+  tutorId     String 
 }
 
 model Appointment {
@@ -82,7 +82,7 @@ model Appointment {
   endTime       DateTime
   tutorAccepted Boolean  @default(false)
   tutor         Tutor    @relation(fields: [tutorId], references: [id])
-  tutorId       String   @unique
+  tutorId       String   
   student       Student  @relation(fields: [studentId], references: [id])
-  studentId     String   @unique
+  studentId     String   
 }
