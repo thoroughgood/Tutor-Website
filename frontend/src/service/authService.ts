@@ -28,4 +28,13 @@ export class HTTPAuthService {
     console.log("fin wrtech")
     return await resp.json()
   }
+
+  async logout(): Promise<{ sucess: boolean }> {
+    try {
+      const resp = wretch(`${this.backendURL}/logout`).post()
+      return await resp.json()
+    } catch {
+      throw new Error("Failed to log out")
+    }
+  }
 }
