@@ -39,34 +39,41 @@ def search():
                 raise ExpectedError("field(s) were missing in 'timeRange'", 400)
 
             try:
-                st = datetime.fromtimestamp(float(args["timeRange"]["startTime"]))
-                et = datetime.fromtimestamp(float(args["timeRange"]["endTime"]))
+                st = float(args["timeRange"]["startTime"])
+                et = float(args["timeRange"]["endTime"])
             except:
                 raise ExpectedError("timeRange field(s) were malformed", 400)
 
             if st > et:
                 raise ExpectedError("endTime cannot be less than startTime", 400)
-            elif st < datetime.now():
+            elif st < datetime.now().timestamp():
                 # ? May not be a necessary check
                 raise ExpectedError("startTime must be in the future", 400)
 
+            # the equalities here are simply checking if st -> et contains
+            # the tutor's elapsed range of time between their first startTime
+            # and last endTime
             valid &= (
                 len(tutor.timesAvailable) != 0
-                and tutor.timesAvailable[0].startTime >= st
-                and tutor.timesAvailable[-1].endTime <= et
+                and et >= tutor.timesAvailable[0].startTime.timestamp()
+                and st <= tutor.timesAvailable[-1].endTime.timestamp()
             )
 
         if "location" in args:
             # ? naive impl, probably change at some point
-            valid &= tutor.location and (tutor.location == args["location"])
+            valid &= tutor.location and (
+                tutor.location.lower() == args["location"].lower()
+            )
 
         if "rating" in args:
-            valid &= rating_calc(tutor.rating) >= args["rating"]
+            valid &= rating_calc(tutor.rating) >= float(args["rating"])
 
         if "courseOfferings" in args:
-            args_offerings = [offerings.upper() for offerings in args["offerings"]]
+            args_offerings = [
+                offerings.lower() for offerings in args["courseOfferings"]
+            ]
             valid &= all(
-                offerings.name.name in args_offerings
+                offerings.name.lower() in args_offerings
                 for offerings in tutor.courseOfferings
             )
 
