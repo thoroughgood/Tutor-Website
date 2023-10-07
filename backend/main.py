@@ -24,7 +24,7 @@ cors = CORS(app)
 # blueprints
 app.register_blueprint(example, url_prefix="/example")
 app.register_blueprint(auth, url_prefix="/")
-app.regiter+blueprint(tutor, url_prefix="/tutor/profile")
+app.register_blueprint(tutor, url_prefix="/tutor/profile")
 
 # default route
 @app.route("/")
