@@ -1,4 +1,4 @@
-from typing import Tuple, Callable, Any
+from typing import Tuple
 from flask import Response, jsonify, logging
 
 
