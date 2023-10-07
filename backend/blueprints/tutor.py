@@ -19,7 +19,7 @@ def get_profile():
 
     if tutor is None:
         raise ExpectedError("Profile does not exist" , 404)
-    
+    #need to validate course offerings
     return jsonify({
         "id": tutor.id,
         "name": tutor.name,
@@ -56,6 +56,7 @@ def modify_profile():
         location = tutor.location
     if "phoneNumber" not in args:
         phoneNumber = tutor.phoneNumber
+    #need to validate courseofferings
     if "courseOfferings" not in args:
         courseOfferings = tutor.courseOfferings
     if "timesAvailable" not in args:
