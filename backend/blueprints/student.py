@@ -46,14 +46,12 @@ def modify_profile():
 
     if "name" not in args or len(str(args["name"]).lower().strip()) == 0:
         name = student.name
-    if "bio" not in args:
-        bio = student.bio
-    if "profilePicture" not in args:
-        profilePicture = student.profilePicture
-    if "location" not in args:  
-        location = student.location
-    if "phoneNumber" not in args:
-        phoneNumber = student.phoneNumber
+    else:
+        name = args["name"]
+    bio = args["bio"] if "bio" in args else student.bio
+    profilePicture = args["profilePicture"] if "profilePicture" in args else student.profilePicture
+    location = args["location"] if "location" in args else student.location
+    phoneNumber = args["phoneNumber"] if "phoneNumber" in args else student.phoneNumber
     
     Student.prisma().update(
         where = {"id": student.id},
