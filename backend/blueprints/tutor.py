@@ -10,7 +10,7 @@ from backend.helpers.error_handlers import (
 
 tutor = Blueprint("tutor", __name__)
 
-@tutor.route("/tutorprofile", methods=["GET"])
+@tutor.route("/", methods=["GET"])
 @error_decorator
 def get_profile():
     args = request.get_json()
@@ -32,7 +32,7 @@ def get_profile():
         "timesAvailable": tutor.timesAvailable
     })
 
-@tutor.route("/modifytutorprofile", methods=["PUT"])
+@tutor.route("/", methods=["PUT"])
 @error_decorator
 def modify_profile():
     args = request.get_json()
@@ -78,7 +78,7 @@ def modify_profile():
 
     return jsonify({"success": True})
 
-@student.route("/deletetutorprofile", methods=["DELETE"])
+@student.route("/", methods=["DELETE"])
 @error_decorator
 def delete_profile():
     args = request.get_json()
