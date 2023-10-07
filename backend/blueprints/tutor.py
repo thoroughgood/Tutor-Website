@@ -5,7 +5,7 @@ from uuid import uuid4
 from hashlib import sha256
 from backend.helpers.error_handlers import (
     ExpectedError,
-    error-decorator,
+    error_decorator,
 )
 
 tutor = Blueprint("tutor", __name__)
