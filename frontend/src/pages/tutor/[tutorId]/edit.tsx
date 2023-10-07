@@ -5,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
@@ -32,6 +33,8 @@ import toast from "react-hot-toast"
 import { ThemeToggle } from "@/components/themeToggle"
 import { Toaster } from "react-hot-toast"
 import { zodResolver } from "@hookform/resolvers/zod"
+import useUser from "@/hooks/useUser"
+import { useRouter } from "next/router"
 
 const authService = new HTTPAuthService()
 
@@ -57,6 +60,10 @@ const formSchema = z.object({
 })
 
 export default function Edit() {
+  const { user } = useUser()
+  //  const id = user?.userId
+  const router = useRouter()
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   })
@@ -72,16 +79,18 @@ export default function Edit() {
     }
     setSubmitLoading(false)
   }
-
   //need to create form with zod to hold the information
   return (
     <div className="flex h-screen w-screen">
       <Toaster />
       <ThemeToggle />
+      <Button asChild>
+        <a href="../"> Return to profile </a>
+      </Button>
       <div className="grid w-full place-content-center">
         <Card className="w-screen max-w-md">
           <CardHeader className="text-center">
-            <CardTitle>Edit Profile</CardTitle>
+            <CardTitle>Edit Profile </CardTitle>
             <CardDescription>Change your details here!</CardDescription>
           </CardHeader>
           <CardContent>
@@ -123,42 +132,36 @@ export default function Edit() {
                   form={form}
                   inputType="string"
                   label="Bio"
-                  formDescription="Let us learn about you!"
                 />
                 <CustomFormField
                   name="email"
                   form={form}
                   label="Email"
                   inputType="email"
-                  formDescription="For personal contact."
                 />
                 <CustomFormField
                   name="profilePicture"
                   form={form}
                   label="Profile Picture"
                   inputType="file"
-                  formDescription="Show us what represents you."
                 />
                 <CustomFormField
                   name="location"
                   form={form}
                   label="Location"
                   inputType="string"
-                  formDescription="You don't have to let us know!"
                 />
                 <CustomFormField
                   name="phoneNumber"
                   form={form}
                   label="Phone Number"
                   inputType="string"
-                  formDescription=";)"
                 />
                 <CustomFormField
                   name="courseOfferings"
                   form={form}
                   label="Course Offerings"
                   inputType="string"
-                  formDescription="Tell us what you're comfortable tutoring."
                 />
                 {/* come back to check on this -> need multiple inputs*/}
                 <CustomFormField
@@ -166,7 +169,6 @@ export default function Edit() {
                   form={form}
                   label="Available Times"
                   inputType="String"
-                  formDescription="Let us know when you're free."
                 />
 
                 <div className="mt-4">
