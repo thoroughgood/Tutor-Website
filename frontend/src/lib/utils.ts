@@ -1,4 +1,5 @@
 import { type ClassValue, clsx } from "clsx"
+import toast from "react-hot-toast"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
@@ -20,4 +21,12 @@ export function getErrorMessage(error: unknown): string {
 
 export function prettySentence(sentence: string): string {
   return sentence.replace(/^./, (c) => c.toUpperCase())
+}
+
+export async function toastProtectedFnCall(fn: Function) {
+  try {
+    await fn()
+  } catch (error) {
+    toast.error(getErrorMessage(error))
+  }
 }
