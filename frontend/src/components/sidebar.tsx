@@ -43,7 +43,7 @@ export default function Sidebar() {
           <Image src="/logo.svg" alt="logo" fill />
         </div>
         <div className="flex grow flex-col gap-1 text-muted-foreground">
-          {user?.userType === "tutor" ? <StudentLinks /> : <TutorLinks />}
+          {user?.userType === "student" ? <StudentLinks /> : <TutorLinks />}
         </div>
         <Button
           variant="ghost"
