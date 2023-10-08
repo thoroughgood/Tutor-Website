@@ -7,14 +7,14 @@ from helpers.error_handlers import (
 
 student = Blueprint("student", __name__)
 
-################### CLARIFY ON ARGS ERROR CHECKING ###############
-
-
 @student.route("/", methods=["GET"])
 @error_decorator
 def get_profile():
     args = request.get_json()
 
+    if "id" not in args:
+        raise ExpectedError("id field was missing", 400)
+    
     student = Student.prisma().find_unique(where={"id": args["id"]})
 
     if not student:
@@ -36,6 +36,20 @@ def get_profile():
 @error_decorator
 def modify_profile():
     args = request.get_json()
+
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 400)
+
+    if "name" not in args:
+        raise ExpectedError("name field was missing", 400)
+    if "bio" not in args:
+        raise ExpectedError("bio field was missing", 400)
+    if "profilePicture" not in args:
+        raise ExpectedError("profilePicture field was missing", 400)
+    if "location" not in args:
+        raise ExpectedError("location field was missing", 400)
+    if "phoneNumber" not in args:
+        raise ExpectedError("phoneNumber field was missing", 400)
 
     admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
     if not admin and session["user_id"] != args["id"]:
@@ -75,6 +89,12 @@ def modify_profile():
 @error_decorator
 def delete_profile():
     args = request.get_json()
+
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 400)
+
+    if "id" not in args:
+        raise ExpectedError("id field was missing", 400)
 
     admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
     if not admin and session["user_id"] != args["id"]:
