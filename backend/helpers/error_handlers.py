@@ -1,5 +1,6 @@
 from typing import Tuple
-from flask import Response, jsonify, logging
+from flask import Response, jsonify, current_app
+import traceback
 
 
 class ExpectedError(Exception):
@@ -19,7 +20,7 @@ def error_decorator(f):
             msg, code = e.args
             return error_generator(msg, code)
         except:
-            # todo: configure logging
+            current_app.logger.error("\n" + traceback.format_exc() + "\n")
             return error_generator("Internal Server Error", 500)
 
     wrapper.__name__ = f.__name__
