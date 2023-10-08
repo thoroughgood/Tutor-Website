@@ -21,7 +21,7 @@ import Link from "next/link"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import LoadingButton from "@/components/loadingButton"
-import { MockAuthService } from "@/service/authService"
+import { HTTPAuthService } from "@/service/authService"
 import { getErrorMessage } from "@/lib/utils"
 import toast from "react-hot-toast"
 import router from "next/router"
@@ -42,7 +42,7 @@ const formSchema = z.object({
   password: z.string(),
 })
 
-const authService = new MockAuthService()
+const authService = new HTTPAuthService()
 export default function Login() {
   //defining a form, the zod object converts the standard format into a json readable format for the backend
   //z.infer checks the type and guesses how to do shit -> zodResolver finishes compilation type thing
