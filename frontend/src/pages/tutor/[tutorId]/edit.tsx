@@ -81,15 +81,10 @@ export default function Edit() {
   }
   //need to create form with zod to hold the information
   return (
-    <div className="flex h-screen w-screen">
+    <div className="flex h-screen w-screen flex-row">
       <Toaster />
       <ThemeToggle />
-      <div className="pt-10">
-        <Button asChild>
-          <a href={`../${user?.userId}`}> Return to profile </a>
-        </Button>
-      </div>
-      <div className="grid w-full place-content-center">
+      <div className="grid w-10/12 place-content-center">
         <Card className="w-screen max-w-md">
           <CardHeader className="text-center">
             <CardTitle>Edit Profile </CardTitle>
@@ -186,6 +181,11 @@ export default function Edit() {
             </Form>
           </CardContent>
         </Card>
+      </div>
+      <div className="p-auto relative mx-auto my-5 max-w-sm text-center">
+        <Button asChild className="m-3 p-6">
+          <a href={`../${user?.userId}`}> Return to profile </a>
+        </Button>
       </div>
     </div>
   )
