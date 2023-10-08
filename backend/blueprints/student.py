@@ -29,7 +29,7 @@ def get_profile():
             "location": student.location,
             "phoneNumber": student.phoneNumber,
         }
-    )
+    ), 200
 
 
 @student.route("/", methods=["PUT"])
@@ -82,7 +82,7 @@ def modify_profile():
         },
     )
 
-    return jsonify({"success": True})
+    return jsonify({"success": True}), 200
 
 
 @student.route("/", methods=["DELETE"])
@@ -107,4 +107,4 @@ def delete_profile():
 
     Student.prisma().delete(where={"id": args["id"]})
 
-    return jsonify({"success": True})
+    return jsonify({"success": True}), 200
