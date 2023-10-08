@@ -9,6 +9,7 @@ export interface RegisterBody {
 }
 
 export interface LoginBody {
+  accountType: "admin" | "tutor" | "student"
   email: string
   password: string
 }
@@ -17,11 +18,11 @@ interface AuthResponse {
   id: string
 }
 
-interface HTTPAuth {
+interface AuthService {
   login: (LoginBody: LoginBody) => Promise<AuthResponse>
 }
 
-export class HTTPAuthService implements HTTPAuth {
+export class MockAuthService implements AuthService {
   private backendURL: string
   private errorHandlerCallback = async (resp: WretchError) => {
     const error = JSON.parse(resp.message)
@@ -42,6 +43,7 @@ export class HTTPAuthService implements HTTPAuth {
 
   async login(loginBody: LoginBody) {
     if (
+      loginBody.accountType === "student" &&
       loginBody.email === "terrythoroughgood@email.com" &&
       loginBody.password === "goodpassword"
     ) {
