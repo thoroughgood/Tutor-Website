@@ -1,4 +1,4 @@
-from typing import Tuple, Callable, Any
+from typing import Tuple
 from flask import Response, jsonify, logging
 
 
@@ -12,7 +12,7 @@ def error_generator(error_msg: str, status_code: int) -> Tuple[Response, int]:
 
 
 def error_decorator(f):
-    def wrapped(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         try:
             return f(*args, **kwargs)
         except ExpectedError as e:
@@ -22,4 +22,5 @@ def error_decorator(f):
             # todo: configure logging
             return error_generator("Internal Server Error", 500)
 
-    return wrapped
+    wrapper.__name__ = f.__name__
+    return wrapper

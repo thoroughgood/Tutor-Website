@@ -1,4 +1,6 @@
-# python virtual env
+.vscode
+
+# python related
 .venv
 __pycache__/
 flask_session

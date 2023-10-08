@@ -31,6 +31,8 @@ import LoadingButton from "@/components/loadingButton"
 import { HTTPAuthService } from "@/service/authService"
 import { getErrorMessage } from "@/lib/utils"
 import toast from "react-hot-toast"
+import useUser from "@/hooks/useUser"
+import { useRouter } from "next/router"
 
 const formSchema = z.object({
   name: z
@@ -56,6 +58,8 @@ const formSchema = z.object({
 
 const authService = new HTTPAuthService()
 export default function Register() {
+  const router = useRouter()
+  const { setUser } = useUser()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   })
@@ -63,7 +67,9 @@ export default function Register() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitLoading(true)
     try {
-      const id = await authService.register(values)
+      const { id } = await authService.register(values)
+      setUser({ userId: id, userType: values.accountType })
+      router.push("/dashboard")
     } catch (error) {
       toast.error(getErrorMessage(error))
     }
