@@ -74,4 +74,10 @@ export class MockAuthService implements AuthService {
     }
     throw new Error("something went wrong")
   }
+  async register(registerBody: RegisterBody) {
+    return { id: "1337" }
+  }
+  async logout() {
+    return { success: true }
+  }
 }
