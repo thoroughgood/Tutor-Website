@@ -80,7 +80,7 @@ def register():
 def login():
     args = request.get_json()
 
-    if session["user_id"] != None:
+    if "user_id" in session:
         raise ExpectedError("A user is already logged in", 400)
 
     if "email" not in args or not fullmatch(
@@ -92,9 +92,9 @@ def login():
     if "password" not in args or len(str(args["password"]).lower().strip()) < 8:
         raise ExpectedError("password field must be at least 8 characters long", 400)
 
-    if "accountType" in args and ("accountType == 'student'" or "accountType == 'tutor'"):
-        student = Student.prisma().find_unique(where={"id": args["id"]})
-        tutor = Tutor.prisma().find_unique(where={"id": args["id"]})
+    if "accountType" in args and (args["accountType"] == 'student' or args["accountType"] == 'tutor'):
+        student = Student.prisma().find_unique(where={"email": args["email"]})
+        tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
         if student and student.hashedPassword == sha256(str(args["password"]).encode()).hexdigest():
             session["user_id"] = student.id
             return jsonify({"id": student.id}), 200
@@ -109,7 +109,7 @@ def login():
 @auth.route("/logout", methods=["POST"])
 @error_decorator
 def logout():
-    if not session["user_id"]:
+    if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
     session["user_id"].pop()
     return jsonify({"success": True}), 200
