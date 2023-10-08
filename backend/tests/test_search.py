@@ -148,10 +148,10 @@ def test_search_args(setup_test: FlaskClient, generate_tutors):
             "timeRange": {
                 "startTime": (
                     datetime.datetime.now() + datetime.timedelta(hours=1)
-                ).timestamp(),
+                ).isoformat(),
                 "endTime": (
                     datetime.datetime.now() + datetime.timedelta(days=10)
-                ).timestamp(),
+                ).isoformat(),
             }
         },
     )
@@ -167,10 +167,10 @@ def test_search_args(setup_test: FlaskClient, generate_tutors):
             "timeRange": {
                 "startTime": (
                     datetime.datetime.now() + datetime.timedelta(hours=1)
-                ).timestamp(),
+                ).isoformat(),
                 "endTime": (
                     datetime.datetime.now() + datetime.timedelta(days=3, hours=10)
-                ).timestamp(),
+                ).isoformat(),
             }
         },
     )
@@ -189,10 +189,10 @@ def test_search_args(setup_test: FlaskClient, generate_tutors):
             "timeRange": {
                 "startTime": (
                     datetime.datetime.now() + datetime.timedelta(hours=1)
-                ).timestamp(),
+                ).isoformat(),
                 "endTime": (
                     datetime.datetime.now() + datetime.timedelta(days=3, hours=10)
-                ).timestamp(),
+                ).isoformat(),
             },
         },
     )
@@ -200,3 +200,5 @@ def test_search_args(setup_test: FlaskClient, generate_tutors):
     tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
     assert tutor1.name == "John"
     assert resp.status_code == 200
+
+    assert 0

@@ -39,25 +39,32 @@ def search():
                 raise ExpectedError("field(s) were missing in 'timeRange'", 400)
 
             try:
-                st = float(args["timeRange"]["startTime"])
-                et = float(args["timeRange"]["endTime"])
+                st = datetime.fromisoformat(args["timeRange"]["startTime"])
+                et = datetime.fromisoformat(args["timeRange"]["endTime"])
             except:
                 raise ExpectedError("timeRange field(s) were malformed", 400)
 
             if st > et:
                 raise ExpectedError("endTime cannot be less than startTime", 400)
-            elif st < datetime.now().timestamp():
+            elif st < datetime.now():
                 # ? May not be a necessary check
                 raise ExpectedError("startTime must be in the future", 400)
 
-            # the equalities here are simply checking if st -> et contains
-            # the tutor's elapsed range of time between their first startTime
-            # and last endTime
-            valid &= (
-                len(tutor.timesAvailable) != 0
-                and et >= tutor.timesAvailable[0].startTime.timestamp()
-                and st <= tutor.timesAvailable[-1].endTime.timestamp()
-            )
+            # if len(tutor.timesAvailable) != 0:
+            #     print(tutor.name)
+            #     print(
+            #         f"et: {et - datetime.utcnow()} tutor.st: {tutor.timesAvailable[0].startTime.replace(tzinfo=None) - datetime.utcnow()}"
+            #     )
+            #     print(
+            #         f"st: {st - datetime.utcnow()} tutor.et: {tutor.timesAvailable[0].endTime.replace(tzinfo=None) - datetime.utcnow()}"
+            #     )
+
+            if len(tutor.timesAvailable) != 0:
+                tutor_st = tutor.timesAvailable[0].startTime.replace(tzinfo=None)
+                tutor_et = tutor.timesAvailable[-1].endTime.replace(tzinfo=None)
+                valid &= et >= tutor_st and st <= tutor_et
+            else:
+                valid &= False
 
         if "location" in args:
             # ? naive impl, probably change at some point

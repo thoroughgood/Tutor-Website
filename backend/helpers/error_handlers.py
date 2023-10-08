@@ -18,9 +18,9 @@ def error_decorator(f):
         except ExpectedError as e:
             msg, code = e.args
             return error_generator(msg, code)
-        except:
-            # todo: configure logging
-            return error_generator("Internal Server Error", 500)
+        # except:
+        #     # todo: configure logging
+        #     return error_generator("Internal Server Error", 500)
 
     wrapper.__name__ = f.__name__
     return wrapper
