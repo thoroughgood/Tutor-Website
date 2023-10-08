@@ -13,13 +13,11 @@ import {
 import { cn, toastProtectedFnCall } from "@/lib/utils"
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/router"
 import { HTTPAuthService } from "@/service/authService"
 
 const authService = new HTTPAuthService()
 export default function Sidebar() {
-  const { user, signedIn } = useUser()
-  const router = useRouter()
+  const { user } = useUser()
   const [isExpanded, setIsExpanded] = useState(false)
   return (
     <div>

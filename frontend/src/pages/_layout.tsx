@@ -13,7 +13,6 @@ export default function Layout({ children }: LayoutProps) {
   const router = useRouter()
   const { signedIn } = useUser()
   useEffect(() => {
-    console.log(signedIn)
     if (!signedIn && !router.pathname.match(/register|login/i)) {
       router.push("/login")
     }
@@ -38,7 +37,7 @@ export default function Layout({ children }: LayoutProps) {
     <div className="flex h-screen w-screen overflow-hidden">
       <Toaster />
       <Sidebar />
-      {children}
+      <div className="h-full w-full overflow-hidden">{children}</div>
     </div>
   )
 }
