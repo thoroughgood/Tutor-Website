@@ -3,6 +3,7 @@ import { ThemeToggle } from "@/components/themeToggle"
 import useUser from "@/hooks/useUser"
 import Image from "next/image"
 import { useRouter } from "next/router"
+import { useEffect } from "react"
 import { Toaster } from "react-hot-toast"
 
 interface LayoutProps {
@@ -10,7 +11,13 @@ interface LayoutProps {
 }
 export default function Layout({ children }: LayoutProps) {
   const router = useRouter()
-  const user = useUser()
+  const { signedIn } = useUser()
+  useEffect(() => {
+    console.log(signedIn)
+    if (!signedIn && !router.pathname.match(/register|login/i)) {
+      router.push("/login")
+    }
+  }, [signedIn, router])
   if (router.pathname.match(/register|login/i)) {
     return (
       <div className="flex h-screen w-screen">
@@ -27,10 +34,6 @@ export default function Layout({ children }: LayoutProps) {
     )
   }
 
-  if (!user.signedIn) {
-    // TODO: uncomment when login is working
-    // router.push("/login")
-  }
   return (
     <div className="flex h-screen w-screen overflow-hidden">
       <Toaster />
