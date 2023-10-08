@@ -50,15 +50,6 @@ def search():
                 # ? May not be a necessary check
                 raise ExpectedError("startTime must be in the future", 400)
 
-            # if len(tutor.timesAvailable) != 0:
-            #     print(tutor.name)
-            #     print(
-            #         f"et: {et - datetime.utcnow()} tutor.st: {tutor.timesAvailable[0].startTime.replace(tzinfo=None) - datetime.utcnow()}"
-            #     )
-            #     print(
-            #         f"st: {st - datetime.utcnow()} tutor.et: {tutor.timesAvailable[0].endTime.replace(tzinfo=None) - datetime.utcnow()}"
-            #     )
-
             if len(tutor.timesAvailable) != 0:
                 tutor_st = tutor.timesAvailable[0].startTime.replace(tzinfo=None)
                 tutor_et = tutor.timesAvailable[-1].endTime.replace(tzinfo=None)
