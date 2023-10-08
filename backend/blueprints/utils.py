@@ -13,4 +13,4 @@ def get_id():
     if "user_id" in session:
         return jsonify({"id": session["user_id"]}), 200
     else:
-        return jsonify({}), 200
+        return jsonify({}), 401
