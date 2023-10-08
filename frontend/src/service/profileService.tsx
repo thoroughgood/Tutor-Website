@@ -37,7 +37,12 @@ export class MockProfileService implements ProfileService {
     location: "Sydney",
     phoneNumber: "0411111111",
     courseOfferings: ["COMP2041", "COMP6080"],
-    timeAvailable: [],
+    timeAvailable: [
+      {
+        startTime: "2023-10-08T12:51:28+11:00",
+        endTime: "2023-10-08T13:51:28+11:00",
+      },
+    ],
   }
   async getTutorProfile(tutorId: string) {
     return this.mockProfile
