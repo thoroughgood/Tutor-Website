@@ -9,6 +9,7 @@ export interface RegisterBody {
 }
 
 export interface LoginBody {
+  accountType: "admin" | "tutor" | "student"
   email: string
   password: string
 }
@@ -17,8 +18,7 @@ interface AuthResponse {
   id: string
 }
 
-interface MockAuthService {
-  register: (RegisterBody: RegisterBody) => Promise<AuthResponse>
+interface AuthService {
   login: (LoginBody: LoginBody) => Promise<AuthResponse>
 }
 
@@ -40,13 +40,16 @@ export class HTTPAuthService {
       .error(415, this.errorHandlerCallback)
     return await resp.json()
   }
+}
 
+export class MockAuthService implements AuthService {
   async login(loginBody: LoginBody) {
     if (
+      loginBody.accountType === "student" &&
       loginBody.email === "terrythoroughgood@email.com" &&
       loginBody.password === "goodpassword"
     ) {
-      return { id: 5363592 }
+      return { id: "35353" }
     }
     throw new Error("something went wrong")
   }
