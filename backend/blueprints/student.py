@@ -1,8 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from prisma.models import Tutor, Student, Admin
-from re import fullmatch
-from uuid import uuid4
-from hashlib import sha256
+from prisma.models import Student, Admin
 from helpers.error_handlers import (
     ExpectedError,
     error_decorator,
