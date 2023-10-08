@@ -92,7 +92,7 @@ def login():
     if "password" not in args or len(str(args["password"]).lower().strip()) < 8:
         raise ExpectedError("password field must be at least 8 characters long", 400)
 
-    if "accountType" in args:
+    if "accountType" in args and ("accountType == 'student'" or "accountType == 'tutor'"):
         student = Student.prisma().find_unique(where={"id": args["id"]})
         tutor = Tutor.prisma().find_unique(where={"id": args["id"]})
         if student and student.hashedPassword == sha256(str(args["password"]).encode()).hexdigest():
