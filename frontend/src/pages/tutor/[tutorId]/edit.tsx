@@ -84,9 +84,11 @@ export default function Edit() {
     <div className="flex h-screen w-screen">
       <Toaster />
       <ThemeToggle />
-      <Button asChild>
-        <a href="../"> Return to profile </a>
-      </Button>
+      <div className="pt-10">
+        <Button asChild>
+          <a href={`../${user?.userId}`}> Return to profile </a>
+        </Button>
+      </div>
       <div className="grid w-full place-content-center">
         <Card className="w-screen max-w-md">
           <CardHeader className="text-center">
