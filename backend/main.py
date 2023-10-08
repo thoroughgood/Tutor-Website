@@ -4,7 +4,8 @@ from flask_cors import CORS
 from prisma import Prisma
 import os
 
-from blueprints.auth import auth
+from blueprints.auth import auth, register, login, logout
+from blueprints.student import student
 from blueprints.search import search_tutor
 from helpers.my_request import MyRequest
 
@@ -22,6 +23,7 @@ cors = CORS(app)
 
 # blueprints
 app.register_blueprint(auth, url_prefix="/")
+app.register_blueprint(student, url_prefix="/student/profile")
 app.register_blueprint(search_tutor, url_prefix="/")
 
 
@@ -29,7 +31,6 @@ app.register_blueprint(search_tutor, url_prefix="/")
 @app.route("/")
 def hello_world():
     return "Hello world!", 200
-
 
 if __name__ == "__main__":
     app.run(debug=True, port=os.getenv("PORT", default=5000), host="0.0.0.0")
