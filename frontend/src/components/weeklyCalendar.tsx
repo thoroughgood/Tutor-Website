@@ -6,8 +6,11 @@ import {
   format,
   getWeek,
   isSameDay,
-  setHours,
   areIntervalsOverlapping,
+  startOfDay,
+  endOfDay,
+  differenceInMinutes,
+  startOfWeek,
 } from "date-fns"
 import { Button } from "./ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -20,6 +23,7 @@ export default function WeeklyCalendar({
   className,
   highlightedIntervals,
 }: WeeklyCalendarProps) {
+  // Below required for scrolling the axis labels
   const [calHeight, setCalHeight] = useState(0)
   const [calWidth, setCalWidth] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -30,10 +34,14 @@ export default function WeeklyCalendar({
   const [weekDate, setWeekDate] = useState(new Date())
 
   useEffect(() => {
-    setWeekDate(setWeek(new Date(), viewWeek))
+    setWeekDate(startOfWeek(setWeek(new Date(), viewWeek)))
   }, [viewWeek])
 
   useEffect(() => {
+    // This useEffect runs on component mount
+    // It sets up window.resize event so that other variables/effects can rely on
+    // the calendar width.
+    // It also scrolls down to 7am by default
     const onResize = () => {
       setCalWidth(scrollRef.current?.scrollWidth || 0)
     }
@@ -43,6 +51,7 @@ export default function WeeklyCalendar({
       const height = scrollRef.current.scrollHeight
       setCalHeight(height)
       setCalWidth(scrollRef.current.scrollWidth)
+      // scroll down to 7am for better UX
       scrollRef.current.scrollTo(0, (height / 24) * 7 + 10)
     }
     return () => window.removeEventListener("resize", onResize)
@@ -51,6 +60,7 @@ export default function WeeklyCalendar({
   return (
     <div className="flex h-full w-full flex-col gap-3">
       <div className="ml-[50px] flex items-center gap-2">
+        {/* Calendar Controls */}
         <Button variant="outline" onClick={() => setViewWeek(viewWeek - 1)}>
           <ChevronLeft />
         </Button>
@@ -61,7 +71,9 @@ export default function WeeklyCalendar({
           {format(weekDate, "MMMM yyyy")}
         </h2>
       </div>
+
       <div className="grid h-full w-full grid-cols-[75px_1fr] grid-rows-[75px_1fr] overflow-hidden">
+        {/* Calendar x-axis labels (i.e. day of the week) */}
         <div ref={topRef} className="col-start-2 col-end-3 overflow-x-hidden">
           <div
             style={{
@@ -89,7 +101,9 @@ export default function WeeklyCalendar({
             })}
           </div>
         </div>
+
         <div ref={sideRef} className="row-span-2 mr-2 overflow-y-hidden">
+          {/* Calendar y-axis labels (i.e. hours of the day) */}
           <div
             style={{
               height: calHeight,
@@ -107,8 +121,10 @@ export default function WeeklyCalendar({
           </div>
         </div>
 
+        {/* Actual Calendar */}
         <div
           onScroll={(e) => {
+            // Scrolling the x and y axis (necessary since we want them to be sticky as well)
             sideRef.current?.scrollTo(0, e.currentTarget.scrollTop)
             topRef.current?.scrollTo(e.currentTarget.scrollLeft, 0)
           }}
@@ -118,6 +134,7 @@ export default function WeeklyCalendar({
             className,
           )}
         >
+          {/* Creating columns for each day */}
           {Array.from(Array(7).keys()).map((dayIndex) => {
             return (
               <DayCol
@@ -133,6 +150,7 @@ export default function WeeklyCalendar({
   )
 }
 
+const MINUTES_IN_DAY = 60 * 24
 interface DayCol {
   style?: React.CSSProperties
   className?: string
@@ -140,27 +158,66 @@ interface DayCol {
   highlightedIntervals: Interval[]
 }
 function DayCol({ className, style, highlightedIntervals, date }: DayCol) {
+  const dayInterval = {
+    start: startOfDay(date),
+    end: endOfDay(date),
+  }
+  const colRef = useRef<HTMLDivElement>(null)
+  const [colHeight, setColHeight] = useState(0)
+
+  useEffect(() => {
+    // This useEffect runs on component mount
+    // sets initial column height and resize hook for other variabnles/effects to use
+    setColHeight(colRef.current?.scrollHeight || 0)
+    const onResize = () => {
+      setColHeight(colRef.current?.scrollHeight || 0)
+    }
+    window.onresize = onResize
+    return () => window.removeEventListener("resize", onResize)
+  }, [])
+
+  // remove any intervals that dont occur within this day
+  highlightedIntervals = highlightedIntervals.filter((interval) =>
+    areIntervalsOverlapping(dayInterval, interval),
+  )
+
+  // little bit of math to calculate x offset and height of absolute positioned interval elements
+  const intervalElements = highlightedIntervals.map((interval) => {
+    const startY =
+      (differenceInMinutes(interval.start, startOfDay(date)) / MINUTES_IN_DAY) *
+      colHeight
+    const height =
+      (differenceInMinutes(interval.end, interval.start) / MINUTES_IN_DAY) *
+      colHeight
+
+    return (
+      <div
+        key={interval.start.toString()}
+        className="absolute w-full bg-green-600/90 p-2 text-sm font-bold text-green-50"
+        style={{
+          height,
+          transform: `translateY(${startY}px)`,
+        }}
+      >
+        {`${format(interval.start, "h:mmaaa")} – ${format(
+          interval.end,
+          "h:mmaaa",
+        )}`}
+      </div>
+    )
+  })
   return (
     <div
+      ref={colRef}
       style={style}
-      className={cn("grid grid-rows-[repeat(24,1fr)] border", className)}
+      className={cn(
+        "relative grid grid-rows-[repeat(24,1fr)] border",
+        className,
+      )}
     >
+      {intervalElements}
       {Array.from(Array(24).keys()).map((hourIndex) => {
-        const startHour = setHours(date, hourIndex)
-        const endHour = setHours(date, hourIndex + 1)
-        return (
-          <div
-            key={hourIndex}
-            className={cn("min-h-[75px] border", {
-              "bg-primary": highlightedIntervals.some((interval) =>
-                areIntervalsOverlapping(
-                  { start: startHour, end: endHour },
-                  interval,
-                ),
-              ),
-            })}
-          />
-        )
+        return <div key={hourIndex} className={cn("min-h-[75px] border")} />
       })}
     </div>
   )

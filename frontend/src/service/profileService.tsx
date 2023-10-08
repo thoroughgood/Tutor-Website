@@ -42,6 +42,18 @@ export class MockProfileService implements ProfileService {
         startTime: "2023-10-08T12:51:28+11:00",
         endTime: "2023-10-08T13:51:28+11:00",
       },
+      {
+        startTime: "2023-10-09T12:00:28+11:00",
+        endTime: "2023-10-09T15:00:28+11:00",
+      },
+      {
+        startTime: "2023-10-09T17:00:28+11:00",
+        endTime: "2023-10-09T20:00:28+11:00",
+      },
+      {
+        startTime: "2023-10-11T17:00:28+11:00",
+        endTime: "2023-10-11T20:00:28+11:00",
+      },
     ],
   }
   async getTutorProfile(tutorId: string) {
