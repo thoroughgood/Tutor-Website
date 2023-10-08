@@ -2,8 +2,9 @@
 
 # python related
 .venv
-__pycache__/
+__pycache__
 flask_session
+.pytest_cache
 
 # .env file for secrets
 .env

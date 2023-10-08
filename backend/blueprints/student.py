@@ -20,14 +20,17 @@ def get_profile():
     if not student:
         raise ExpectedError("Profile does not exist", 404)
 
-    return jsonify({
-        "id": student.id,
-        "name": student.name,
-        "bio": student.bio,
-        "profilePicture": student.profilePicture,
-        "location": student.location,
-        "phoneNumber": student.phoneNumber
-    })
+    return jsonify(
+        {
+            "id": student.id,
+            "name": student.name,
+            "bio": student.bio,
+            "profilePicture": student.profilePicture,
+            "location": student.location,
+            "phoneNumber": student.phoneNumber,
+        }
+    )
+
 
 @student.route("/", methods=["PUT"])
 @error_decorator
@@ -53,24 +56,31 @@ def modify_profile():
     if not student:
         raise ExpectedError("Profile does not exist", 404)
 
-    name = args["name"] if ("name" in args and len(str(args["name"]).lower().strip()) != 0) else student.name
+    name = (
+        args["name"]
+        if ("name" in args and len(str(args["name"]).lower().strip()) != 0)
+        else student.name
+    )
     bio = args["bio"] if "bio" in args else student.bio
-    profilePicture = args["profilePicture"] if "profilePicture" in args else student.profilePicture
+    profilePicture = (
+        args["profilePicture"] if "profilePicture" in args else student.profilePicture
+    )
     location = args["location"] if "location" in args else student.location
     phoneNumber = args["phoneNumber"] if "phoneNumber" in args else student.phoneNumber
-    
+
     Student.prisma().update(
-        where = {"id": student.id},
-        data = {
+        where={"id": student.id},
+        data={
             "name": name,
             "bio": bio,
             "profilePicture": profilePicture,
             "location": location,
-            "phoneNumber": phoneNumber
-        }
+            "phoneNumber": phoneNumber,
+        },
     )
 
-    return jsonify({"success": True}) 
+    return jsonify({"success": True})
+
 
 @student.route("/", methods=["DELETE"])
 @error_decorator
@@ -83,7 +93,7 @@ def delete_profile():
     admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
     if not admin and session["user_id"] != args["id"]:
         raise ExpectedError("Insufficient permission to delete this profile", 403)
-    
+
     student = Student.prisma().find_unique(where={"id": args["id"]})
 
     if not student:
