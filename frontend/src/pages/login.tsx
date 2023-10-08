@@ -57,9 +57,9 @@ export default function Login() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitLoading(true)
     try {
-      const id = await authService.login(values)
+      const { id } = await authService.login(values)
       setUser({
-        userId: String(id),
+        userId: id,
         userType: values.accountType,
       })
       router.push("/dashboard")
@@ -96,6 +96,7 @@ export default function Login() {
                         <SelectContent>
                           <SelectItem value="student">Student</SelectItem>
                           <SelectItem value="tutor">Tutor</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>

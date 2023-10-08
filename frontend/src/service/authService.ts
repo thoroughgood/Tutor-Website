@@ -1,5 +1,6 @@
 import wretch from "wretch"
 import { WretchError } from "wretch/resolver"
+import { SuccessResponse } from "./types"
 
 export interface RegisterBody {
   name: string
@@ -19,10 +20,12 @@ interface AuthResponse {
 }
 
 interface AuthService {
-  login: (LoginBody: LoginBody) => Promise<AuthResponse>
+  login: (loginBody: LoginBody) => Promise<AuthResponse>
+  register: (registerBody: RegisterBody) => Promise<AuthResponse>
+  logout: () => Promise<SuccessResponse>
 }
 
-export class HTTPAuthService {
+export class HTTPAuthService implements AuthService {
   private backendURL: string
   private errorHandlerCallback = async (resp: WretchError) => {
     const error = JSON.parse(resp.message)
@@ -31,19 +34,26 @@ export class HTTPAuthService {
   constructor() {
     this.backendURL = process.env.BACKEND_URL || "http://127.0.0.1:5000"
   }
-  async register(registerBody: RegisterBody): Promise<{ id: string }> {
-    console.log("register")
+  async login(loginBody: LoginBody): Promise<AuthResponse> {
+    const resp = wretch(`${this.backendURL}/login`)
+      .json(loginBody)
+      .post()
+      .notFound(this.errorHandlerCallback)
+      .badRequest(this.errorHandlerCallback)
+      .error(415, this.errorHandlerCallback)
+    return await resp.json()
+  }
+  async register(registerBody: RegisterBody): Promise<AuthResponse> {
     const resp = wretch(`${this.backendURL}/register`)
       .json(registerBody)
       .post()
       .notFound(this.errorHandlerCallback)
       .badRequest(this.errorHandlerCallback)
       .error(415, this.errorHandlerCallback)
-    console.log("fin wrtech")
     return await resp.json()
   }
 
-  async logout(): Promise<{ sucess: boolean }> {
+  async logout(): Promise<SuccessResponse> {
     try {
       const resp = wretch(`${this.backendURL}/logout`).post()
       return await resp.json()
@@ -63,5 +73,11 @@ export class MockAuthService implements AuthService {
       return { id: "35353" }
     }
     throw new Error("something went wrong")
+  }
+  async register(registerBody: RegisterBody) {
+    return { id: "1337" }
+  }
+  async logout() {
+    return { success: true }
   }
 }
