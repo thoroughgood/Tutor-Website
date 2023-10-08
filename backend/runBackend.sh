@@ -6,7 +6,8 @@ source .venv/bin/activate
 
 pip3 install -r requirements.txt
 
-prisma db push
+# will stop here if db push fails
+prisma db push --schema ./schema.prisma || exit 1
 
 python3 main.py
 
