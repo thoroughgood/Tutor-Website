@@ -12,9 +12,10 @@ import {
   FormDescription,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { UseFormReturn, useForm } from "react-hook-form"
+import { UseFormReturn, useFieldArray, useForm } from "react-hook-form"
 import * as z from "zod"
 import { Input } from "@/components/ui/input"
 import {
@@ -28,7 +29,7 @@ import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import LoadingButton from "@/components/loadingButton"
 import { HTTPAuthService } from "@/service/authService"
-import { getErrorMessage } from "@/lib/utils"
+import { cn, getErrorMessage } from "@/lib/utils"
 import toast from "react-hot-toast"
 import { ThemeToggle } from "@/components/themeToggle"
 import { Toaster } from "react-hot-toast"
@@ -38,6 +39,7 @@ import { useRouter } from "next/router"
 
 const authService = new HTTPAuthService()
 
+//changed courseOfferings into an object -> have to then manipulate it to be an array upon data submission
 const formSchema = z.object({
   name: z
     .string()
@@ -50,7 +52,13 @@ const formSchema = z.object({
   profilePicture: z.string().optional(),
   location: z.string().optional(),
   phoneNumber: z.string().optional(),
-  courseOfferings: z.string().array(),
+  courseOfferings: z.array(
+    z.object({
+      name: z.string().regex(/^[A-z]{4}[0-9]{4}$/, {
+        message: "Code does not fit course code format",
+      }),
+    }),
+  ),
   timeAvailable: z
     .object({
       startTime: z.string(),
@@ -67,6 +75,11 @@ export default function Edit() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   })
+
+  const { fields, append } = useFieldArray({
+    name: "courseOfferings",
+    control: form.control,
+  })
   const [submitLoading, setSubmitLoading] = useState(false)
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     //need to modify to convert from image to base64URI values.profilePicture
@@ -79,6 +92,11 @@ export default function Edit() {
     }
     setSubmitLoading(false)
   }
+  //need to grab the profile values
+  const defaultValues: Partial<z.infer<typeof formSchema>> = {
+    courseOfferings: [{ name: "COMP6080" }, { name: "COMP2041" }],
+  }
+
   //need to create form with zod to hold the information
   return (
     <div className="flex h-screen w-screen flex-row">
@@ -154,12 +172,40 @@ export default function Edit() {
                   label="Phone Number"
                   inputType="string"
                 />
-                <CustomFormField
-                  name="courseOfferings"
-                  form={form}
-                  label="Course Offerings"
-                  inputType="string"
-                />
+                <div>
+                  {fields.map((field, index) => (
+                    <FormField
+                      control={form.control}
+                      key={field.id}
+                      name={`courseOfferings.${index}.name`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className={cn(index !== 0 && "sr-only")}>
+                            Course Offerings
+                          </FormLabel>
+                          <FormDescription
+                            className={cn(index !== 0 && "sr-only")}
+                          >
+                            Must be formatted
+                          </FormDescription>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => append({ value: "" })}
+                  >
+                    Add Course Offerings
+                  </Button>
+                </div>
                 {/* come back to check on this -> need multiple inputs*/}
                 <CustomFormField
                   name="timeAvailable"
@@ -174,7 +220,7 @@ export default function Edit() {
                     className="w-full"
                     isLoading={submitLoading}
                   >
-                    Edit
+                    Submit Changes
                   </LoadingButton>
                 </div>
               </form>
