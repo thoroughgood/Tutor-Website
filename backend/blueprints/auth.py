@@ -10,7 +10,6 @@ from helpers.error_handlers import (
 
 auth = Blueprint("auth", __name__)
 
-
 @auth.route("/register", methods=["POST"])
 @error_decorator
 def register():
@@ -76,34 +75,41 @@ def register():
 
     return jsonify({"id": new_user_id}), 200
 
-@auth.route("/resetpassword", methods=["PUT"])
+@auth.route("/login", methods=["POST"])
 @error_decorator
-def resetpassword():
-    
+def login():
     args = request.get_json()
 
-    admin = Admin.prisma().find_first(where={"id": session["user_id"]})
-    if not admin and session["user_id"] != args["id"]:
-        raise ExpectedError("Insufficient permission to modify this profile", 403)
+    if "user_id" in session:
+        raise ExpectedError("A user is already logged in", 400)
 
-    student = Student.prisma().find_unique(where={"id": args["id"]})
-    tutor = Tutor.prisma().find_unique(where={"id": args["id"]})
-    if not student and not tutor:
-        raise ExpectedError("Profile does not exist", 404)
-    
-    if "newPassword" not in args or len(str(args["newPassword"]).lower().strip()) < 8:
+    if "email" not in args or not fullmatch(
+        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
+        str(args["email"]).lower().strip(),
+    ):
+        raise ExpectedError("email field is invalid", 400)
+
+    if "password" not in args or len(str(args["password"]).lower().strip()) < 8:
         raise ExpectedError("password field must be at least 8 characters long", 400)
 
-    newPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
-    if student:
-        Student.prisma().update(
-            where = {"id": student.id},
-            data = {"hashedPassword": newPassword}
-        )
-    if tutor:
-        Tutor.prisma().update(
-            where = {"id": tutor.id},
-            data = {"hashedPassword": newPassword}
-        )
+    if "accountType" in args and (args["accountType"] == 'student' or args["accountType"] == 'tutor'):
+        student = Student.prisma().find_unique(where={"email": args["email"]})
+        tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
+        if student and student.hashedPassword == sha256(str(args["password"]).encode()).hexdigest():
+            session["user_id"] = student.id
+            return jsonify({"id": student.id}), 200
+        elif tutor and tutor.hashedPassword == sha256(str(args["password"]).encode()).hexdigest():
+            session["user_id"] = tutor.id
+            return jsonify({"id": tutor.id}), 200
+        else:
+            raise ExpectedError("Invalid login attempt", 401)
+    else:
+        raise ExpectedError("accountType must be 'student' or 'tutor'", 400)
 
-    return jsonify({"success": True})
+@auth.route("/logout", methods=["POST"])
+@error_decorator
+def logout():
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 400)
+    session.pop("user_id")
+    return jsonify({"success": True}), 200
