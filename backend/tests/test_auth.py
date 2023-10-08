@@ -1,3 +1,4 @@
+from hashlib import sha256
 from uuid import uuid4
 import pytest
 from flask.testing import FlaskClient
@@ -126,38 +127,38 @@ def test_login_not_json(setup_test: FlaskClient):
     assert resp.status_code == 415
 
 @pytest.fixture
-def initialise_student() -> str:
+def initialise_student() -> None:
     student = Student.prisma().create(
         data={
             "id": str(uuid4()),
             "email": "validemail@mail.com",
-            "hashedPassword": "12345678",
+            "hashedPassword": sha256("12345678".encode()).hexdigest(),
             "name": "Name1",
             "bio": "",
             "location": "Australia",
         },
     )
-    return student.id
+    return None
 
 @pytest.fixture
-def initialise_tutor() -> str:
+def initialise_tutor() -> None:
     tutor = Tutor.prisma().create(
         data={
             "id": str(uuid4()),
             "email": "validemail2@mail.com",
-            "hashedPassword": "12345678",
+            "hashedPassword": sha256("12345678".encode()).hexdigest(),
             "name": "Name2",
             "bio": "",
             "location": "Australia",
         },
     )
-    return tutor.id
+    return None
 
-def test_login_args(setup_test: FlaskClient, initialise_student: str):
+def test_login_args(setup_test: FlaskClient, initialise_student: None):
     client = setup_test
     # Missing email
     resp = client.post("/login", json={})
-    assert resp.json == {"error": "email field was missing"}
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
     # Invalid Email
@@ -219,12 +220,11 @@ def test_login_args(setup_test: FlaskClient, initialise_student: str):
         },
     )
     assert resp.status_code == 200
-    assert resp.json["success"] == True
     with client.session_transaction() as session:
-        assert session["user_id"] == initialise_student
+        assert session["user_id"] == resp.json["id"]
 
 # Successful login attempt (student)
-def test_tutor_login(setup_test: FlaskClient, initialise_tutor: str):
+def test_tutor_login(setup_test: FlaskClient, initialise_tutor: None):
     client = setup_test
     resp = client.post(
         "/login",
@@ -235,24 +235,23 @@ def test_tutor_login(setup_test: FlaskClient, initialise_tutor: str):
         },
     )
     assert resp.status_code == 200
-    assert resp.json["success"] == True
     with client.session_transaction() as session:
-        assert session["user_id"] == initialise_tutor
+        assert session["user_id"] == resp.json["id"]
 
 
 ################################# LOGOUT TESTS #################################
 
-def test_logout_no_user(setup_test: FlaskClient, initialise_student: str):
+def test_logout_no_user(setup_test: FlaskClient):
     client = setup_test
     with client.session_transaction() as session:
         assert ("user_id" not in session) == True
     resp = client.post("/logout", json = {})
     assert resp.status_code == 400
-    assert resp.json == {"error": "Invalid login attempt"}
+    assert resp.json == {"error": "No user is logged in"}
 
-def test_logout_student(setup_test: FlaskClient, initialise_student: str):
+def test_logout_student(setup_test: FlaskClient, initialise_student: None):
     client = setup_test
-    client.post(
+    resp1 = client.post(
         "/login",
         json={
             "email": "validemail@mail.com",
@@ -262,15 +261,17 @@ def test_logout_student(setup_test: FlaskClient, initialise_student: str):
     )
 
     with client.session_transaction() as session:
-        assert session["user_id"] == initialise_student
+        assert session["user_id"] == resp1.json["id"]
 
-    resp = client.post("/logout", json = {})
-    assert resp.status_code == 200
-    assert resp.json["success"] == True
+    resp2 = client.post("/logout", json = {})
+    with client.session_transaction() as session:
+        assert ("user_id" not in session) == True
+    assert resp2.status_code == 200
+    assert resp2.json["success"] == True
 
-def test_logout_tutor(setup_test: FlaskClient, initialise_tutor: str):
+def test_logout_tutor(setup_test: FlaskClient, initialise_tutor: None):
     client = setup_test
-    client.post(
+    resp1 = client.post(
         "/login",
         json={
             "email": "validemail2@mail.com",
@@ -280,8 +281,10 @@ def test_logout_tutor(setup_test: FlaskClient, initialise_tutor: str):
     )
 
     with client.session_transaction() as session:
-        assert session["user_id"] == initialise_tutor
+        assert session["user_id"] == resp1.json["id"]
 
     resp = client.post("/logout", json = {})
+    with client.session_transaction() as session:
+        assert ("user_id" not in session) == True
     assert resp.status_code == 200
     assert resp.json["success"] == True

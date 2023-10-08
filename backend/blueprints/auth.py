@@ -111,5 +111,5 @@ def login():
 def logout():
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
-    session["user_id"].pop()
+    session.pop("user_id")
     return jsonify({"success": True}), 200
