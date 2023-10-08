@@ -21,20 +21,28 @@ import Link from "next/link"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import LoadingButton from "@/components/loadingButton"
-import { HTTPAuthService } from "@/service/authService"
+import { MockAuthService } from "@/service/authService"
 import { getErrorMessage } from "@/lib/utils"
 import toast from "react-hot-toast"
 import router from "next/router"
+import useUser from "@/hooks/useUser"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 //this is a template, z.object will condense the information parsed into it as a readable json format, and formaSchema is basically from the form
 
 const formSchema = z.object({
-  accountType: z.enum(["tutor", "student"]),
+  accountType: z.enum(["tutor", "student", "admin"]),
   email: z.string().email(),
   password: z.string(),
 })
 
-const authService = new HTTPAuthService()
+const authService = new MockAuthService()
 export default function Login() {
   //defining a form, the zod object converts the standard format into a json readable format for the backend
   //z.infer checks the type and guesses how to do shit -> zodResolver finishes compilation type thing
@@ -43,11 +51,17 @@ export default function Login() {
   })
   //need to identify if it is loading for shadcn framework
   const [submitLoading, setSubmitLoading] = useState(false)
+  //deconstructor
+  const { setUser } = useUser()
   //when the form is submitted we call this async to submit the form
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitLoading(true)
     try {
       const id = await authService.login(values)
+      setUser({
+        userId: String(id),
+        userType: values.accountType,
+      })
       router.push("/dashboard")
     } catch (error) {
       toast.error(getErrorMessage(error))
@@ -67,7 +81,33 @@ export default function Login() {
             onSubmit={form.handleSubmit(onSubmit)}
             noValidate
           >
-            <CustomFormField form={form} name="email" label="Email" />
+            <div className="grid grid-cols-2 items-end gap-4">
+              <CustomFormField form={form} name="email" label="Email" />
+              <FormField
+                control={form.control}
+                name="accountType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Select onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Account Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="student">Student</SelectItem>
+                          <SelectItem value="tutor">Tutor</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage>
+                      {/* We need this so the select box is 
+                      aligned when name has an error */}
+                      {form.getFieldState("email").invalid && "\xa0"}
+                    </FormMessage>
+                  </FormItem>
+                )}
+              />
+            </div>
             <CustomFormField
               name="password"
               form={form}
@@ -93,7 +133,6 @@ export default function Login() {
   )
 }
 
-//#TODO: change to generic types and push it into components directory
 // scary interface
 interface CustomFormFieldProps {
   form: UseFormReturn<z.infer<typeof formSchema>, any, undefined>
@@ -105,7 +144,6 @@ interface CustomFormFieldProps {
 /**
  * Reusable basic custom form field
  */
-//#TODO: change to generic types and push it into components directory
 function CustomFormField({
   label,
   form,
