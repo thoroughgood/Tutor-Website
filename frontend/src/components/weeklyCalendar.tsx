@@ -86,7 +86,10 @@ interface DayCol {
 }
 function DayCol({ className, style }: DayCol) {
   return (
-    <div style={style} className={cn("grid grid-rows-[repeat(24,1fr)] border")}>
+    <div
+      style={style}
+      className={cn("grid grid-rows-[repeat(24,1fr)] border", className)}
+    >
       {Array.from(Array(24).keys()).map((hourIndex) => (
         <div key={hourIndex} className="min-h-[75px] border" />
       ))}
