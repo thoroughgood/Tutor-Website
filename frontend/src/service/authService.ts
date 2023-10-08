@@ -22,7 +22,7 @@ interface AuthService {
   login: (LoginBody: LoginBody) => Promise<AuthResponse>
 }
 
-export class MockAuthService implements AuthService {
+export class HTTPAuthService {
   private backendURL: string
   private errorHandlerCallback = async (resp: WretchError) => {
     const error = JSON.parse(resp.message)
@@ -40,7 +40,9 @@ export class MockAuthService implements AuthService {
       .error(415, this.errorHandlerCallback)
     return await resp.json()
   }
+}
 
+export class MockAuthService implements AuthService {
   async login(loginBody: LoginBody) {
     if (
       loginBody.accountType === "student" &&
