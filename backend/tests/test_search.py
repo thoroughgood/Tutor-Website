@@ -3,6 +3,7 @@ from flask.testing import FlaskClient
 from prisma.models import Tutor, Subject
 from uuid import uuid4
 import datetime
+import json
 
 
 @pytest.fixture
@@ -68,13 +69,6 @@ def generate_tutors() -> None:
     return None
 
 
-def test_search_not_json(setup_test: FlaskClient):
-    client = setup_test
-    resp = client.get("/searchtutor")
-    assert resp.json == {"error": "content-type was not json or data was malformed"}
-    assert resp.status_code == 415
-
-
 def test_search_no_args(setup_test: FlaskClient, generate_tutors):
     client = setup_test
     resp = client.get("/searchtutor", json={})
@@ -92,50 +86,52 @@ def test_search_args(setup_test: FlaskClient, generate_tutors):
     client = setup_test
 
     # only location
-    resp = client.get("/searchtutor", json={"location": "Tasmania"})
+    resp = client.get("/searchtutor", query_string={"location": "Tasmania"})
     assert len(resp.json["tutorIds"]) == 2
     tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
     tutor2 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][1]})
     assert set([tutor1.name, tutor2.name]) == set(["Jan", "John"])
     assert resp.status_code == 200
-    resp = client.get("/searchtutor", json={"location": "Australia"})
+    resp = client.get("/searchtutor", query_string={"location": "Australia"})
     assert len(resp.json["tutorIds"]) == 1
     assert resp.status_code == 200
     tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
     assert tutor1.name == "James"
 
     # only rating
-    resp = client.get("/searchtutor", json={"rating": 2})
+    resp = client.get("/searchtutor", query_string={"rating": 2})
     assert len(resp.json["tutorIds"]) == 3
     tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
     tutor2 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][1]})
     tutor3 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][2]})
     assert set([tutor1.name, tutor2.name, tutor3.name]) == set(["James", "Jan", "John"])
     assert resp.status_code == 200
-    resp = client.get("/searchtutor", json={"rating": 3})
+    resp = client.get("/searchtutor", query_string={"rating": 3})
     assert len(resp.json["tutorIds"]) == 2
     tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
     tutor2 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][1]})
     assert set([tutor1.name, tutor2.name]) == set(["Jan", "John"])
     assert resp.status_code == 200
-    resp = client.get("/searchtutor", json={"rating": 4})
+    resp = client.get("/searchtutor", query_string={"rating": 4})
     assert len(resp.json["tutorIds"]) == 1
     assert resp.status_code == 200
     tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
     assert tutor1.name == "Jan"
 
     # only courseOfferings
-    resp = client.get("/searchtutor", json={"courseOfferings": ["math"]})
+    resp = client.get("/searchtutor", query_string={"courseOfferings": ["math"]})
     assert len(resp.json["tutorIds"]) == 1
     tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
     assert tutor1.name == "James"
     assert resp.status_code == 200
-    resp = client.get("/searchtutor", json={"courseOfferings": ["science"]})
+    resp = client.get("/searchtutor", query_string={"courseOfferings": ["science"]})
     assert len(resp.json["tutorIds"]) == 1
     tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
     assert tutor1.name == "Jan"
     assert resp.status_code == 200
-    resp = client.get("/searchtutor", json={"courseOfferings": ["math", "science"]})
+    resp = client.get(
+        "/searchtutor", query_string={"courseOfferings": ["math", "science"]}
+    )
     assert len(resp.json["tutorIds"]) == 3
     tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
     tutor1.name == "John"
@@ -144,15 +140,17 @@ def test_search_args(setup_test: FlaskClient, generate_tutors):
     # only timeRange
     resp = client.get(
         "/searchtutor",
-        json={
-            "timeRange": {
-                "startTime": (
-                    datetime.datetime.now() + datetime.timedelta(hours=1)
-                ).isoformat(),
-                "endTime": (
-                    datetime.datetime.now() + datetime.timedelta(days=10)
-                ).isoformat(),
-            }
+        query_string={
+            "timeRange": json.dumps(
+                {
+                    "startTime": (
+                        datetime.datetime.now() + datetime.timedelta(hours=1)
+                    ).isoformat(),
+                    "endTime": (
+                        datetime.datetime.now() + datetime.timedelta(days=10)
+                    ).isoformat(),
+                }
+            )
         },
     )
     assert len(resp.json["tutorIds"]) == 2
@@ -163,15 +161,17 @@ def test_search_args(setup_test: FlaskClient, generate_tutors):
 
     resp = client.get(
         "/searchtutor",
-        json={
-            "timeRange": {
-                "startTime": (
-                    datetime.datetime.now() + datetime.timedelta(hours=1)
-                ).isoformat(),
-                "endTime": (
-                    datetime.datetime.now() + datetime.timedelta(days=3, hours=10)
-                ).isoformat(),
-            }
+        query_string={
+            "timeRange": json.dumps(
+                {
+                    "startTime": (
+                        datetime.datetime.now() + datetime.timedelta(hours=1)
+                    ).isoformat(),
+                    "endTime": (
+                        datetime.datetime.now() + datetime.timedelta(days=3, hours=10)
+                    ).isoformat(),
+                }
+            )
         },
     )
     assert len(resp.json["tutorIds"]) == 1
@@ -182,18 +182,20 @@ def test_search_args(setup_test: FlaskClient, generate_tutors):
     # all
     resp = client.get(
         "/searchtutor",
-        json={
+        query_string={
             "rating": 3,
             "location": "Tasmania",
             "courseOfferings": ["science", "math"],
-            "timeRange": {
-                "startTime": (
-                    datetime.datetime.now() + datetime.timedelta(hours=1)
-                ).isoformat(),
-                "endTime": (
-                    datetime.datetime.now() + datetime.timedelta(days=3, hours=10)
-                ).isoformat(),
-            },
+            "timeRange": json.dumps(
+                {
+                    "startTime": (
+                        datetime.datetime.now() + datetime.timedelta(hours=1)
+                    ).isoformat(),
+                    "endTime": (
+                        datetime.datetime.now() + datetime.timedelta(days=3, hours=10)
+                    ).isoformat(),
+                }
+            ),
         },
     )
     assert len(resp.json["tutorIds"]) == 1
