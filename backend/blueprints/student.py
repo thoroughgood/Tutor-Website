@@ -37,6 +37,9 @@ def get_profile():
 def modify_profile():
     args = request.get_json()
 
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 400)
+
     if "name" not in args:
         raise ExpectedError("name field was missing", 400)
     if "bio" not in args:
@@ -86,6 +89,9 @@ def modify_profile():
 @error_decorator
 def delete_profile():
     args = request.get_json()
+
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 400)
 
     if "id" not in args:
         raise ExpectedError("id field was missing", 400)
