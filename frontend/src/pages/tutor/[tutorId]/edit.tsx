@@ -36,7 +36,9 @@ import { X } from "lucide-react"
 const authService = new HTTPAuthService()
 
 //changed courseOfferings into an object -> have to then manipulate it to be an array upon data submission
+//need to change
 const formSchema = z.object({
+  id: z.string(),
   name: z
     .string()
     .min(1, {
@@ -99,12 +101,34 @@ export default function Edit() {
     control: form.control,
   })
   const [submitLoading, setSubmitLoading] = useState(false)
+  const courses: string[] = []
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     //need to modify to convert from image to base64URI values.profilePicture
     setSubmitLoading(true)
     try {
-      //will need to create a mock implementation of the edit api/return values
-      //const id = await userService.edit(values)
+      values.id = tutorId
+      values.courseOfferings.forEach((e) => {
+        courses.push(e.name)
+      })
+      for (const val in values) {
+        if (val === "") {
+          val === null
+        }
+      }
+
+      const tutorObj = {
+        id: tutorId,
+        name: values.name,
+        bio: values.bio,
+        email: values.email,
+        profilePicture: values.profilePicture,
+        location: values.location,
+        phoneNumber: values.phoneNumber,
+        courseOfferings: courses,
+        timeAvailable: data?.timeAvailable,
+      }
+
+      const id = await profileService.setTutorProfile(tutorId, tutorObj)
     } catch (error) {
       toast.error(getErrorMessage(error))
     }
@@ -113,7 +137,7 @@ export default function Edit() {
 
   return (
     <div className="grid h-full w-full  place-content-center overflow-hidden p-16">
-      <Card className="flex w-screen max-w-2xl flex-col overflow-y-auto ">
+      <Card className="flex w-screen max-w-2xl flex-col overflow-y-auto">
         <CardHeader className=" text-center">
           <CardTitle>Edit Profile </CardTitle>
           <CardDescription>Change your details here!</CardDescription>
@@ -182,7 +206,10 @@ export default function Edit() {
                           <FormControl>
                             <div className="flex items-center gap-2">
                               <Input {...field} />
-                              <Button variant="destructive">
+                              <Button
+                                variant="destructive"
+                                onClick={() => remove(index)}
+                              >
                                 <X />
                               </Button>
                             </div>
@@ -203,10 +230,10 @@ export default function Edit() {
                   Add Course Offerings
                 </Button>
               </div>
-              <div className="mt-4">
+              <div className=" mt-4">
                 <LoadingButton
                   role="submit"
-                  className="w-6/12 justify-center"
+                  className="w-3/12"
                   isLoading={submitLoading}
                 >
                   Submit Changes

@@ -6,7 +6,7 @@ export interface TutorProfile {
   name: string
   bio: string
   email: string
-  profilePicture: string | null
+  profilePicture: string | undefined
   location: string | undefined
   phoneNumber: string | undefined
   courseOfferings: string[]
