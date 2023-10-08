@@ -66,7 +66,7 @@ export class HTTPAuthService implements AuthService {
 export class MockAuthService implements AuthService {
   async login(loginBody: LoginBody) {
     if (
-      loginBody.accountType === "student" &&
+      loginBody.accountType === "tutor" &&
       loginBody.email === "terrythoroughgood@email.com" &&
       loginBody.password === "goodpassword"
     ) {

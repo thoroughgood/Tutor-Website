@@ -18,26 +18,20 @@ import {
 import { UseFormReturn, useFieldArray, useForm } from "react-hook-form"
 import * as z from "zod"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import LoadingButton from "@/components/loadingButton"
 import { HTTPAuthService } from "@/service/authService"
 import { cn, getErrorMessage } from "@/lib/utils"
 import toast from "react-hot-toast"
-import { ThemeToggle } from "@/components/themeToggle"
-import { Toaster } from "react-hot-toast"
 import { zodResolver } from "@hookform/resolvers/zod"
 import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
 import { MockProfileService } from "@/service/profileService"
 import { useQuery } from "react-query"
+import { Textarea } from "@/components/ui/textarea"
+import { X } from "lucide-react"
 
 const authService = new HTTPAuthService()
 
@@ -56,9 +50,7 @@ const formSchema = z.object({
   phoneNumber: z.string().optional(),
   courseOfferings: z.array(
     z.object({
-      name: z.string().regex(/^[A-z]{4}[0-9]{4}$/, {
-        message: "Code does not fit course code format",
-      }),
+      name: z.string(),
     }),
   ),
   timeAvailable: z
@@ -75,11 +67,34 @@ export default function Edit() {
   const tutorId = router.query.tutorId as string
   const isOwnProfile = tutorId === user?.userId
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const { data } = useQuery({
+    queryKey: ["tutors", tutorId],
+    queryFn: () => profileService.getTutorProfile(tutorId),
   })
 
-  const { fields, append } = useFieldArray({
+  //create an empty array of objects
+  const test: { name: string }[] = []
+
+  //push in courses from profile
+  data?.courseOfferings.forEach((course) => {
+    test.push({ name: course })
+  })
+
+  const defaultValues: Partial<z.infer<typeof formSchema>> = {
+    courseOfferings: test,
+    name: data?.name,
+    bio: data?.bio,
+    email: data?.email,
+    location: data?.location,
+    phoneNumber: data?.phoneNumber,
+  }
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+  })
+
+  const { fields, append, remove } = useFieldArray({
     name: "courseOfferings",
     control: form.control,
   })
@@ -96,84 +111,46 @@ export default function Edit() {
     setSubmitLoading(false)
   }
 
-  const { data } = useQuery({
-    queryKey: ["tutors", tutorId],
-    queryFn: () => profileService.getTutorProfile(tutorId),
-  })
-  //create an empty array of objects
-  const test: { name: string }[] = []
-
-  //push in courses from profile
-  data?.courseOfferings.forEach((course) => {
-    test.push({ name: course })
-  })
-
-  const defaultValues: Partial<z.infer<typeof formSchema>> = {
-    courseOfferings: test,
-  }
-
   return (
-    <div className="flex h-screen w-screen flex-row">
-      <Toaster />
-      <ThemeToggle />
-      <div className="grid w-10/12 place-content-center">
-        <Card className="w-screen max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle>Edit Profile </CardTitle>
-            <CardDescription>Change your details here!</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form
-                className="flex flex-col gap-4"
-                onSubmit={form.handleSubmit(onSubmit)}
-                noValidate
-              >
-                <div className="grid grid-cols-2 items-end gap-4">
-                  <CustomFormField form={form} name="name" label="Name" />
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Select onValueChange={field.onChange}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select Account Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="student">Student</SelectItem>
-                              <SelectItem value="tutor">Tutor</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage>
-                          {/* We need this so the select box is 
-                      aligned when name has an error */}
-                          {form.getFieldState("name").invalid && "\xa0"}
-                        </FormMessage>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <CustomFormField
-                  name="bio"
-                  form={form}
-                  inputType="string"
-                  label="Bio"
-                />
-                <CustomFormField
-                  name="email"
-                  form={form}
-                  label="Email"
-                  inputType="email"
-                />
-                <CustomFormField
-                  name="profilePicture"
-                  form={form}
-                  label="Profile Picture"
-                  inputType="file"
-                />
+    <div className="grid h-full w-full  place-content-center overflow-hidden p-16">
+      <Card className="flex w-screen max-w-2xl flex-col overflow-y-auto ">
+        <CardHeader className=" text-center">
+          <CardTitle>Edit Profile </CardTitle>
+          <CardDescription>Change your details here!</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form
+              className="flex flex-col gap-4 "
+              onSubmit={form.handleSubmit(onSubmit)}
+              noValidate
+            >
+              <CustomFormField form={form} name="name" label="Name" />
+              <FormField
+                control={form.control}
+                name="bio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bio</FormLabel>
+                    <FormControl>
+                      <Textarea className="resize-none" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <CustomFormField
+                name="email"
+                form={form}
+                label="Email"
+                inputType="email"
+              />
+              <CustomFormField
+                name="profilePicture"
+                form={form}
+                label="Profile Picture"
+                inputType="file"
+              />
+              <div className="grid grid-cols-2 gap-3">
                 <CustomFormField
                   name="location"
                   form={form}
@@ -186,65 +163,62 @@ export default function Edit() {
                   label="Phone Number"
                   inputType="string"
                 />
-                <div>
-                  {fields.map((field, index) => (
-                    <FormField
-                      control={form.control}
-                      key={field.id}
-                      name={`courseOfferings.${index}.name`}
-                      render={({ field }) => (
+              </div>
+
+              <div>
+                {fields.map((field, index) => (
+                  <FormField
+                    control={form.control}
+                    key={field.id}
+                    name={`courseOfferings.${index}.name`}
+                    render={({ field }) => (
+                      <div className="w-full items-center space-x-2">
                         <FormItem>
-                          <FormLabel className={cn(index !== 0 && "sr-only")}>
+                          <FormLabel
+                            className={cn(index !== 0 && "grid-span sr-only")}
+                          >
                             Course Offerings
                           </FormLabel>
-                          <FormDescription
-                            className={cn(index !== 0 && "sr-only")}
-                          >
-                            Must be formatted
-                          </FormDescription>
                           <FormControl>
-                            <Input {...field} />
+                            <div className="flex items-center gap-2">
+                              <Input {...field} />
+                              <Button variant="destructive">
+                                <X />
+                              </Button>
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
-                      )}
-                    />
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => append({ value: "" })}
-                  >
-                    Add Course Offerings
-                  </Button>
-                </div>
-                {/* come back to check on this -> need multiple inputs*/}
-                <CustomFormField
-                  name="timeAvailable"
-                  form={form}
-                  label="Available Times"
-                  inputType="String"
-                />
-
-                <div className="mt-4">
-                  <LoadingButton
-                    role="submit"
-                    className="w-full"
-                    isLoading={submitLoading}
-                  >
-                    Submit Changes
-                  </LoadingButton>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </div>
+                      </div>
+                    )}
+                  />
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => append({ value: "" })}
+                >
+                  Add Course Offerings
+                </Button>
+              </div>
+              <div className="mt-4">
+                <LoadingButton
+                  role="submit"
+                  className="w-6/12 justify-center"
+                  isLoading={submitLoading}
+                >
+                  Submit Changes
+                </LoadingButton>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
       <div className="p-auto relative mx-auto my-5 max-w-sm text-center">
-        <Button asChild className="m-3 p-6">
-          <a href={`../${user?.userId}`}> Return to profile </a>
+        <Button asChild className="m-3 p-6" variant="secondary">
+          <a href={`../${user?.userId}`}> Back </a>
         </Button>
       </div>
     </div>
@@ -255,6 +229,7 @@ export default function Edit() {
     name: keyof z.infer<typeof formSchema>
     label: string
     inputType?: string
+    defaultValue?: string
     formDescription?: string
   }
 

@@ -7,8 +7,8 @@ export interface TutorProfile {
   bio: string
   email: string
   profilePicture: string | null
-  location: string | null
-  phoneNumber: string | null
+  location: string | undefined
+  phoneNumber: string | undefined
   courseOfferings: string[]
   timeAvailable: {
     startTime: string
