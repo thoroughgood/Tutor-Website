@@ -44,10 +44,7 @@ def modify_profile():
     if not student:
         raise ExpectedError("Profile does not exist", 404)
 
-    if "name" not in args or len(str(args["name"]).lower().strip()) == 0:
-        name = student.name
-    else:
-        name = args["name"]
+    name = args["name"] if ("name" in args and len(str(args["name"]).lower().strip()) != 0) else student.name
     bio = args["bio"] if "bio" in args else student.bio
     profilePicture = args["profilePicture"] if "profilePicture" in args else student.profilePicture
     location = args["location"] if "location" in args else student.location
