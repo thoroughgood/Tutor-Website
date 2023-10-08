@@ -151,13 +151,13 @@ export default function WeeklyCalendar({
 }
 
 const MINUTES_IN_DAY = 60 * 24
-interface DayCol {
+interface DayColProps {
   style?: React.CSSProperties
   className?: string
   date: Date
   highlightedIntervals: Interval[]
 }
-function DayCol({ className, style, highlightedIntervals, date }: DayCol) {
+function DayCol({ className, style, highlightedIntervals, date }: DayColProps) {
   const dayInterval = {
     start: startOfDay(date),
     end: endOfDay(date),
