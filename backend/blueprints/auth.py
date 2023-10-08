@@ -80,7 +80,7 @@ def register():
 def login():
     args = request.get_json()
 
-    if session["user_id"] != None:
+    if "user_id" in session:
         raise ExpectedError("A user is already logged in", 400)
 
     if "email" not in args or not fullmatch(
@@ -109,7 +109,7 @@ def login():
 @auth.route("/logout", methods=["POST"])
 @error_decorator
 def logout():
-    if not session["user_id"]:
+    if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
     session["user_id"].pop()
     return jsonify({"success": True}), 200
