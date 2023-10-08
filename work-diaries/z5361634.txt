@@ -1,0 +1,24 @@
+Victor Tang | z5361634
+
+Week 1
+Team was created and named 3900M16AThecarrothead.
+Scrum Master: Terry Thoroughgood
+Project Leader: Daniel Nguyen
+Chose between three different projects (P16, P18 and P2), with P16 being our top pick.
+Created the Jira board and added the team members to the board.
+Discussed roles and team members skills to assign for future tasks.
+
+Week 2
+Decided roles with Terry and Daniel N. being in charge of the front-end.
+Daniel W, Akul and Victor are in charge of the back-end. 
+Next.js was decided for the front-end framework.
+Python Flask (and prisma) was decided for the back-end framework.
+P16 was announced to be our project and client meeting (done by Daniel W.) 
+Created the project sprints and added the tasks to the Jira backlog.
+
+Week 3
+Finished the background section of the proposal and oversaw the fixation of the backlog issues.
+Setup terminal according to Daniel W.'s instructions for the backend.
+Set up the GitHub classroom repository and added the team members to the repository.
+Was assigned the task of auth by Daniel, and started working on it locally right now.
+

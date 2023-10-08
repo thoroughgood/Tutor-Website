@@ -36,6 +36,8 @@ import { Toaster } from "react-hot-toast"
 import { zodResolver } from "@hookform/resolvers/zod"
 import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
+import { MockProfileService } from "@/service/profileService"
+import { useQuery } from "react-query"
 
 const authService = new HTTPAuthService()
 
@@ -66,11 +68,12 @@ const formSchema = z.object({
     })
     .array(),
 })
-
+const profileService = new MockProfileService()
 export default function Edit() {
-  const { user } = useUser()
-  //  const id = user?.userId
   const router = useRouter()
+  const { user } = useUser()
+  const tutorId = router.query.tutorId as string
+  const isOwnProfile = tutorId === user?.userId
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -92,12 +95,23 @@ export default function Edit() {
     }
     setSubmitLoading(false)
   }
-  //need to grab the profile values
+
+  const { data } = useQuery({
+    queryKey: ["tutors", tutorId],
+    queryFn: () => profileService.getTutorProfile(tutorId),
+  })
+  //create an empty array of objects
+  const test: { name: string }[] = []
+
+  //push in courses from profile
+  data?.courseOfferings.forEach((course) => {
+    test.push({ name: course })
+  })
+
   const defaultValues: Partial<z.infer<typeof formSchema>> = {
-    courseOfferings: [{ name: "COMP6080" }, { name: "COMP2041" }],
+    courseOfferings: test,
   }
 
-  //need to create form with zod to hold the information
   return (
     <div className="flex h-screen w-screen flex-row">
       <Toaster />

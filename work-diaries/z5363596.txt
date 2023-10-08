@@ -11,3 +11,14 @@ should be made in based on the aforementioned. Decision being a NextJS frontend,
 by Daniel Nguyen and Terry Thoroughgood and, Python Flask backend operated by myself,
 Akul Anand and, Victor Tang. Along with a surface level discussion of what DBMS
 the backend team should use.
+
+Week 3
+Decision of technology stack and comprehensive discussion of functionality that was
+added to product backlog on Jira were completed, with information related all added and,
+submitted in a project proposal on the 30th September. Moreover, work on the decided first sprint
+began, with myself setting up most basic and required backend infrastucture including a basic running Python 
+Flask server w/ Prisma as the ORM that interfaces with a deployed PostgreSQL server, with also
+basic deployment of said server. Furthermore, I worked on integrating session based authentication featured
+in a working `/register` route which successfully registers new users, adding their information
+to the PostgreSQL server and, returning appropriate information to the frontend whilst also doing some
+basic error checks.
