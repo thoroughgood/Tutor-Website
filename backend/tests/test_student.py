@@ -2,7 +2,7 @@ from hashlib import sha256
 from uuid import uuid4
 import pytest
 from flask.testing import FlaskClient
-from prisma.models import Tutor, Student
+from prisma.models import Admin, Tutor, Student
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def initialise_student() -> str:
 
 @pytest.fixture
 def initialise_tutor() -> str:
-    tutor = Student.prisma().create(
+    tutor = Tutor.prisma().create(
         data={
             "id": str(uuid4()),
             "email": "validemail2@mail.com",
@@ -33,6 +33,19 @@ def initialise_tutor() -> str:
         },
     )
     return tutor.id
+
+
+@pytest.fixture
+def initialise_admin() -> str:
+    admin = Admin.prisma().create(
+        data={
+            "id": str(uuid4()),
+            "email": "validemail3@mail.com",
+            "hashedPassword": sha256("12345678".encode()).hexdigest(),
+            "name": "Name3",
+        },
+    )
+    return admin.id
 
 
 ############################ GET PROFILE TESTS #################################
@@ -46,7 +59,7 @@ def test_get_no_query(setup_test: FlaskClient):
     assert resp.status_code == 400
 
 
-def test_register_args(setup_test: FlaskClient, initialise_student: str):
+def test_get_args(setup_test: FlaskClient, initialise_student: str):
     client = setup_test
 
     # Missing id
@@ -82,6 +95,7 @@ def test_modify_not_json(setup_test: FlaskClient):
     assert resp.status_code == 415
 
 
+# Non-admin modifying their profile
 def test_modify_args(setup_test: FlaskClient, initialise_student: str):
     client = setup_test
 
@@ -147,6 +161,132 @@ def test_modify_args(setup_test: FlaskClient, initialise_student: str):
     )
     assert resp.json == {"success": True}
     assert resp.status_code == 200
+
+
+# Admin modifying a student profile
+def test_admin_modify_args(
+    setup_test: FlaskClient, initialise_admin: str, initialise_student: str
+):
+    client = setup_test
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+    client = setup_test
+    resp = client.put("/student/profile/", json={"id": initialise_student})
+    assert resp.json == {"error": "id should not be supplied from non admin user"}
+    assert resp.status_code == 400
+
+    resp = client.post("/logout")
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+
+    # Missing id
+    resp = client.put("/student/profile/", json={})
+    assert resp.json == {"error": "id field was missing"}
+    assert resp.status_code == 400
+
+    # Missing name
+    resp = client.put("/student/profile/", json={"id": initialise_student})
+    assert resp.json == {"error": "name field was missing"}
+    assert resp.status_code == 400
+
+    # Missing name 2
+    resp = client.put("/student/profile/", json={"id": initialise_student, "name": ""})
+    assert resp.json == {"error": "name field was missing"}
+    assert resp.status_code == 400
+
+    # Missing bio
+    resp = client.put(
+        "/student/profile/", json={"id": initialise_student, "name": "Jerry"}
+    )
+    assert resp.json == {"error": "bio field was missing"}
+    assert resp.status_code == 400
+
+    # Missing profilePicture
+    resp = client.put(
+        "/student/profile/",
+        json={"id": initialise_student, "name": "Name1", "bio": "bio"},
+    )
+    assert resp.json == {"error": "profilePicture field was missing"}
+    assert resp.status_code == 400
+
+    # Missing location
+    resp = client.put(
+        "/student/profile/",
+        json={
+            "id": initialise_student,
+            "name": "Name1",
+            "bio": "bio",
+            "profilePicture": "",
+        },
+    )
+    assert resp.json == {"error": "location field was missing"}
+    assert resp.status_code == 400
+
+    # Missing phoneNumber
+    resp = client.put(
+        "/student/profile/",
+        json={
+            "id": initialise_student,
+            "name": "Name1",
+            "bio": "",
+            "profilePicture": "",
+            "location": "",
+        },
+    )
+    assert resp.json == {"error": "phoneNumber field was missing"}
+    assert resp.status_code == 400
+
+    # Invalid id
+    resp = client.put(
+        "/student/profile/",
+        json={
+            "id": "invalid",
+            "name": "Name1",
+            "bio": "",
+            "profilePicture": "",
+            "location": "Australia",
+            "phoneNumber": "",
+        },
+    )
+    assert resp.json == {"error": "Profile does not exist"}
+    assert resp.status_code == 404
+
+    # Valid modification
+    resp = client.put(
+        "/student/profile/",
+        json={
+            "id": initialise_student,
+            "name": "Name123",
+            "bio": "hi",
+            "profilePicture": "hi",
+            "location": "Sydney",
+            "phoneNumber": "000",
+        },
+    )
+    assert resp.json == {"success": True}
+    assert resp.status_code == 200
+
+    resp = client.get("/student/profile/", query_string={"id": initialise_student})
+    assert resp.json == {
+        "id": initialise_student,
+        "name": "Name123",
+        "bio": "hi",
+        "profilePicture": "hi",
+        "location": "Sydney",
+        "phoneNumber": "000",
+    }
 
 
 ########################### DELETE PROFILE TESTS ###############################
