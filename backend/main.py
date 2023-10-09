@@ -4,9 +4,11 @@ from flask_cors import CORS
 from prisma import Prisma
 import os
 
-from blueprints.example import example
 from blueprints.auth import auth
 from blueprints.tutor import tutor
+from blueprints.student import student
+from blueprints.search import search_tutor
+from blueprints.utils import utils
 from helpers.my_request import MyRequest
 
 prisma = Prisma(auto_register=True)
@@ -22,9 +24,12 @@ server_session = Session(app)
 cors = CORS(app)
 
 # blueprints
-app.register_blueprint(example, url_prefix="/example")
 app.register_blueprint(auth, url_prefix="/")
 app.register_blueprint(tutor, url_prefix="/tutor/profile")
+app.register_blueprint(student, url_prefix="/student/profile")
+app.register_blueprint(search_tutor, url_prefix="/")
+app.register_blueprint(utils, url_prefix="/utils")
+
 
 # default route
 @app.route("/")

@@ -1,6 +1,6 @@
 from flask import Request
 import typing as t
-from helpers.error_handlers import error_generator, ExpectedError
+from helpers.error_handlers import ExpectedError
 
 
 class MyRequest(Request):
