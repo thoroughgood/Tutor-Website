@@ -4,6 +4,7 @@ import pytest
 from flask.testing import FlaskClient
 from prisma.models import Tutor, Student
 
+
 @pytest.fixture
 def initialise_student() -> str:
     student = Student.prisma().create(
@@ -17,6 +18,7 @@ def initialise_student() -> str:
         },
     )
     return student.id
+
 
 @pytest.fixture
 def initialise_tutor() -> str:
@@ -32,7 +34,9 @@ def initialise_tutor() -> str:
     )
     return tutor.id
 
+
 ############################ GET PROFILE TESTS #################################
+
 
 # No query string
 def test_get_no_query(setup_test: FlaskClient):
@@ -40,6 +44,7 @@ def test_get_no_query(setup_test: FlaskClient):
     resp = client.get("/student/profile/")
     assert resp.json == {"error": "id field was missing"}
     assert resp.status_code == 400
+
 
 def test_register_args(setup_test: FlaskClient, initialise_student: str):
     client = setup_test
@@ -54,7 +59,7 @@ def test_register_args(setup_test: FlaskClient, initialise_student: str):
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
-    # Valid id 
+    # Valid id
     resp = client.get("/student/profile/", query_string={"id": initialise_student})
     assert resp.status_code == 200
     assert resp.json == {
@@ -66,7 +71,9 @@ def test_register_args(setup_test: FlaskClient, initialise_student: str):
         "phoneNumber": None,
     }
 
+
 ########################### MODIFY PROFILE TESTS ###############################
+
 
 def test_modify_not_json(setup_test: FlaskClient):
     client = setup_test
@@ -74,10 +81,11 @@ def test_modify_not_json(setup_test: FlaskClient):
     assert resp.json == {"error": "content-type was not json or data was malformed"}
     assert resp.status_code == 415
 
+
 def test_modify_args(setup_test: FlaskClient, initialise_student: str):
     client = setup_test
 
-    # No user logged in 
+    # No user logged in
     resp = client.put("/student/profile/", json={})
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 400
@@ -112,34 +120,78 @@ def test_modify_args(setup_test: FlaskClient, initialise_student: str):
     assert resp.status_code == 400
 
     # Missing location
-    resp = client.put("/student/profile/", 
-        json={
-            "name": "Name1", 
-            "bio": "bio",
-            "profilePicture": ""
-        })
+    resp = client.put(
+        "/student/profile/", json={"name": "Name1", "bio": "bio", "profilePicture": ""}
+    )
     assert resp.json == {"error": "location field was missing"}
     assert resp.status_code == 400
 
     # Missing phoneNumber
-    resp = client.put("/student/profile/", 
-        json={
-            "name": "Name1", 
-            "bio": "",
-            "profilePicture": "",
-            "location": ""
-        })
+    resp = client.put(
+        "/student/profile/",
+        json={"name": "Name1", "bio": "", "profilePicture": "", "location": ""},
+    )
     assert resp.json == {"error": "phoneNumber field was missing"}
     assert resp.status_code == 400
 
     # Valid modification
-    resp = client.put("/student/profile/", 
+    resp = client.put(
+        "/student/profile/",
         json={
-            "name": "Name1", 
+            "name": "Name1",
             "bio": "",
             "profilePicture": "",
             "location": "Australia",
-            "phoneNumber": ""
-        })
+            "phoneNumber": "",
+        },
+    )
     assert resp.json == {"success": True}
     assert resp.status_code == 200
+
+
+########################### DELETE PROFILE TESTS ###############################
+
+
+# No JSON
+def test_delete_not_json(setup_test: FlaskClient):
+    client = setup_test
+    resp = client.delete("/student/profile/")
+    assert resp.json == {"error": "content-type was not json or data was malformed"}
+    assert resp.status_code == 415
+
+
+# No user logged in
+def test_delete_no_user(setup_test: FlaskClient):
+    client = setup_test
+    resp = client.delete("/student/profile/", json={})
+    assert resp.json == {"error": "No user is logged in"}
+    assert resp.status_code == 400
+
+
+def test_delete_args(setup_test: FlaskClient, initialise_student: str):
+    client = setup_test
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+
+    # No id
+    resp = client.delete("/student/profile/", json={})
+    assert resp.json == {"error": "id field was missing"}
+    assert resp.status_code == 400
+
+    # Invalid id
+    resp = client.delete("/student/profile/", json={"id": "invalid"})
+    assert resp.json == {"error": "Profile does not exist"}
+    assert resp.status_code == 404
+
+    # Valid id
+    resp = client.delete("/student/profile/", json={"id": initialise_student})
+    assert resp.json == {"success": True}
+    assert resp.status_code == 200
+
+    assert Student.prisma().count() == 0
