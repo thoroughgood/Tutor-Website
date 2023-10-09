@@ -122,9 +122,8 @@ def login():
 @auth.route("/logout", methods=["POST"])
 @error_decorator
 def logout():
-    if "user_id" not in session:
-        raise ExpectedError("No user is logged in", 400)
-    session.pop("user_id")
+    if "user_id" in session:
+        session.pop("user_id")
     return jsonify({"success": True}), 200
 
 
