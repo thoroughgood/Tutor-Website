@@ -15,7 +15,7 @@ tutor = Blueprint("tutor", __name__)
 @tutor.route("/", methods=["GET"])
 @error_decorator
 def get_profile():
-    args = request.get_json()
+    args = request.args
 
     tutor = Tutor.prisma().find_unique(
         where={"id": args["id"]},
