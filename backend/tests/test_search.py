@@ -71,7 +71,7 @@ def generate_tutors() -> None:
 
 def test_search_no_args(setup_test: FlaskClient, generate_tutors):
     client = setup_test
-    resp = client.get("/searchtutor", json={})
+    resp = client.get("/searchtutor", query_string={})
     assert "tutorIds" in resp.json
     assert len(resp.json["tutorIds"]) == 3
     assert resp.status_code == 200
@@ -84,6 +84,15 @@ def test_search_no_args(setup_test: FlaskClient, generate_tutors):
 
 def test_search_args(setup_test: FlaskClient, generate_tutors):
     client = setup_test
+
+    # only name
+    resp = client.get("/searchtutor", query_string={"name": "James"})
+    assert len(resp.json["tutorIds"]) == 1
+    assert (
+        Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]}).name
+        == "James"
+    )
+    assert resp.status_code == 200
 
     # only location
     resp = client.get("/searchtutor", query_string={"location": "Tasmania"})
@@ -179,7 +188,7 @@ def test_search_args(setup_test: FlaskClient, generate_tutors):
     assert tutor1.name == "John"
     assert resp.status_code == 200
 
-    # all
+    # all excluding name
     resp = client.get(
         "/searchtutor",
         query_string={
