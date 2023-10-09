@@ -6,11 +6,11 @@ export interface TutorProfile {
   name: string
   bio: string
   email: string
-  profilePicture: string | undefined
-  location: string | undefined
-  phoneNumber: string | undefined
+  profilePicture: string | null
+  location: string | null
+  phoneNumber: string | null
   courseOfferings: string[]
-  timeAvailable?: {
+  timeAvailable: {
     startTime: string
     endTime: string
   }[]
@@ -60,8 +60,15 @@ export class MockProfileService implements ProfileService {
     return this.mockProfile
   }
 
-  async setTutorProfile(tutoriId: string, tutorProfile: TutorProfile) {
+  async setTutorProfile(tutorId: string, tutorProfile: TutorProfile) {
     this.mockProfile = tutorProfile
+    return { success: true }
+  }
+
+  async deleteTutorProfile(tutorId: string) {
+    console.log("start timer")
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    console.log("after 1 second")
     return { success: true }
   }
 }

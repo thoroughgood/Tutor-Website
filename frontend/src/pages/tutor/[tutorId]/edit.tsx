@@ -20,11 +20,10 @@ import * as z from "zod"
 import { Input } from "@/components/ui/input"
 
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import LoadingButton from "@/components/loadingButton"
 import { HTTPAuthService } from "@/service/authService"
 import { cn, getErrorMessage } from "@/lib/utils"
-import { zodResolver } from "@hookform/resolvers/zod"
 import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
 import { MockProfileService } from "@/service/profileService"
@@ -32,13 +31,22 @@ import { useQuery } from "react-query"
 import { Textarea } from "@/components/ui/textarea"
 import { X } from "lucide-react"
 import toast from "react-hot-toast"
+import {
+  DialogTrigger,
+  Dialog,
+  DialogTitle,
+  DialogHeader,
+  DialogContent,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { DialogDescription } from "@radix-ui/react-dialog"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 const authService = new HTTPAuthService()
 
 //changed courseOfferings into an object -> have to then manipulate it to be an array upon data submission
 //need to change
 const formSchema = z.object({
-  id: z.string(),
   name: z
     .string()
     .min(1, {
@@ -46,21 +54,14 @@ const formSchema = z.object({
     })
     .max(50),
   bio: z.string(),
-  email: z.string(),
   profilePicture: z.string().optional(),
-  location: z.string().optional(),
-  phoneNumber: z.string().optional(),
+  location: z.string().nullable(),
+  phoneNumber: z.string().nullable(),
   courseOfferings: z.array(
     z.object({
       name: z.string(),
     }),
   ),
-  timeAvailable: z
-    .object({
-      startTime: z.string(),
-      endTime: z.string(),
-    })
-    .array(),
 })
 const profileService = new MockProfileService()
 export default function Edit() {
@@ -68,50 +69,77 @@ export default function Edit() {
   const { user } = useUser()
   const tutorId = router.query.tutorId as string
   const isOwnProfile = tutorId === user?.userId
+  const [open, setOpen] = useState(false)
 
   const { data } = useQuery({
     queryKey: ["tutors", tutorId],
     queryFn: () => profileService.getTutorProfile(tutorId),
   })
 
-  //create an empty array of objects
-  const test: { name: string }[] = []
+  useEffect(() => {
+    if (data) {
+      //create an empty array of objects
+      const courseObj: { name: string }[] = []
 
-  //push in courses from profile
-  data?.courseOfferings.forEach((course) => {
-    test.push({ name: course })
-  })
+      //push in courses from profile
+      data.courseOfferings.forEach((course) => {
+        courseObj.push({ name: course })
+      })
+      data.courseOfferings.forEach((course) => {
+        courseObj.push({ name: course })
+      })
 
-  const defaultValues: Partial<z.infer<typeof formSchema>> = {
-    courseOfferings: test,
-    name: data?.name,
-    bio: data?.bio,
-    email: data?.email,
-    location: data?.location,
-    phoneNumber: data?.phoneNumber,
-  }
+      form.setValue("name", data.name)
+      form.setValue("bio", data.bio)
+      form.setValue("location", data.location)
+      form.setValue("phoneNumber", data.phoneNumber)
+      const arrObjects: { name: string }[] = []
+      data.courseOfferings.map(() => {})
+      form.setValue("courseOfferings", courseObj)
+      console.log(data.courseOfferings + "hey")
+    }
+  }, data)
+
+  //if data hasnt loaded, give them a loading screen or skeleton
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues,
   })
 
   const { fields, append, remove } = useFieldArray({
     name: "courseOfferings",
     control: form.control,
   })
+
   const [submitLoading, setSubmitLoading] = useState(false)
+
+  if (!data) {
+    return <div> loading screen </div>
+  }
+
+  //if there is empty string -> convert undefined null
+  // if data -> do code inside here so that there are no undefined values
+
+  //manually enter forms
+
   const courses: string[] = []
   const tester = () => {
     console.log("hello")
   }
+  const deleteProfile = async () => {
+    setSubmitLoading(true)
+    try {
+      const deletion = await profileService.deleteTutorProfile(tutorId)
+      console.log(deletion)
+    } catch {
+      toast.error(getErrorMessage)
+    }
+  }
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     //need to modify to convert from image to base64URI values.profilePicture
-    console.log(1)
+    console.log(values)
     setSubmitLoading(true)
-    console.log("submitting")
     try {
-      values.id = tutorId
       values.courseOfferings.forEach((e) => {
         courses.push(e.name)
       })
@@ -125,7 +153,7 @@ export default function Edit() {
         id: tutorId,
         name: values.name,
         bio: values.bio,
-        email: values.email,
+        email: data?.email,
         profilePicture: values.profilePicture,
         location: values.location,
         phoneNumber: values.phoneNumber,
@@ -140,7 +168,6 @@ export default function Edit() {
     setSubmitLoading(false)
   }
 
-  const DeleteProfile = {}
   return (
     <div className="grid h-full w-full  place-content-center overflow-hidden p-16">
       <Card className="flex w-screen max-w-2xl flex-col overflow-y-auto">
@@ -248,13 +275,43 @@ export default function Edit() {
           <a href={`../${user?.userId}`}> Back </a>
         </Button>
       </div>
-      <Button
-        onClick={() => {
-          DeleteProfile
-        }}
-      >
-        Delete Profile
-      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button>Delete Profile</Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle> Delete Profile </DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently remove your
+              account and your data from our servers.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              type="submit"
+              onClick={() => {
+                setOpen(false)
+              }}
+            >
+              Cancel
+            </Button>
+            <LoadingButton
+              variant="destructive"
+              type="submit"
+              isLoading={submitLoading}
+              onClick={async () => {
+                await deleteProfile()
+                setOpen(false)
+                setSubmitLoading(false)
+              }}
+            >
+              Delete
+            </LoadingButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 
