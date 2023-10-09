@@ -34,9 +34,9 @@ interface AuthService {
 export class HTTPAuthService extends HTTPService implements AuthService {
   async login(loginBody: LoginBody): Promise<AuthResponse> {
     const resp = wretch(`${this.backendURL}/login`)
-      .headers({
-        "Access-Control-Allow-Credentials": "true",
-      })
+      // .headers({
+      //   "Access-Control-Allow-Credentials": "true",
+      // }) // i commented this because i tink its supposed to be from a backend response - daniel n
       .options({
         credentials: "include",
         mode: "cors",
@@ -51,6 +51,10 @@ export class HTTPAuthService extends HTTPService implements AuthService {
   }
   async register(registerBody: RegisterBody): Promise<AuthResponse> {
     const resp = wretch(`${this.backendURL}/register`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
       .json(registerBody)
       .post()
       .notFound(this.errorHandlerCallback)
@@ -79,9 +83,9 @@ export class HTTPAuthService extends HTTPService implements AuthService {
   async checkUser(): Promise<CheckUserResponse> {
     try {
       const resp = wretch(`${this.backendURL}/utils/getuserid`)
-        .headers({
-          "Access-Control-Allow-Credentials": "true",
-        })
+        // .headers({
+        //   "Access-Control-Allow-Credentials": "true",
+        // })
         .options({
           credentials: "include",
           mode: "cors",
