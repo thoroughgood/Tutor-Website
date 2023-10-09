@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import LoadingButton from "@/components/loadingButton"
 import { HTTPAuthService } from "@/service/authService"
-import { cn } from "@/lib/utils"
+import { cn, getErrorMessage } from "@/lib/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
@@ -31,6 +31,7 @@ import { MockProfileService } from "@/service/profileService"
 import { useQuery } from "react-query"
 import { Textarea } from "@/components/ui/textarea"
 import { X } from "lucide-react"
+import toast from "react-hot-toast"
 
 const authService = new HTTPAuthService()
 
@@ -138,6 +139,8 @@ export default function Edit() {
     }
     setSubmitLoading(false)
   }
+
+  const DeleteProfile = {}
   return (
     <div className="grid h-full w-full  place-content-center overflow-hidden p-16">
       <Card className="flex w-screen max-w-2xl flex-col overflow-y-auto">
@@ -245,6 +248,13 @@ export default function Edit() {
           <a href={`../${user?.userId}`}> Back </a>
         </Button>
       </div>
+      <Button
+        onClick={() => {
+          DeleteProfile
+        }}
+      >
+        Delete Profile
+      </Button>
     </div>
   )
 
