@@ -29,7 +29,7 @@ def get_profile():
             "location": student.location,
             "phoneNumber": student.phoneNumber,
         }
-    )
+    ), 200
 
 
 @student.route("/", methods=["PUT"])
@@ -40,7 +40,7 @@ def modify_profile():
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
 
-    if "name" not in args:
+    if "name" not in args or len(str(args["name"]).lower().strip()) != 0:
         raise ExpectedError("name field was missing", 400)
     if "bio" not in args:
         raise ExpectedError("bio field was missing", 400)
@@ -51,11 +51,11 @@ def modify_profile():
     if "phoneNumber" not in args:
         raise ExpectedError("phoneNumber field was missing", 400)
 
-    admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
-    if not admin and session["user_id"] != args["id"]:
-        raise ExpectedError("Insufficient permission to modify this profile", 403)
+    # admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
+    # if not admin and session["user_id"] != args["id"]:
+    #     raise ExpectedError("Insufficient permission to modify this profile", 403)
 
-    student = Student.prisma().find_unique(where={"id": args["id"]})
+    student = Student.prisma().find_unique(where={"id": session["id"]})
     if not student:
         raise ExpectedError("Profile does not exist", 404)
 
@@ -82,7 +82,7 @@ def modify_profile():
         },
     )
 
-    return jsonify({"success": True})
+    return jsonify({"success": True}), 200
 
 
 @student.route("/", methods=["DELETE"])
@@ -96,9 +96,9 @@ def delete_profile():
     if "id" not in args:
         raise ExpectedError("id field was missing", 400)
 
-    admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
-    if not admin and session["user_id"] != args["id"]:
-        raise ExpectedError("Insufficient permission to delete this profile", 403)
+    # admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
+    # if not admin and session["user_id"] != args["id"]:
+    #     raise ExpectedError("Insufficient permission to delete this profile", 403)
 
     student = Student.prisma().find_unique(where={"id": args["id"]})
 
@@ -107,4 +107,4 @@ def delete_profile():
 
     Student.prisma().delete(where={"id": args["id"]})
 
-    return jsonify({"success": True})
+    return jsonify({"success": True}), 200

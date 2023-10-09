@@ -1,3 +1,4 @@
+import json
 from flask import Blueprint, request, jsonify
 from prisma.models import Tutor
 from datetime import datetime
@@ -13,7 +14,8 @@ search_tutor = Blueprint("search_tutor", __name__)
 @search_tutor.route("/searchtutor", methods=["GET"])
 @error_decorator
 def search():
-    args = request.get_json()
+    args = request.args
+
     # * Note: timesAvailable should never overlap and is assumed not to
     tutors = Tutor.prisma().find_many(
         include={
@@ -32,16 +34,15 @@ def search():
 
         # ? May need to change datetimes here to utc
         if "timeRange" in args:
-            if (
-                "startTime" not in args["timeRange"]
-                or "endTime" not in args["timeRange"]
-            ):
+            timeRange = json.loads(args["timeRange"])
+
+            if "startTime" not in timeRange or "endTime" not in timeRange:
                 raise ExpectedError("field(s) were missing in 'timeRange'", 400)
 
             try:
-                st = datetime.fromisoformat(args["timeRange"]["startTime"])
-                et = datetime.fromisoformat(args["timeRange"]["endTime"])
-            except:
+                st = datetime.fromisoformat(timeRange["startTime"])
+                et = datetime.fromisoformat(timeRange["endTime"])
+            except ValueError:
                 raise ExpectedError("timeRange field(s) were malformed", 400)
 
             if st > et:
@@ -60,7 +61,7 @@ def search():
         if "location" in args:
             # ? naive impl, probably change at some point
             valid &= tutor.location and (
-                tutor.location.lower() == args["location"].lower()
+                tutor.location.lower().strip() == args["location"].lower().strip()
             )
 
         if "rating" in args:
@@ -68,7 +69,7 @@ def search():
 
         if "courseOfferings" in args:
             args_offerings = [
-                offerings.lower() for offerings in args["courseOfferings"]
+                offerings.lower() for offerings in args.getlist("courseOfferings")
             ]
             valid &= all(
                 offerings.name.lower() in args_offerings
