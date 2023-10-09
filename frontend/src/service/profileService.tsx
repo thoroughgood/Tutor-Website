@@ -1,5 +1,7 @@
 import TutorProfile from "@/pages/tutor/[tutorId]"
 import { SuccessResponse } from "./types"
+import { HTTPService } from "./helpers"
+import wretch from "wretch"
 
 export interface TutorProfile {
   id: string
@@ -19,12 +21,35 @@ export interface TutorProfile {
 /**
  * ProfileService provides operations relating to tutor/student profiles
  */
+interface TutorSearchParams {
+  location?: string
+  rating?: string
+  courseOfferings?: string[]
+  timeRange?: {
+    startTime: string
+    endTime: string
+  }
+}
 export interface ProfileService {
   getTutorProfile: (tutorId: string) => Promise<TutorProfile>
   setTutorProfile: (
     tutorId: string,
     tutorProfile: TutorProfile,
   ) => Promise<SuccessResponse>
+  searchTutors: (
+    searchParams: TutorSearchParams,
+  ) => Promise<{ tutorIds: string[] }>
+}
+
+export class HTTPProfileService extends HTTPService implements ProfileService {
+  async searchTutors(searchParams): { tutorIds: string[] } {
+    const url = new URL(`${this.backendURL}/searchtutor`)
+    const params = new URLSearchParams(searchParams)
+    url.search = params.toString()
+    console.log(url)
+    const data = wretch(`${this.backendURL}/searchtutor`).get()
+    return await data.json()
+  }
 }
 
 export class MockProfileService implements ProfileService {
@@ -63,5 +88,9 @@ export class MockProfileService implements ProfileService {
   async setTutorProfile(tutoriId: string, tutorProfile: TutorProfile) {
     this.mockProfile = tutorProfile
     return { success: true }
+  }
+
+  async searchTutors(searchParams: TutorSearchParams) {
+    return { tutorIds: ["1337"] }
   }
 }

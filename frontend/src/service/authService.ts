@@ -1,6 +1,6 @@
 import wretch from "wretch"
-import { WretchError } from "wretch/resolver"
 import { SuccessResponse } from "./types"
+import { HTTPService } from "./helpers"
 
 export interface RegisterBody {
   name: string
@@ -25,15 +25,7 @@ interface AuthService {
   logout: () => Promise<SuccessResponse>
 }
 
-export class HTTPAuthService implements AuthService {
-  private backendURL: string
-  private errorHandlerCallback = async (resp: WretchError) => {
-    const error = JSON.parse(resp.message)
-    throw new Error(error.error)
-  }
-  constructor() {
-    this.backendURL = process.env.BACKEND_URL || "http://127.0.0.1:5000"
-  }
+export class HTTPAuthService extends HTTPService implements AuthService {
   async login(loginBody: LoginBody): Promise<AuthResponse> {
     const resp = wretch(`${this.backendURL}/login`)
       .json(loginBody)
