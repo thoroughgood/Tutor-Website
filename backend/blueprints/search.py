@@ -34,7 +34,7 @@ def search():
         valid = True
 
         if "name" in args:
-            valid &= tutor.name.lower().strip() == args["name"].lower().strip()
+            valid &= re.search(args["name"].lower().strip(), tutor.name.lower()) != None
 
         # ? May need to change datetimes here to utc
         if "timeRange" in args and len(tutor.timesAvailable) != 0:
@@ -78,7 +78,7 @@ def search():
             args_offerings = [
                 offerings.lower() for offerings in args.getlist("courseOfferings")
             ]
-            valid &= all(
+            valid &= any(
                 offerings.name.lower() in args_offerings
                 for offerings in tutor.courseOfferings
             )
