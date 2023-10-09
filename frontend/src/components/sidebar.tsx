@@ -46,7 +46,6 @@ export default function Sidebar() {
           {user?.userType === "student" ? <StudentLinks /> : <TutorLinks />}
         </div>
 
-        {JSON.stringify(user)}
         <Button
           variant="ghost"
           className="flex justify-start gap-2 text-muted-foreground"
