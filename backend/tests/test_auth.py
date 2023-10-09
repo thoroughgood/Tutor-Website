@@ -252,9 +252,9 @@ def test_logout_no_user(setup_test: FlaskClient):
     client = setup_test
     with client.session_transaction() as session:
         assert ("user_id" not in session) == True
-    resp = client.post("/logout", json={})
-    assert resp.status_code == 400
-    assert resp.json == {"error": "No user is logged in"}
+    resp = client.post("/logout")
+    assert resp.json == {"success": True}
+    assert resp.status_code == 200
 
 
 def test_logout_student(setup_test: FlaskClient, initialise_student: str):
@@ -271,7 +271,7 @@ def test_logout_student(setup_test: FlaskClient, initialise_student: str):
     with client.session_transaction() as session:
         assert session["user_id"] == resp1.json["id"]
 
-    resp2 = client.post("/logout", json={})
+    resp2 = client.post("/logout")
     with client.session_transaction() as session:
         assert ("user_id" not in session) == True
     assert resp2.status_code == 200
