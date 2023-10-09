@@ -51,6 +51,8 @@ def modify_profile():
         name = tutor.name
     else:
         name = args["name"]
+
+    #name = tutor.name if "name" not in args else name = args["name"]
     
     if "bio" not in args:
         bio = tutor.bio
@@ -98,7 +100,12 @@ def modify_profile():
             "profilePicture": profilePicture,
             "location": location,
             "phoneNumber": phoneNumber,
-            "courseOfferings": {connect: {Subject: courseOfferings}},
+            "courseOfferings": {
+                "deleteMany": {},
+                "createMany": {
+                    "data": [list(map(helper, courseOfferings))]
+                }
+            }
             #"timesAvailable": timesAvailable
         }
     )
@@ -122,3 +129,6 @@ def delete_profile():
     Tutor.prisma().delete(where={"id": tutor.id})
 
     return jsonify({"success": True})
+
+def helper(n):
+    return {"name" : n}
