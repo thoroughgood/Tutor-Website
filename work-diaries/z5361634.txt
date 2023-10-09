@@ -22,3 +22,11 @@ Setup terminal according to Daniel W.'s instructions for the backend.
 Set up the GitHub classroom repository and added the team members to the repository.
 Was assigned the task of auth by Daniel, and started working on it locally right now.
 
+Week 4
+Attended regular (daily) standups
+Written code for Login and Logout functions
+Written code for Student Profile functions
+Wrote tests for login and logout
+Wrote tests for Student Profile
+Written code for resetpassword
+Discussed workload distribution for Sprint 2
