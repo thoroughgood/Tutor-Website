@@ -14,10 +14,12 @@ import { cn, toastProtectedFnCall } from "@/lib/utils"
 import { useState } from "react"
 import Link from "next/link"
 import { HTTPAuthService } from "@/service/authService"
+import { useRouter } from "next/router"
 
 const authService = new HTTPAuthService()
 export default function Sidebar() {
-  const { user } = useUser()
+  const router = useRouter()
+  const { user, setUser } = useUser()
   const [isExpanded, setIsExpanded] = useState(false)
   return (
     <div>
@@ -43,10 +45,16 @@ export default function Sidebar() {
         <div className="flex grow flex-col gap-1 text-muted-foreground">
           {user?.userType === "student" ? <StudentLinks /> : <TutorLinks />}
         </div>
+
         <Button
           variant="ghost"
           className="flex justify-start gap-2 text-muted-foreground"
-          onClick={() => toastProtectedFnCall(authService.logout)}
+          onClick={async () => {
+            if (await toastProtectedFnCall(authService.logout)) {
+              setUser(null)
+              router.push("/login")
+            }
+          }}
         >
           <LogOut className="h-4" />
           Logout

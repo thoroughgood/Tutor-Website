@@ -26,7 +26,9 @@ export function prettySentence(sentence: string): string {
 export async function toastProtectedFnCall(fn: Function) {
   try {
     await fn()
+    return true
   } catch (error) {
     toast.error(getErrorMessage(error))
   }
+  return false
 }
