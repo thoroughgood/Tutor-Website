@@ -10,7 +10,7 @@ export interface TutorProfile {
   location: string | undefined
   phoneNumber: string | undefined
   courseOfferings: string[]
-  timeAvailable: {
+  timeAvailable?: {
     startTime: string
     endTime: string
   }[]
