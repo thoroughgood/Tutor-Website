@@ -95,10 +95,13 @@ def login():
         raise ExpectedError("password field must be at least 8 characters long", 400)
 
     if "accountType" in args and (
-        args["accountType"] == "student" or args["accountType"] == "tutor"
+        args["accountType"] == "student"
+        or args["accountType"] == "tutor"
+        or args["accountType"] == "admin"
     ):
         student = Student.prisma().find_unique(where={"email": args["email"]})
         tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
+        admin = Admin.prisma().find_unique(where={"email": args["email"]})
         if (
             student
             and student.hashedPassword
@@ -113,10 +116,17 @@ def login():
         ):
             session["user_id"] = tutor.id
             return jsonify({"id": tutor.id}), 200
+        elif (
+            admin
+            and admin.hashedPassword
+            == sha256(str(args["password"]).encode()).hexdigest()
+        ):
+            session["user_id"] = admin.id
+            return jsonify({"id": admin.id}), 200
         else:
             raise ExpectedError("Invalid login attempt", 401)
     else:
-        raise ExpectedError("accountType must be 'student' or 'tutor'", 400)
+        raise ExpectedError("accountType must be 'student' or 'tutor' or 'admin'", 400)
 
 
 @auth.route("/logout", methods=["POST"])
@@ -135,6 +145,10 @@ def resetpassword():
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
 
+    admin = Admin.prisma().find_first(where={"id": session["user_id"]})
+    if not admin:
+        raise ExpectedError("Insufficient permission to modify this profile", 403)
+
     if "id" not in args:
         raise ExpectedError("id field is missing", 400)
 
@@ -142,10 +156,6 @@ def resetpassword():
     tutor = Tutor.prisma().find_unique(where={"id": args["id"]})
     if not student and not tutor:
         raise ExpectedError("Profile does not exist", 404)
-
-    admin = Admin.prisma().find_first(where={"id": session["user_id"]})
-    if not admin and session["user_id"] != args["id"]:
-        raise ExpectedError("Insufficient permission to modify this profile", 403)
 
     if "newPassword" not in args or len(str(args["newPassword"]).lower().strip()) < 8:
         raise ExpectedError("password field must be at least 8 characters long", 400)
