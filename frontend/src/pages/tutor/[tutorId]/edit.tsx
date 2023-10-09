@@ -23,8 +23,7 @@ import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import LoadingButton from "@/components/loadingButton"
 import { HTTPAuthService } from "@/service/authService"
-import { cn, getErrorMessage } from "@/lib/utils"
-import toast from "react-hot-toast"
+import { cn } from "@/lib/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
@@ -102,9 +101,14 @@ export default function Edit() {
   })
   const [submitLoading, setSubmitLoading] = useState(false)
   const courses: string[] = []
+  const tester = () => {
+    console.log("hello")
+  }
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     //need to modify to convert from image to base64URI values.profilePicture
+    console.log(1)
     setSubmitLoading(true)
+    console.log("submitting")
     try {
       values.id = tutorId
       values.courseOfferings.forEach((e) => {
@@ -134,7 +138,6 @@ export default function Edit() {
     }
     setSubmitLoading(false)
   }
-
   return (
     <div className="grid h-full w-full  place-content-center overflow-hidden p-16">
       <Card className="flex w-screen max-w-2xl flex-col overflow-y-auto">
@@ -161,12 +164,6 @@ export default function Edit() {
                     </FormControl>
                   </FormItem>
                 )}
-              />
-              <CustomFormField
-                name="email"
-                form={form}
-                label="Email"
-                inputType="email"
               />
               <CustomFormField
                 name="profilePicture"
