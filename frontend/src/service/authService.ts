@@ -19,10 +19,16 @@ interface AuthResponse {
   id: string
 }
 
+interface CheckUserResponse {
+  id: string
+  accountType: "tutor" | "admin" | "student"
+}
+
 interface AuthService {
   login: (loginBody: LoginBody) => Promise<AuthResponse>
   register: (registerBody: RegisterBody) => Promise<AuthResponse>
   logout: () => Promise<SuccessResponse>
+  checkUser: () => Promise<CheckUserResponse>
 }
 
 export class HTTPAuthService implements AuthService {
@@ -36,11 +42,19 @@ export class HTTPAuthService implements AuthService {
   }
   async login(loginBody: LoginBody): Promise<AuthResponse> {
     const resp = wretch(`${this.backendURL}/login`)
+      .headers({
+        "Access-Control-Allow-Credentials": "true",
+      })
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
       .json(loginBody)
       .post()
       .notFound(this.errorHandlerCallback)
       .badRequest(this.errorHandlerCallback)
       .error(415, this.errorHandlerCallback)
+
     return await resp.json()
   }
   async register(registerBody: RegisterBody): Promise<AuthResponse> {
@@ -55,10 +69,35 @@ export class HTTPAuthService implements AuthService {
 
   async logout(): Promise<SuccessResponse> {
     try {
-      const resp = wretch(`${this.backendURL}/logout`).post()
+      const resp = wretch(`http://127.0.0.1:5000/logout`)
+        .headers({
+          "Access-Control-Allow-Credentials": "true",
+        })
+        .options({
+          credentials: "include",
+          mode: "cors",
+        })
+        .post()
+      return await resp.json()
+    } catch (error) {
+      throw new Error(error)
+    }
+  }
+
+  async checkUser(): Promise<CheckUserResponse> {
+    try {
+      const resp = wretch(`${this.backendURL}/utils/getuserid`)
+        .headers({
+          "Access-Control-Allow-Credentials": "true",
+        })
+        .options({
+          credentials: "include",
+          mode: "cors",
+        })
+        .get()
       return await resp.json()
     } catch {
-      throw new Error("Failed to log out")
+      throw new Error("Failed to get user details")
     }
   }
 }
@@ -79,5 +118,8 @@ export class MockAuthService implements AuthService {
   }
   async logout() {
     return { success: true }
+  }
+  async checkUser(): Promise<CheckUserResponse> {
+    return { id: "1337", accountType: "tutor" }
   }
 }
