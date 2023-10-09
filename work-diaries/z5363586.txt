@@ -19,3 +19,9 @@ Initialised and setup frontend code, including Nextjs, Eslint, Shadcn and Tailwi
 Organised meeting with Daniel Wang (Backend Lead) to discuss basic API documentation for sprint 1.
 Also drafted ER diagram with Daniel Wang for the database. 
 
+Week 4
+Attended standups. Created register form, tutor profile, tutor schedule and 
+tutor search pages. Discussed workload distribution for Sprint 2.
+Assisted other team members with setup of project repo. Created DX scripts
+to enhance workflow, e.g. ./runBoth.sh ./runBackend.sh. 
+Pair programmed with Terry Thoroughgood to debug CSS. 
