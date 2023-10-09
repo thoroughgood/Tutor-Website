@@ -10,7 +10,7 @@ student = Blueprint("student", __name__)
 @student.route("/", methods=["GET"])
 @error_decorator
 def get_profile():
-    args = request.get_json()
+    args = request.args
 
     if "id" not in args:
         raise ExpectedError("id field was missing", 400)

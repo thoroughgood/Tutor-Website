@@ -32,9 +32,9 @@ def initialise_tutor() -> str:
 
 ############################ GET PROFILE TESTS #################################
 
-def test_get_not_json(setup_test: FlaskClient):
+def test_get_no_args(setup_test: FlaskClient):
     client = setup_test
-    resp = client.get("/student/profile")
+    resp = client.get("/student/profile", query_string = {})
     assert resp.json == {"error": "content-type was not json or data was malformed"}
     assert resp.status_code == 415
 
@@ -42,19 +42,19 @@ def test_register_args(setup_test: FlaskClient, initialise_student: str):
     client = setup_test
 
     # Missing id
-    resp = client.get("/student/profile", json={})
+    resp = client.get("/student/profile", query_string={})
     assert resp.json == {"error": "id field was missing"}
     assert resp.status_code == 400
 
     # Invalid id
-    resp = client.get("/student/profile", json={"id": "invalid"})
+    resp = client.get("/student/profile", query_string={"id": "invalid"})
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
     # Valid id 
-    resp = client.get("/student/profile", json={"id": initialise_student})
-    assert resp2.status_code == 200
-    assert resp2.json == {
+    resp = client.get("/student/profile", query_string={"id": initialise_student})
+    assert resp.status_code == 200
+    assert resp.json == {
         "id": initialise_student,
         "name": "Name1",
         "bio": "",
