@@ -4,6 +4,7 @@ import pytest
 from flask.testing import FlaskClient
 from prisma.models import Tutor, Student
 
+@pytest.fixture
 def initialise_student() -> str:
     student = Student.prisma().create(
         data={
@@ -17,6 +18,7 @@ def initialise_student() -> str:
     )
     return student.id
 
+@pytest.fixture
 def initialise_tutor() -> str:
     tutor = Student.prisma().create(
         data={
@@ -32,27 +34,28 @@ def initialise_tutor() -> str:
 
 ############################ GET PROFILE TESTS #################################
 
-def test_get_no_args(setup_test: FlaskClient):
+# No query string
+def test_get_no_query(setup_test: FlaskClient):
     client = setup_test
-    resp = client.get("/student/profile", query_string = {})
-    assert resp.json == {"error": "content-type was not json or data was malformed"}
-    assert resp.status_code == 415
+    resp = client.get("/student/profile/")
+    assert resp.json == {"error": "id field was missing"}
+    assert resp.status_code == 400
 
 def test_register_args(setup_test: FlaskClient, initialise_student: str):
     client = setup_test
 
     # Missing id
-    resp = client.get("/student/profile", query_string={})
+    resp = client.get("/student/profile/", query_string={})
     assert resp.json == {"error": "id field was missing"}
     assert resp.status_code == 400
 
     # Invalid id
-    resp = client.get("/student/profile", query_string={"id": "invalid"})
+    resp = client.get("/student/profile/", query_string={"id": "invalid"})
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
     # Valid id 
-    resp = client.get("/student/profile", query_string={"id": initialise_student})
+    resp = client.get("/student/profile/", query_string={"id": initialise_student})
     assert resp.status_code == 200
     assert resp.json == {
         "id": initialise_student,
@@ -67,7 +70,7 @@ def test_register_args(setup_test: FlaskClient, initialise_student: str):
 
 def test_modify_not_json(setup_test: FlaskClient):
     client = setup_test
-    resp = client.put("/student/profile")
+    resp = client.put("/student/profile/")
     assert resp.json == {"error": "content-type was not json or data was malformed"}
     assert resp.status_code == 415
 
@@ -75,7 +78,7 @@ def test_modify_args(setup_test: FlaskClient, initialise_student: str):
     client = setup_test
 
     # No user logged in 
-    resp = client.put("/student/profile", json={})
+    resp = client.put("/student/profile/", json={})
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 400
 
@@ -89,27 +92,27 @@ def test_modify_args(setup_test: FlaskClient, initialise_student: str):
     )
 
     # Missing name
-    resp = client.put("/student/profile", json={})
+    resp = client.put("/student/profile/", json={})
     assert resp.json == {"error": "name field was missing"}
     assert resp.status_code == 400
 
     # Missing name 2
-    resp = client.put("/student/profile", json={"name": ""})
+    resp = client.put("/student/profile/", json={"name": ""})
     assert resp.json == {"error": "name field was missing"}
     assert resp.status_code == 400
 
     # Missing bio
-    resp = client.put("/student/profile", json={"name": "Jerry"})
+    resp = client.put("/student/profile/", json={"name": "Jerry"})
     assert resp.json == {"error": "bio field was missing"}
     assert resp.status_code == 400
 
     # Missing profilePicture
-    resp = client.put("/student/profile", json={"name": "Jerry", "bio": "bio"})
+    resp = client.put("/student/profile/", json={"name": "Jerry", "bio": "bio"})
     assert resp.json == {"error": "profilePicture field was missing"}
     assert resp.status_code == 400
 
     # Missing location
-    resp = client.put("/student/profile", 
+    resp = client.put("/student/profile/", 
         json={
             "name": "Name1", 
             "bio": "bio",
@@ -119,7 +122,7 @@ def test_modify_args(setup_test: FlaskClient, initialise_student: str):
     assert resp.status_code == 400
 
     # Missing phoneNumber
-    resp = client.put("/student/profile", 
+    resp = client.put("/student/profile/", 
         json={
             "name": "Name1", 
             "bio": "",
@@ -130,7 +133,7 @@ def test_modify_args(setup_test: FlaskClient, initialise_student: str):
     assert resp.status_code == 400
 
     # Valid modification
-    resp = client.put("/student/profile", 
+    resp = client.put("/student/profile/", 
         json={
             "name": "Name1", 
             "bio": "",
