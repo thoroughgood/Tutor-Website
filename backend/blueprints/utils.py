@@ -1,8 +1,6 @@
 from flask import Blueprint, jsonify, session
-from helpers.error_handlers import (
-    ExpectedError,
-    error_decorator,
-)
+from helpers.error_handlers import error_decorator
+
 
 utils = Blueprint("utils", __name__)
 
