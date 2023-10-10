@@ -38,6 +38,24 @@ def generate_tutor() -> str:
     return tutor.id
 
 
+@pytest.fixture
+def generate_dummy_tutor() -> str:
+    Tutor.prisma().create(
+        data={
+            "id": str(uuid4()),
+            "email": "dummy@mail.com",
+            "name": "dummy",
+            "hashedPassword": "dfnsdkjgnsf",
+            "bio": "",
+            "location": None,
+            "profilePicture": None,
+            "phoneNumber": None,
+            "courseOfferings": {},
+            "timesAvailable": {},
+        }
+    )
+
+
 # Get Tutor Profile Tests
 
 
@@ -77,9 +95,6 @@ def test_get_valid(setup_test: FlaskClient, generate_tutor: str):
     )
 
     assert resp.status_code == 200
-
-    print(resp.json["id"])
-
     assert resp.json["id"] == tutor.id
     assert resp.json["name"] == tutor.name
     assert resp.json["bio"] == tutor.bio
@@ -105,3 +120,74 @@ def formatTimesAvailable(timeBlock):
         "startTime": timeBlock.startTime.isoformat(),
         "endTime": timeBlock.endTime.isoformat(),
     }
+
+
+# Modify Tutor Profile Tests
+
+
+def test_modify_not_json(setup_test: FlaskClient):
+    client = setup_test
+    resp = client.put("/student/profile/")
+    assert resp.json == {"error": "content-type was not json or data was malformed"}
+    assert resp.status_code == 415
+
+
+def test_modify_args(
+    setup_test: FlaskClient, generate_tutor: str, generate_dummy_tutor: str
+):
+    client = setup_test
+
+    tutorId = generate_tutor
+    tutor = Tutor.prisma().find_unique(
+        where={"id": tutorId},
+        include={
+            "courseOfferings": {"include": {"tutorsTeaching": True}},
+            "timesAvailable": True,
+        },
+    )
+
+    # No user logged in
+    resp = client.put("/student/profile/", json={"id": tutorId})
+    assert resp.json == {"error": "No user is logged in"}
+    assert resp.status_code == 400
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    print(resp.data)
+    assert resp.status_code == 200
+
+    # User doesnt have permission to modify profile
+    resp = client.put("/student/profile/", json={"id": generate_dummy_tutor})
+    assert resp.json == {"error": "Insufficient permission to modify this profile"}
+    assert resp.status_code == 403
+
+    # profile doesnt exist
+    resp = client.put("/student/profile/", json={"id": "1"})
+    assert resp.json == {"error": "Profile does not exist"}
+    assert resp.status_code == 404
+
+    # missing fields
+    resp = client.put("/student/profile/", json={"id": tutorId})
+
+    assert resp.status_code == 200
+    assert resp.json["id"] == tutor.id
+    assert resp.json["name"] == tutor.name
+    assert resp.json["bio"] == tutor.bio
+    assert resp.json["email"] == tutor.email
+    assert resp.json["rating"] == tutor.rating
+    assert resp.json["profilePicture"] == tutor.profilePicture
+    assert resp.json["location"] == tutor.location
+    assert resp.json["phoneNumber"] == tutor.phoneNumber
+    assert resp.json["courseOfferings"] == list(
+        map(formatCourseOfferings, tutor.courseOfferings)
+    )
+    assert resp.json["timesAvailable"] == list(
+        map(formatTimesAvailable, tutor.timesAvailable)
+    )

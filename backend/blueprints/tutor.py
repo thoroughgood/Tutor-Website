@@ -91,12 +91,12 @@ def modify_profile():
     if tutor is None:
         raise ExpectedError("Profile does not exist", 404)
 
-    if "name" not in args or len(args["name"]) == 0:
+    if "name" not in args:
         name = tutor.name
     else:
         name = args["name"]
 
-    if "bio" not in args or args["bio"] == None:
+    if "bio" not in args:
         bio = tutor.bio
     else:
         bio = args["bio"]
@@ -106,12 +106,12 @@ def modify_profile():
     else:
         email = args["email"]
 
-    if "profilePicture" not in args or args["profilePicture"] == None:
+    if "profilePicture" not in args:
         profilePicture = tutor.profilePicture
     else:
         profilePicture = args["profilePicture"]
 
-    if "location" not in args or args["location"] == None or len(args["location"]) == 0:
+    if "location" not in args:
         location = tutor.location
     else:
         location = args["location"]
