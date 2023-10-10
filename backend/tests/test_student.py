@@ -102,7 +102,7 @@ def test_modify_args(setup_test: FlaskClient, initialise_student: str):
     # No user logged in
     resp = client.put("/student/profile/", json={})
     assert resp.json == {"error": "No user is logged in"}
-    assert resp.status_code == 400
+    assert resp.status_code == 401
 
     resp = client.post(
         "/login",
@@ -295,7 +295,7 @@ def test_admin_modify_args(
 # No JSON
 def test_delete_not_json(setup_test: FlaskClient):
     client = setup_test
-    resp = client.delete("/student/profile/")
+    resp = client.delete("/student/")
     assert resp.json == {"error": "content-type was not json or data was malformed"}
     assert resp.status_code == 415
 
@@ -303,12 +303,12 @@ def test_delete_not_json(setup_test: FlaskClient):
 # No user logged in
 def test_delete_no_user(setup_test: FlaskClient):
     client = setup_test
-    resp = client.delete("/student/profile/", json={})
+    resp = client.delete("/student/", json={})
     assert resp.json == {"error": "No user is logged in"}
-    assert resp.status_code == 400
+    assert resp.status_code == 401
 
 
-def test_delete_args(setup_test: FlaskClient, initialise_student: str):
+def test_delete_student_login(setup_test: FlaskClient, initialise_student: str):
     client = setup_test
     resp = client.post(
         "/login",
@@ -319,18 +319,49 @@ def test_delete_args(setup_test: FlaskClient, initialise_student: str):
         },
     )
 
+    # Invalid id
+    resp = client.delete("/student/", json={"id": "invalid"})
+    assert resp.json == {"error": "id should not be supplied from non admin user"}
+    assert resp.status_code == 400
+
+    # Valid id
+    resp = client.delete("/student/", json={"id": initialise_student})
+    assert resp.json == {"error": "id should not be supplied from non admin user"}
+    assert resp.status_code == 400
+
     # No id
-    resp = client.delete("/student/profile/", json={})
+    resp = client.delete("/student/", json={})
+    assert resp.json == {"success": True}
+    assert resp.status_code == 200
+
+    assert Student.prisma().count() == 0
+
+
+def test_delete_admin_login(
+    setup_test: FlaskClient, initialise_admin: str, initialise_student: str
+):
+    client = setup_test
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+
+    # No id
+    resp = client.delete("/student/", json={})
     assert resp.json == {"error": "id field was missing"}
     assert resp.status_code == 400
 
     # Invalid id
-    resp = client.delete("/student/profile/", json={"id": "invalid"})
+    resp = client.delete("/student/", json={"id": "invalid"})
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
     # Valid id
-    resp = client.delete("/student/profile/", json={"id": initialise_student})
+    resp = client.delete("/student/", json={"id": initialise_student})
     assert resp.json == {"success": True}
     assert resp.status_code == 200
 
