@@ -54,7 +54,7 @@ const formSchema = z.object({
     })
     .max(50),
   bio: z.string(),
-  profilePicture: z.string().optional(),
+  profilePicture: z.string().nullable().optional(),
   location: z.string().nullable(),
   phoneNumber: z.string().nullable(),
   courseOfferings: z.array(
@@ -70,6 +70,7 @@ export default function Edit() {
   const tutorId = router.query.tutorId as string
   const isOwnProfile = tutorId === user?.userId
   const [open, setOpen] = useState(false)
+  const [submitLoading, setSubmitLoading] = useState(false)
 
   const { data } = useQuery({
     queryKey: ["tutors", tutorId],
@@ -106,8 +107,6 @@ export default function Edit() {
     control: form.control,
   })
 
-  const [submitLoading, setSubmitLoading] = useState(false)
-
   if (!data) {
     return <div> loading screen </div>
   }
@@ -124,7 +123,7 @@ export default function Edit() {
   const deleteProfile = async () => {
     setSubmitLoading(true)
     try {
-      const deletion = await profileService.deleteTutorProfile(tutorId)
+      const deletion = await profileService.deleteOwnUserProfile(tutorId)
       console.log(deletion)
     } catch {
       toast.error(getErrorMessage)
@@ -134,12 +133,14 @@ export default function Edit() {
     //need to modify to convert from image to base64URI values.profilePicture
     setSubmitLoading(true)
     try {
-      for (const val in values) {
+      /* for (const val in values) {
         console.log(val + val.valueOf)
         if (val == "") {
           val === null
         }
-      }
+      } */
+
+      console.log(values)
 
       const tutorObj = {
         id: tutorId,
@@ -153,7 +154,8 @@ export default function Edit() {
         timeAvailable: data?.timeAvailable,
       }
 
-      const id = await profileService.setTutorProfile(tutorId, tutorObj)
+      const id = await profileService.setOwnTutorProfile(tutorObj)
+      console.log(id)
     } catch (error) {
       toast.error(getErrorMessage(error))
     }

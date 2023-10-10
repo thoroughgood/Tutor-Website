@@ -1,7 +1,7 @@
 import TutorProfile from "@/pages/tutor/[tutorId]"
 import { SuccessResponse } from "./types"
 
-export interface TutorProfile {
+interface UserProfile {
   id: string
   name: string
   bio: string
@@ -9,6 +9,9 @@ export interface TutorProfile {
   profilePicture: string | null
   location: string | null
   phoneNumber: string | null
+}
+
+export interface TutorProfile extends UserProfile {
   courseOfferings: string[]
   timeAvailable: {
     startTime: string
@@ -16,19 +19,49 @@ export interface TutorProfile {
   }[]
 }
 
+export interface StudentProfile extends UserProfile {}
+export interface TutorSelfEditReqBody extends Omit<TutorProfile, "id"> {}
+export interface StudentSelfEditReqBody extends Omit<StudentProfile, "id"> {}
+
 /**
  * ProfileService provides operations relating to tutor/student profiles
  */
+interface TutorSearchParams {
+  location?: string
+  rating?: string
+  courseOfferings?: string[]
+  timeRange?: {
+    startTime: string
+    endTime: string
+  }
+}
 export interface ProfileService {
   getTutorProfile: (tutorId: string) => Promise<TutorProfile>
-  setTutorProfile: (
-    tutorId: string,
-    tutorProfile: TutorProfile,
+  setOwnTutorProfile: (
+    tutorProfile: TutorSelfEditReqBody,
+  ) => Promise<SuccessResponse>
+  searchTutors: (
+    searchParams: TutorSearchParams,
+  ) => Promise<{ tutorIds: string[] }>
+  getStudentProfile: (studentId: string) => Promise<StudentProfile>
+  setOwnStudentProfile: (
+    studentProfile: StudentSelfEditReqBody,
   ) => Promise<SuccessResponse>
 }
 
+// export class HTTPProfileService extends HTTPService implements ProfileService {
+//   async searchTutors(searchParams): Promise<{ tutorIds: string[] }> {
+//     const url = new URL(`${this.backendURL}/searchtutor`)
+//     const params = new URLSearchParams(searchParams)
+//     url.search = params.toString()
+//     console.log(url)
+//     const data = wretch(`${this.backendURL}/searchtutor`).get()
+//     return await data.json()
+//   }
+// }
+
 export class MockProfileService implements ProfileService {
-  private mockProfile: TutorProfile = {
+  private mockTutorProfile: TutorProfile = {
     id: "1337",
     name: "Daniel Nguyen",
     bio: "I tutor Computer Science at UNSW and I like grape gummy candy. It is a pleasure to meet you.",
@@ -56,19 +89,46 @@ export class MockProfileService implements ProfileService {
       },
     ],
   }
+
+  private mockStudentProfile: StudentProfile = {
+    id: "64",
+    name: "Daniel Wang",
+    bio: "I need help with COMP6080",
+    email: "daniel.wang@gmail.com",
+    profilePicture: null,
+    location: "Sydney",
+    phoneNumber: "0499999999",
+  }
   async getTutorProfile(tutorId: string) {
-    return this.mockProfile
+    return this.mockTutorProfile
   }
 
-  async setTutorProfile(tutorId: string, tutorProfile: TutorProfile) {
-    this.mockProfile = tutorProfile
+  async setOwnTutorProfile(tutorProfile: TutorSelfEditReqBody) {
+    this.mockTutorProfile = { ...tutorProfile, id: "1337" }
     return { success: true }
   }
 
-  async deleteTutorProfile(tutorId: string) {
-    console.log("start timer")
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    console.log("after 1 second")
+  async searchTutors(_searchParams: TutorSearchParams) {
+    return { tutorIds: ["1337"] }
+  }
+
+  async getStudentProfile(studentId: string) {
+    return this.mockStudentProfile
+  }
+
+  async setOwnStudentProfile(studentProfile: StudentSelfEditReqBody) {
+    this.mockStudentProfile = {
+      ...studentProfile,
+      id: this.mockStudentProfile.id,
+    }
     return { success: true }
+  }
+
+  async deleteOwnUserProfile(userId: string) {
+    if (userId === "64" || userId === "1337") {
+      return { success: true }
+    } else {
+      return { success: false }
+    }
   }
 }
