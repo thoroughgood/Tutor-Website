@@ -17,7 +17,7 @@ tutor = Blueprint("tutor", __name__)
 def get_profile():
     args = request.args
 
-    if "id" not in args:
+    if "id" not in args or len(args["id"]) == 0:
         raise ExpectedError("id field was missing", 400)
 
     tutor = Tutor.prisma().find_unique(
@@ -70,7 +70,7 @@ def formatTimesAvailable(timeBlock):
 def modify_profile():
     args = request.get_json()
 
-    if args["user_id"] not in session:
+    if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
 
     admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
@@ -93,7 +93,7 @@ def modify_profile():
     else:
         name = args["name"]
 
-    if "bio" not in args:
+    if "bio" not in args or args["bio"] == None:
         bio = tutor.bio
     else:
         bio = args["bio"]
@@ -103,17 +103,21 @@ def modify_profile():
     else:
         email = args["email"]
 
-    if "profilePicture" not in args:
+    if "profilePicture" not in args or args["profilePicture"] == None:
         profilePicture = tutor.profilePicture
     else:
         profilePicture = args["profilePicture"]
 
-    if "location" not in args or len(args["location"]) == 0:
+    if "location" not in args or args["location"] == None or len(args["location"]) == 0:
         location = tutor.location
     else:
         location = args["location"]
 
-    if "phoneNumber" not in args or len(args["phoneNumber"]) == 0:
+    if (
+        "phoneNumber" not in args
+        or args["phoneNumber"] == None
+        or len(args["phoneNumber"]) == 0
+    ):
         phoneNumber = tutor.phoneNumber
     else:
         phoneNumber = args["phoneNumber"]
