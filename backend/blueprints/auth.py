@@ -87,7 +87,7 @@ def login():
         user = user_view(email=args["email"])
         if (
             user
-            and user.hashedPassword
+            and user.hashed_password
             == sha256(str(args["password"]).encode()).hexdigest()
         ):
             session["user_id"] = user.id
@@ -130,7 +130,7 @@ def resetpassword():
         raise ExpectedError("password field must be at least 8 characters long", 400)
 
     new_password = sha256(str(args["newPassword"]).encode()).hexdigest()
-    if new_password == user.hashedPassword:
+    if new_password == user.hashed_password:
         raise ExpectedError("New password cannot be the same as the old password", 400)
 
     User.prisma().update(where={"id": user.id}, data={"hashedPassword": new_password})

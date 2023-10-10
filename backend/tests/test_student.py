@@ -2,19 +2,20 @@ from hashlib import sha256
 from uuid import uuid4
 import pytest
 from flask.testing import FlaskClient
-from prisma.models import Tutor, Student
+from prisma.models import Tutor, Student, User
 
 
 @pytest.fixture
 def initialise_student() -> str:
-    student = Student.prisma().create(
+    id = str(uuid4())
+    student = User.prisma().create(
         data={
-            "id": str(uuid4()),
+            "id": id,
             "email": "validemail@mail.com",
             "hashedPassword": sha256("12345678".encode()).hexdigest(),
             "name": "Name1",
-            "bio": "",
             "location": "Australia",
+            "studentInfo": {"create": {"id": id}},
         },
     )
     return student.id
@@ -22,14 +23,15 @@ def initialise_student() -> str:
 
 @pytest.fixture
 def initialise_tutor() -> str:
-    tutor = Student.prisma().create(
+    id = str(uuid4())
+    tutor = User.prisma().create(
         data={
-            "id": str(uuid4()),
+            "id": id,
             "email": "validemail2@mail.com",
             "hashedPassword": sha256("12345678".encode()).hexdigest(),
             "name": "Name2",
-            "bio": "",
             "location": "Australia",
+            "tutorInfo": {"create": {"id": id}},
         },
     )
     return tutor.id
@@ -62,14 +64,12 @@ def test_register_args(setup_test: FlaskClient, initialise_student: str):
     # Valid id
     resp = client.get("/student/profile/", query_string={"id": initialise_student})
     assert resp.status_code == 200
-    assert resp.json == {
-        "id": initialise_student,
-        "name": "Name1",
-        "bio": "",
-        "profilePicture": None,
-        "location": "Australia",
-        "phoneNumber": None,
-    }
+    assert resp.json["id"] == initialise_student
+    assert resp.json["name"] == "Name1"
+    assert resp.json["bio"] == ""
+    assert resp.json["profilePicture"] == None
+    assert resp.json["location"] == "Australia"
+    assert resp.json["phoneNumber"] == None
 
 
 ########################### MODIFY PROFILE TESTS ###############################

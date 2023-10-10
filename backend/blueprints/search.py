@@ -20,6 +20,7 @@ def search():
     # * Note: timesAvailable should never overlap and is assumed not to
     tutors = Tutor.prisma().find_many(
         include={
+            "userInfo": True,
             "rating": True,
             "courseOfferings": True,
             "timesAvailable": {"order_by": {"startTime": "asc"}},
@@ -34,7 +35,10 @@ def search():
         valid = True
 
         if "name" in args:
-            valid &= re.search(args["name"].lower().strip(), tutor.name.lower()) != None
+            valid &= (
+                re.search(args["name"].lower().strip(), tutor.userInfo.name.lower())
+                != None
+            )
 
         # ? May need to change datetimes here to utc
         if "timeRange" in args and len(tutor.timesAvailable) != 0:
@@ -64,8 +68,8 @@ def search():
         elif "timeRange" in args:
             continue
 
-        if "location" in args and tutor.location:
-            tutor_location = tutor.location.lower().strip()
+        if "location" in args and tutor.userInfo.location:
+            tutor_location = tutor.userInfo.location.lower().strip()
             search_location = args["location"].lower().strip()
             valid &= re.search(search_location, tutor_location) != None
         elif "location" in args:
