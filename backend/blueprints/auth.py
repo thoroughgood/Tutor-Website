@@ -44,11 +44,13 @@ def register():
         }
 
         match str(args["accountType"]).lower().strip():
+            # id the of 'typed' tables are the same such it's possible
+            # to still query on those tables with id
             case "student":
-                data["studentInfo"] = {"create": {"id": str(uuid4())}}
+                data["studentInfo"] = {"create": {"id": new_user_id}}
                 User.prisma().create(data=data)
             case "tutor":
-                data["tutorInfo"] = {"create": {"id": str(uuid4())}}
+                data["tutorInfo"] = {"create": {"id": new_user_id}}
                 User.prisma().create(data=data)
             case _:
                 raise ExpectedError("accountType must be 'student' or 'tutor'", 400)
