@@ -17,6 +17,9 @@ tutor = Blueprint("tutor", __name__)
 def get_profile():
     args = request.args
 
+    if "id" not in args:
+        raise ExpectedError("id field was missing", 400)
+
     tutor = Tutor.prisma().find_unique(
         where={"id": args["id"]},
         include={
