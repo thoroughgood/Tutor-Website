@@ -27,7 +27,7 @@ cors = CORS(app, supports_credentials=True)
 
 # blueprints
 app.register_blueprint(auth, url_prefix="/")
-app.register_blueprint(student, url_prefix="/student/profile")
+app.register_blueprint(student, url_prefix="/student")
 app.register_blueprint(search_tutor, url_prefix="/")
 app.register_blueprint(utils, url_prefix="/utils")
 
