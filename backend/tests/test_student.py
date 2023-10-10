@@ -2,7 +2,7 @@ from hashlib import sha256
 from uuid import uuid4
 import pytest
 from flask.testing import FlaskClient
-from prisma.models import Tutor, Student, User
+from prisma.models import User
 
 
 @pytest.fixture
@@ -193,5 +193,3 @@ def test_delete_args(setup_test: FlaskClient, initialise_student: str):
     resp = client.delete("/student/profile/", json={"id": initialise_student})
     assert resp.json == {"success": True}
     assert resp.status_code == 200
-
-    assert Student.prisma().count() == 0

@@ -7,7 +7,7 @@ flask_session
 .pytest_cache
 
 # sqlite db files
-*.db
+test.db
 
 # .env file for secrets
 .env
