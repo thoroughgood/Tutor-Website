@@ -274,6 +274,80 @@ def test_admin_login(setup_test: FlaskClient, initialise_admin: str):
         assert session["user_id"] == resp.json["id"]
 
 
+def test_login_as_other(
+    setup_test: FlaskClient,
+    initialise_admin: str,
+    initialise_tutor: str,
+    initialise_student: str,
+):
+    client = setup_test
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+    assert resp.json == {"error": "Invalid login attempt"}
+    assert resp.status_code == 401
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+    assert resp.json == {"error": "Invalid login attempt"}
+    assert resp.status_code == 401
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+    assert resp.json == {"error": "Invalid login attempt"}
+    assert resp.status_code == 401
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+    assert resp.json == {"error": "Invalid login attempt"}
+    assert resp.status_code == 401
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+    assert resp.json == {"error": "Invalid login attempt"}
+    assert resp.status_code == 401
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+    assert resp.json == {"error": "Invalid login attempt"}
+    assert resp.status_code == 401
+
+
 ################################# LOGOUT TESTS #################################
 
 
