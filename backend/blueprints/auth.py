@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session
-from prisma.models import Tutor, Student, Admin
+from prisma.models import Tutor, Student, Admin, User
 from re import fullmatch
 from uuid import uuid4
 from hashlib import sha256
@@ -7,6 +7,7 @@ from helpers.error_handlers import (
     ExpectedError,
     error_decorator,
 )
+from helpers.views import user_view
 
 auth = Blueprint("auth", __name__)
 
@@ -30,43 +31,25 @@ def register():
 
     new_user_id = None
     if "accountType" in args:
-        student = Student.prisma().find_unique(where={"email": args["email"]})
-        tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
-        if student or tutor:
+        user = user_view(email=args["email"])
+        if user:
             raise ExpectedError("user already exists with this email", 400)
+
+        new_user_id = str(uuid4())
+        data = {
+            "id": new_user_id,
+            "name": args["name"],
+            "email": args["email"],
+            "hashedPassword": sha256(str(args["password"]).encode()).hexdigest(),
+        }
 
         match str(args["accountType"]).lower().strip():
             case "student":
-                new_user_id = str(uuid4())
-                Student.prisma().create(
-                    data={
-                        "id": new_user_id,
-                        "name": args["name"],
-                        "email": args["email"],
-                        "hashedPassword": sha256(
-                            str(args["password"]).encode()
-                        ).hexdigest(),
-                        "bio": "",
-                        "appointments": {},
-                    }
-                )
+                data["studentInfo"] = {"create": {"id": str(uuid4())}}
+                User.prisma().create(data=data)
             case "tutor":
-                new_user_id = str(uuid4())
-                Tutor.prisma().create(
-                    data={
-                        "id": new_user_id,
-                        "name": args["name"],
-                        "email": args["email"],
-                        "hashedPassword": sha256(
-                            str(args["password"]).encode()
-                        ).hexdigest(),
-                        "bio": "",
-                        "rating": {},
-                        "courseOfferings": {},
-                        "timesAvailable": {},
-                        "appointments": {},
-                    }
-                )
+                data["tutorInfo"] = {"create": {"id": str(uuid4())}}
+                User.prisma().create(data=data)
             case _:
                 raise ExpectedError("accountType must be 'student' or 'tutor'", 400)
     else:

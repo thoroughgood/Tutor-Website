@@ -29,19 +29,22 @@ model User {
 }
 
 model Admin {
-  id       String @id
-  userInfo User   @relation(fields: [id], references: [id])
+  id         String @id
+  userInfo   User   @relation(fields: [userInfoId], references: [id])
+  userInfoId String @unique
 }
 
 model Student {
   id           String        @id
-  userInfo     User          @relation(fields: [id], references: [id])
+  userInfo     User          @relation(fields: [userInfoId], references: [id])
+  userInfoId   String        @unique
   appointments Appointment[]
 }
 
 model Tutor {
   id              String              @id
-  userInfo        User                @relation(fields: [id], references: [id])
+  userInfo        User                @relation(fields: [userInfoId], references: [id])
+  userInfoId      String              @unique
   rating          Rating[]
   courseOfferings Subject[]
   timesAvailable  TutorAvailability[]
