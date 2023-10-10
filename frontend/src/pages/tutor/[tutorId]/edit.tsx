@@ -85,18 +85,13 @@ export default function Edit() {
       data.courseOfferings.forEach((course) => {
         courseObj.push({ name: course })
       })
-      data.courseOfferings.forEach((course) => {
-        courseObj.push({ name: course })
-      })
 
       form.setValue("name", data.name)
       form.setValue("bio", data.bio)
       form.setValue("location", data.location)
       form.setValue("phoneNumber", data.phoneNumber)
-      const arrObjects: { name: string }[] = []
-      data.courseOfferings.map(() => {})
       form.setValue("courseOfferings", courseObj)
-      console.log(data.courseOfferings + "hey")
+      console.log(courseObj + "hey")
     }
   }, data)
 
@@ -137,14 +132,11 @@ export default function Edit() {
   }
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     //need to modify to convert from image to base64URI values.profilePicture
-    console.log(values)
     setSubmitLoading(true)
     try {
-      values.courseOfferings.forEach((e) => {
-        courses.push(e.name)
-      })
       for (const val in values) {
-        if (val === "") {
+        console.log(val + val.valueOf)
+        if (val == "") {
           val === null
         }
       }
@@ -274,44 +266,46 @@ export default function Edit() {
         <Button asChild className="m-3 p-6" variant="secondary">
           <a href={`../${user?.userId}`}> Back </a>
         </Button>
-      </div>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button>Delete Profile</Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle> Delete Profile </DialogTitle>
-            <DialogDescription>
-              This action cannot be undone. This will permanently remove your
-              account and your data from our servers.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="secondary"
-              type="submit"
-              onClick={() => {
-                setOpen(false)
-              }}
-            >
-              Cancel
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button variant="destructive" className="m-3 p-6">
+              Delete Profile
             </Button>
-            <LoadingButton
-              variant="destructive"
-              type="submit"
-              isLoading={submitLoading}
-              onClick={async () => {
-                await deleteProfile()
-                setOpen(false)
-                setSubmitLoading(false)
-              }}
-            >
-              Delete
-            </LoadingButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DialogTrigger>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle> Delete Profile </DialogTitle>
+              <DialogDescription>
+                This action cannot be undone. This will permanently remove your
+                account and your data from our servers.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="secondary"
+                type="submit"
+                onClick={() => {
+                  setOpen(false)
+                }}
+              >
+                Cancel
+              </Button>
+              <LoadingButton
+                variant="destructive"
+                type="submit"
+                isLoading={submitLoading}
+                onClick={async () => {
+                  await deleteProfile()
+                  setOpen(false)
+                  setSubmitLoading(false)
+                }}
+              >
+                Delete
+              </LoadingButton>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   )
 
