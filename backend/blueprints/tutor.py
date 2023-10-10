@@ -67,6 +67,9 @@ def formatTimesAvailable(timeBlock):
 def modify_profile():
     args = request.get_json()
 
+    if args["user_id"] not in session:
+        raise ExpectedError("No user is logged in", 400)
+
     admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
     if admin is None and session["user_id"] != args["id"]:
         raise ExpectedError("Insufficient permission to modify this profile", 403)
@@ -82,12 +85,10 @@ def modify_profile():
     if tutor is None:
         raise ExpectedError("Profile does not exist", 404)
 
-    if "name" not in args:
+    if "name" not in args or len(args["name"]) == 0:
         name = tutor.name
     else:
         name = args["name"]
-
-    # name = tutor.name if "name" not in args else name = args["name"]
 
     if "bio" not in args:
         bio = tutor.bio
@@ -104,27 +105,21 @@ def modify_profile():
     else:
         profilePicture = args["profilePicture"]
 
-    if "location" not in args:
+    if "location" not in args or len(args["location"]) == 0:
         location = tutor.location
     else:
         location = args["location"]
 
-    if "phoneNumber" not in args:
+    if "phoneNumber" not in args or len(args["phoneNumber"]) == 0:
         phoneNumber = tutor.phoneNumber
     else:
         phoneNumber = args["phoneNumber"]
 
-    # need to validate courseofferings
     if "courseOfferings" in args:
-        courseOfferings = args["courseOfferings"]
-        addingSubjects(courseOfferings, args["id"])
+        addingSubjects(args["courseOfferings"], args["id"])
 
-    if "timesAvailable" not in args:
-        timesAvailable = tutor.timesAvailable
-    else:
-        timesAvailable = args["timesAvailable"]
-        addingTimes(timesAvailable, args["id"])
-    # timesavailable should also change when appointments are made and cancelled
+    if "timesAvailable" in args:
+        addingTimes(args["timesAvailable"], args["id"])
 
     Tutor.prisma().update(
         where={"id": tutor.id},
@@ -137,8 +132,6 @@ def modify_profile():
             "phoneNumber": phoneNumber,
         },
     )
-
-    # call function that updates course offerings, passin through the list of courseofferings
 
     return jsonify({"success": True})
 
