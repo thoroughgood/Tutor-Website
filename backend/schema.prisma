@@ -14,49 +14,49 @@ generator client {
 // data models
 // FYI Model names are in PascalCase, and fields are in camelCase
 // see: https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#naming-conventions
-model Admin {
-  id              String @id
-  email           String @unique
-  hashedPassword  String
-  name            String
-}
-
-model Student {
-  id             String        @id
-  email          String        @unique
+model User {
+  id             String   @id
+  email          String   @unique
   hashedPassword String
   name           String
-  bio            String
+  bio            String?
   profilePicture String?
   location       String?
   phoneNumber    String?
-  appointments   Appointment[]
+  tutorInfo      Tutor?
+  studentInfo    Student?
+  adminInfo      Admin?
+}
+
+model Admin {
+  id       String @id
+  userInfo User   @relation(fields: [id], references: [id])
+}
+
+model Student {
+  id           String        @id
+  userInfo     User          @relation(fields: [id], references: [id])
+  appointments Appointment[]
 }
 
 model Tutor {
   id              String              @id
-  email           String              @unique
-  hashedPassword  String
-  name            String
-  bio             String
+  userInfo        User                @relation(fields: [id], references: [id])
   rating          Rating[]
-  profilePicture  String?
-  location        String?
-  phoneNumber     String?
   courseOfferings Subject[]
   timesAvailable  TutorAvailability[]
   appointments    Appointment[]
 }
 
 model Subject {
-  name           String @id
+  name           String  @id
   tutorsTeaching Tutor[]
 }
 
 model TutorAvailability {
   id        String   @id
   tutor     Tutor    @relation(fields: [tutorId], references: [id])
-  tutorId   String   
+  tutorId   String
   startTime DateTime
   endTime   DateTime
 }
@@ -64,9 +64,9 @@ model TutorAvailability {
 model Rating {
   id          String @id
   score       Int
-  createdById String 
+  createdById String
   createdFor  Tutor  @relation(fields: [tutorId], references: [id])
-  tutorId     String 
+  tutorId     String
 }
 
 model Appointment {
@@ -75,7 +75,7 @@ model Appointment {
   endTime       DateTime
   tutorAccepted Boolean  @default(false)
   tutor         Tutor    @relation(fields: [tutorId], references: [id])
-  tutorId       String   
+  tutorId       String
   student       Student  @relation(fields: [studentId], references: [id])
-  studentId     String   
+  studentId     String
 }
