@@ -23,6 +23,7 @@ def get_profile():
     tutor = Tutor.prisma().find_unique(
         where={"id": args["id"]},
         include={
+            "rating": True,
             "courseOfferings": {"include": {"tutorsTeaching": True}},
             "timesAvailable": True,
         },
@@ -41,13 +42,18 @@ def get_profile():
     else:
         timesAvailable = list(map(formatTimesAvailable, tutor.timesAvailable))
 
+    if tutor.rating is None:
+        rating = []
+    else:
+        rating = list(map(formatRating, tutor.rating))
+
     return jsonify(
         {
             "id": tutor.id,
             "name": tutor.name,
             "bio": tutor.bio,
             "email": tutor.email,
-            "rating": tutor.rating,
+            "rating": rating,
             "profilePicture": tutor.profilePicture,
             "location": tutor.location,
             "phoneNumber": tutor.phoneNumber,
@@ -68,6 +74,10 @@ def formatTimesAvailable(timeBlock):
     }
 
 
+def formatRating(rating):
+    return rating.score
+
+
 @tutor.route("/", methods=["PUT"])
 @error_decorator
 def modify_profile():
@@ -76,6 +86,7 @@ def modify_profile():
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
 
+    # may not be necessary
     admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
     if admin is None and session["user_id"] != args["id"]:
         raise ExpectedError("Insufficient permission to modify this profile", 403)
@@ -116,11 +127,7 @@ def modify_profile():
     else:
         location = args["location"]
 
-    if (
-        "phoneNumber" not in args
-        or args["phoneNumber"] == None
-        or len(args["phoneNumber"]) == 0
-    ):
+    if "phoneNumber" not in args:
         phoneNumber = tutor.phoneNumber
     else:
         phoneNumber = args["phoneNumber"]
@@ -151,6 +158,12 @@ def modify_profile():
 def delete_profile():
     args = request.get_json()
 
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 400)
+
+    if "id" not in args or len(args["id"]) == 0:
+        raise ExpectedError("id field was missing", 400)
+
     admin = Admin.prisma().find_unique(where={"id": args["id"]})
     if admin is None and session["user_id"] != args["id"]:
         raise ExpectedError("Insufficient permission to delete this profile", 403)
@@ -159,6 +172,20 @@ def delete_profile():
 
     if tutor is None:
         raise ExpectedError("Profile does not exist", 404)
+
+    Tutor.prisma().update(
+        where={"id": tutor.id},
+        data={"rating": {"deleteMany": {}}, "timesAvailable": {"deleteMany": {}}},
+    )
+
+    if tutor.courseOfferings != None:
+        subjectList = list(map(formatCourseOfferings, tutor.courseOfferings))
+
+        for subject in subjectList:
+            Tutor.prisma().delete(
+                where={"id": tutor.id},
+                data={"courseOfferings": {"disconnect": {"name": subject}}},
+            )
 
     Tutor.prisma().delete(where={"id": tutor.id})
 
@@ -216,7 +243,10 @@ def addingTimes(timesAvailable, tutorId):
         where={"id": tutorId}, data={"timesAvailable": {"deleteMany": {}}}
     )
 
-    if timesAvailable is None:
+    if timesAvailable is None or len(timesAvailable) == 0:
+        Tutor.prisma().update(
+            where={"id": tutorId}, data={"timesAvailable": {"deleteMany": {}}}
+        )
         return
 
     # create all the tutoravailability records again with the new timesAvailable
@@ -229,7 +259,7 @@ def addingTimes(timesAvailable, tutorId):
 
         if st > et:
             raise ExpectedError("endTime cannot be less than startTime", 400)
-        elif st < datetime.now():
+        elif st.replace(tzinfo=None) < datetime.now():
             raise ExpectedError("startTime must be in the future", 400)
 
         Tutor.prisma().update(
