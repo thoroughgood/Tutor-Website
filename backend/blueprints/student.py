@@ -10,7 +10,7 @@ student = Blueprint("student", __name__)
 @student.route("/", methods=["GET"])
 @error_decorator
 def get_profile():
-    args = request.get_json()
+    args = request.args
 
     if "id" not in args:
         raise ExpectedError("id field was missing", 400)
@@ -40,7 +40,7 @@ def modify_profile():
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
 
-    if "name" not in args or len(str(args["name"]).lower().strip()) != 0:
+    if "name" not in args or len(str(args["name"]).lower().strip()) == 0:
         raise ExpectedError("name field was missing", 400)
     if "bio" not in args:
         raise ExpectedError("bio field was missing", 400)
@@ -55,7 +55,7 @@ def modify_profile():
     # if not admin and session["user_id"] != args["id"]:
     #     raise ExpectedError("Insufficient permission to modify this profile", 403)
 
-    student = Student.prisma().find_unique(where={"id": session["id"]})
+    student = Student.prisma().find_unique(where={"id": session["user_id"]})
     if not student:
         raise ExpectedError("Profile does not exist", 404)
 

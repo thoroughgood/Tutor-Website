@@ -19,9 +19,12 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", default="not very secret")
 # ? Consider moving to redis in the future?
 app.config["SESSION_TYPE"] = "filesystem"
+# app.config["SESSION_COOKIE_HTTPONLY"] = False # uncomment for debugging in frontend
+app.config["SESSION_COOKIE_SAMESITE"] = "None"
+app.config["SESSION_COOKIE_SECURE"] = True
 server_session = Session(app)
 # todo: figure cors
-cors = CORS(app)
+cors = CORS(app, supports_credentials=True)
 
 # blueprints
 app.register_blueprint(auth, url_prefix="/")

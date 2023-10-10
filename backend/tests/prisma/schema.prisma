@@ -19,7 +19,7 @@ generator client {
 model Admin {
   id              String @id
   email           String @unique
-  hashed_password String
+  hashedPassword  String
   name            String
 }
 

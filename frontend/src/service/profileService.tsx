@@ -19,13 +19,36 @@ export interface TutorProfile {
 /**
  * ProfileService provides operations relating to tutor/student profiles
  */
+interface TutorSearchParams {
+  location?: string
+  rating?: string
+  courseOfferings?: string[]
+  timeRange?: {
+    startTime: string
+    endTime: string
+  }
+}
 export interface ProfileService {
   getTutorProfile: (tutorId: string) => Promise<TutorProfile>
   setTutorProfile: (
     tutorId: string,
     tutorProfile: TutorProfile,
   ) => Promise<SuccessResponse>
+  searchTutors: (
+    searchParams: TutorSearchParams,
+  ) => Promise<{ tutorIds: string[] }>
 }
+
+// export class HTTPProfileService extends HTTPService implements ProfileService {
+//   async searchTutors(searchParams): Promise<{ tutorIds: string[] }> {
+//     const url = new URL(`${this.backendURL}/searchtutor`)
+//     const params = new URLSearchParams(searchParams)
+//     url.search = params.toString()
+//     console.log(url)
+//     const data = wretch(`${this.backendURL}/searchtutor`).get()
+//     return await data.json()
+//   }
+// }
 
 export class MockProfileService implements ProfileService {
   private mockProfile: TutorProfile = {
@@ -63,5 +86,9 @@ export class MockProfileService implements ProfileService {
   async setTutorProfile(tutoriId: string, tutorProfile: TutorProfile) {
     this.mockProfile = tutorProfile
     return { success: true }
+  }
+
+  async searchTutors(searchParams: TutorSearchParams) {
+    return { tutorIds: ["1337"] }
   }
 }

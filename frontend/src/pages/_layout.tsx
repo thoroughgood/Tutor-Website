@@ -16,6 +16,9 @@ export default function Layout({ children }: LayoutProps) {
     if (!signedIn && !router.pathname.match(/register|login/i)) {
       router.push("/login")
     }
+    if (router.pathname.match(/register|login/i) && signedIn) {
+      router.push("/dashboard")
+    }
   }, [signedIn, router])
   if (router.pathname.match(/register|login/i)) {
     return (
