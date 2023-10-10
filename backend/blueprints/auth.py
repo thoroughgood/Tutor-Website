@@ -1,13 +1,13 @@
 from flask import Blueprint, request, jsonify, session
-from prisma.models import Tutor, Student, Admin, User
+from prisma.models import User
 from re import fullmatch
 from uuid import uuid4
 from hashlib import sha256
+from helpers.views import user_view, admin_view
 from helpers.error_handlers import (
     ExpectedError,
     error_decorator,
 )
-from helpers.views import user_view
 
 auth = Blueprint("auth", __name__)
 
@@ -82,30 +82,14 @@ def login():
         or args["accountType"] == "tutor"
         or args["accountType"] == "admin"
     ):
-        student = Student.prisma().find_unique(where={"email": args["email"]})
-        tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
-        admin = Admin.prisma().find_unique(where={"email": args["email"]})
+        user = user_view(email=args["email"])
         if (
-            student
-            and student.hashedPassword
+            user
+            and user.hashedPassword
             == sha256(str(args["password"]).encode()).hexdigest()
         ):
-            session["user_id"] = student.id
-            return jsonify({"id": student.id}), 200
-        elif (
-            tutor
-            and tutor.hashedPassword
-            == sha256(str(args["password"]).encode()).hexdigest()
-        ):
-            session["user_id"] = tutor.id
-            return jsonify({"id": tutor.id}), 200
-        elif (
-            admin
-            and admin.hashedPassword
-            == sha256(str(args["password"]).encode()).hexdigest()
-        ):
-            session["user_id"] = admin.id
-            return jsonify({"id": admin.id}), 200
+            session["user_id"] = user.id
+            return jsonify({"id": user.id}), 200
         else:
             raise ExpectedError("Invalid login attempt", 401)
     else:
@@ -128,37 +112,25 @@ def resetpassword():
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
 
-    admin = Admin.prisma().find_first(where={"id": session["user_id"]})
+    admin = admin_view(id=session["user_id"])
     if not admin:
         raise ExpectedError("Insufficient permission to modify this profile", 403)
 
     if "id" not in args:
         raise ExpectedError("id field is missing", 400)
 
-    student = Student.prisma().find_unique(where={"id": args["id"]})
-    tutor = Tutor.prisma().find_unique(where={"id": args["id"]})
-    if not student and not tutor:
+    user = user_view(id=args["id"])
+    # ? we'll tentatively say an admin may reset their own password
+    if not user:
         raise ExpectedError("Profile does not exist", 404)
 
     if "newPassword" not in args or len(str(args["newPassword"]).lower().strip()) < 8:
         raise ExpectedError("password field must be at least 8 characters long", 400)
 
-    newPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
-    if student:
-        if student.hashedPassword == newPassword:
-            raise ExpectedError(
-                "New password cannot be the same as the old password", 400
-            )
-        Student.prisma().update(
-            where={"id": student.id}, data={"hashedPassword": newPassword}
-        )
-    if tutor:
-        if tutor.hashedPassword == newPassword:
-            raise ExpectedError(
-                "New password cannot be the same as the old password", 400
-            )
-        Tutor.prisma().update(
-            where={"id": tutor.id}, data={"hashedPassword": newPassword}
-        )
+    new_password = sha256(str(args["newPassword"]).encode()).hexdigest()
+    if new_password == user.hashedPassword:
+        raise ExpectedError("New password cannot be the same as the old password", 400)
+
+    User.prisma().update(where={"id": user.id}, data={"hashedPassword": new_password})
 
     return jsonify({"success": True}), 200
