@@ -62,7 +62,10 @@ def formatCourseOfferings(subject):
 
 
 def formatTimesAvailable(timeBlock):
-    return {"startTime": timeBlock.startTime, "endTime": timeBlock.endTime}
+    return {
+        "startTime": timeBlock.startTime.isoformat(),
+        "endTime": timeBlock.endTime.isoformat(),
+    }
 
 
 @tutor.route("/", methods=["PUT"])
