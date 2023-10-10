@@ -6,8 +6,9 @@ __pycache__
 flask_session
 .pytest_cache
 
-# sqlite db files
+# sqlite db files from testing
 test.db
+test.db-journal
 
 # .env file for secrets
 .env

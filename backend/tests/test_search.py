@@ -12,17 +12,16 @@ def generate_tutors() -> None:
     Subject.prisma().create(data={"name": "science"})
 
     # * irrelevant information are left empty
-    tutorId1 = str(uuid4())
     User.prisma().create(
         data={
-            "id": tutorId1,
+            "id": "tutorId1",
             "email": "mail@gmail.com",
             "hashedPassword": "12345678",
             "name": "James",
             "location": "Australia",
             "tutorInfo": {
                 "create": {
-                    "id": tutorId1,
+                    "id": "tutorId1",
                     "rating": {
                         "create": {"id": str(uuid4()), "score": 2, "createdById": ""}
                     },
@@ -31,17 +30,16 @@ def generate_tutors() -> None:
             },
         },
     )
-    tutorId2 = str(uuid4())
     User.prisma().create(
         data={
-            "id": tutorId2,
+            "id": "tutorId2",
             "email": "mail2@gmail.com",
             "hashedPassword": "12345678",
             "name": "Jan",
             "location": "Tasmania",
             "tutorInfo": {
                 "create": {
-                    "id": tutorId2,
+                    "id": "tutorId2",
                     "rating": {
                         "create": {"id": str(uuid4()), "score": 4, "createdById": ""}
                     },
@@ -59,17 +57,16 @@ def generate_tutors() -> None:
             },
         },
     )
-    tutorId3 = str(uuid4())
     User.prisma().create(
         data={
-            "id": tutorId3,
+            "id": "tutorId3",
             "email": "mail3@gmail.com",
             "hashedPassword": "12345678",
             "name": "John",
             "location": "Tasmania",
             "tutorInfo": {
                 "create": {
-                    "id": tutorId3,
+                    "id": "tutorId3",
                     "rating": {
                         "create": {"id": str(uuid4()), "score": 3, "createdById": ""}
                     },
@@ -99,79 +96,78 @@ def test_search_no_args(setup_test: FlaskClient, generate_tutors):
     assert len(resp.json["tutorIds"]) == 3
     assert resp.status_code == 200
 
-    # tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
-    # tutor2 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][1]})
-    # tutor3 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][2]})
-    # assert set([tutor1.name, tutor2.name, tutor3.name]) == set(["James", "Jan", "John"])
+    assert all(
+        id in ["tutorId1", "tutorId2", "tutorId3"] for id in resp.json["tutorIds"]
+    )
 
 
-def test_search_args(setup_test: FlaskClient, generate_tutors):
+def test_search_only_name(setup_test: FlaskClient, generate_tutors):
     client = setup_test
-
     # only name
     resp = client.get("/searchtutor", query_string={"name": "James"})
     assert len(resp.json["tutorIds"]) == 1
     assert resp.status_code == 200
-    # assert (
-    #     Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]}).name
-    #     == "James"
-    # )
+    assert resp.json["tutorIds"][0] == "tutorId1"
+
+
+def test_search_only_location(setup_test: FlaskClient, generate_tutors):
+    client = setup_test
 
     # only location
     resp = client.get("/searchtutor", query_string={"location": "Tasmania"})
     assert len(resp.json["tutorIds"]) == 2
     assert resp.status_code == 200
-    # tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
-    # tutor2 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][1]})
-    # assert set([tutor1.name, tutor2.name]) == set(["Jan", "John"])
+    assert all(id in ["tutorId2", "tutorId3"] for id in resp.json["tutorIds"])
     resp = client.get("/searchtutor", query_string={"location": "Australia"})
     assert len(resp.json["tutorIds"]) == 1
     assert resp.status_code == 200
-    # tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
-    # assert tutor1.name == "James"
+    assert resp.json["tutorIds"][0] == "tutorId1"
+
+
+def test_search_only_ratings(setup_test: FlaskClient, generate_tutors):
+    client = setup_test
 
     # only rating
     resp = client.get("/searchtutor", query_string={"rating": 2})
     assert len(resp.json["tutorIds"]) == 3
     assert resp.status_code == 200
-    # tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
-    # tutor2 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][1]})
-    # tutor3 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][2]})
-    # assert set([tutor1.name, tutor2.name, tutor3.name]) == set(["James", "Jan", "John"])
+    assert all(
+        id in ["tutorId1", "tutorId2", "tutorId3"] for id in resp.json["tutorIds"]
+    )
+
     resp = client.get("/searchtutor", query_string={"rating": 3})
     assert len(resp.json["tutorIds"]) == 2
     assert resp.status_code == 200
-    # tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
-    # tutor2 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][1]})
-    # assert set([tutor1.name, tutor2.name]) == set(["Jan", "John"])
     resp = client.get("/searchtutor", query_string={"rating": 4})
     assert len(resp.json["tutorIds"]) == 1
     assert resp.status_code == 200
-    # tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
-    # assert tutor1.name == "Jan"
+    assert resp.json["tutorIds"][0] == "tutorId2"
+
+
+def test_search_only_course_offerings(setup_test: FlaskClient, generate_tutors):
+    client = setup_test
 
     # only courseOfferings
     resp = client.get("/searchtutor", query_string={"courseOfferings": ["math"]})
     assert len(resp.json["tutorIds"]) == 2
     assert resp.status_code == 200
-    # tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
-    # tutor2 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][1]})
-    # assert set([tutor1.name, tutor2.name]) == set(["James", "John"])
+    assert all(id in ["tutorId1", "tutorId3"] for id in resp.json["tutorIds"])
     resp = client.get("/searchtutor", query_string={"courseOfferings": ["science"]})
     assert len(resp.json["tutorIds"]) == 2
     assert resp.status_code == 200
-    # tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
-    # tutor2 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][1]})
-    # assert set([tutor1.name, tutor2.name]) == set(["Jan", "John"])
+    assert all(id in ["tutorId2", "tutorId3"] for id in resp.json["tutorIds"])
     resp = client.get(
         "/searchtutor", query_string={"courseOfferings": ["math", "science"]}
     )
     assert len(resp.json["tutorIds"]) == 3
     assert resp.status_code == 200
-    # tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
-    # tutor2 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][1]})
-    # tutor3 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][2]})
-    # assert set([tutor1.name, tutor2.name, tutor3.name]) == set(["James", "Jan", "John"])
+    assert all(
+        id in ["tutorId1", "tutorId2", "tutorId3"] for id in resp.json["tutorIds"]
+    )
+
+
+def test_search_only_time_range(setup_test: FlaskClient, generate_tutors):
+    client = setup_test
 
     # only timeRange
     resp = client.get(
@@ -191,9 +187,7 @@ def test_search_args(setup_test: FlaskClient, generate_tutors):
     )
     assert len(resp.json["tutorIds"]) == 2
     assert resp.status_code == 200
-    # tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
-    # tutor2 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][1]})
-    # assert set([tutor1.name, tutor2.name]) == set(["Jan", "John"])
+    assert all(id in ["tutorId2", "tutorId3"] for id in resp.json["tutorIds"])
 
     resp = client.get(
         "/searchtutor",
@@ -212,8 +206,11 @@ def test_search_args(setup_test: FlaskClient, generate_tutors):
     )
     assert len(resp.json["tutorIds"]) == 1
     assert resp.status_code == 200
-    # tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
-    # assert tutor1.name == "John"
+    assert resp.json["tutorIds"][0] == "tutorId3"
+
+
+def test_search_args(setup_test: FlaskClient, generate_tutors):
+    client = setup_test
 
     # all excluding name
     resp = client.get(
@@ -236,5 +233,4 @@ def test_search_args(setup_test: FlaskClient, generate_tutors):
     )
     assert len(resp.json["tutorIds"]) == 1
     assert resp.status_code == 200
-    # tutor1 = Tutor.prisma().find_first(where={"id": resp.json["tutorIds"][0]})
-    # assert tutor1.name == "John"
+    assert resp.json["tutorIds"][0] == "tutorId3"
