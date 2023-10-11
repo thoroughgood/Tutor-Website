@@ -315,14 +315,14 @@ def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
 
 def test_delete_not_json(setup_test: FlaskClient):
     client = setup_test
-    resp = client.delete("/tutor/profile/")
+    resp = client.delete("/tutor/")
     assert resp.json == {"error": "content-type was not json or data was malformed"}
     assert resp.status_code == 415
 
 
 def test_delete_no_user(setup_test: FlaskClient):
     client = setup_test
-    resp = client.delete("/tutor/profile/", json={})
+    resp = client.delete("/tutor/", json={})
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 400
 
@@ -345,7 +345,7 @@ def test_delete_permission(
     )
     assert resp.status_code == 200
 
-    resp = client.delete("/tutor/profile/", json={"id": generate_dummy_tutor})
+    resp = client.delete("/tutor/", json={"id": generate_dummy_tutor})
 
     assert resp.json == {"error": "Insufficient permission to delete this profile"}
     assert resp.status_code == 403
@@ -366,7 +366,7 @@ def test_delete_valid(setup_test: FlaskClient, generate_tutor: str):
     )
     assert resp.status_code == 200
 
-    resp = client.delete("/tutor/profile/", json={})
+    resp = client.delete("/tutor/", json={})
     assert resp.status_code == 200
 
     resp = client.get("/tutor/profile/", query_string={"id": tutorId})

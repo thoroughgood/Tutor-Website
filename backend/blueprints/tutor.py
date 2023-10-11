@@ -12,7 +12,7 @@ from helpers.error_handlers import (
 tutor = Blueprint("tutor", __name__)
 
 
-@tutor.route("/tutor/profile", methods=["GET"])
+@tutor.route("profile/", methods=["GET"])
 @error_decorator
 def get_profile():
     args = request.args
@@ -78,7 +78,7 @@ def formatRating(rating):
     return rating.score
 
 
-@tutor.route("/tutor/profile", methods=["PUT"])
+@tutor.route("profile/", methods=["PUT"])
 @error_decorator
 def modify_profile():
     args = request.get_json()
@@ -161,7 +161,7 @@ def modify_profile():
     return jsonify({"success": True})
 
 
-@tutor.route("/tutor", methods=["DELETE"])
+@tutor.route("/", methods=["DELETE"])
 @error_decorator
 def delete_profile():
     args = request.get_json()
