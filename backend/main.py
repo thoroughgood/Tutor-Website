@@ -5,6 +5,7 @@ from prisma import Prisma
 import os
 
 from blueprints.auth import auth
+from blueprints.tutor import tutor
 from blueprints.student import student
 from blueprints.search import search_tutor
 from blueprints.utils import utils
@@ -27,6 +28,7 @@ cors = CORS(app, supports_credentials=True)
 
 # blueprints
 app.register_blueprint(auth, url_prefix="/")
+app.register_blueprint(tutor, url_prefix="/tutor")
 app.register_blueprint(student, url_prefix="/student/profile")
 app.register_blueprint(search_tutor, url_prefix="/")
 app.register_blueprint(utils, url_prefix="/utils")
