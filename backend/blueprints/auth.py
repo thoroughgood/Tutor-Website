@@ -99,30 +99,20 @@ def login():
         or args["accountType"] == "tutor"
         or args["accountType"] == "admin"
     ):
-        student = Student.prisma().find_unique(where={"email": args["email"]})
-        tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
-        admin = Admin.prisma().find_unique(where={"email": args["email"]})
+        match args["accountType"]:
+            case "student":
+                user = Student.prisma().find_unique(where={"email": args["email"]})
+            case "tutor":
+                user = Tutor.prisma().find_unique(where={"email": args["email"]})
+            case "admin":
+                user = Admin.prisma().find_unique(where={"email": args["email"]})
         if (
-            student
-            and student.hashedPassword
+            user
+            and user.hashedPassword
             == sha256(str(args["password"]).encode()).hexdigest()
         ):
-            session["user_id"] = student.id
-            return jsonify({"id": student.id}), 200
-        elif (
-            tutor
-            and tutor.hashedPassword
-            == sha256(str(args["password"]).encode()).hexdigest()
-        ):
-            session["user_id"] = tutor.id
-            return jsonify({"id": tutor.id}), 200
-        elif (
-            admin
-            and admin.hashedPassword
-            == sha256(str(args["password"]).encode()).hexdigest()
-        ):
-            session["user_id"] = admin.id
-            return jsonify({"id": admin.id}), 200
+            session["user_id"] = user.id
+            return jsonify({"id": user.id}), 200
         else:
             raise ExpectedError("Invalid login attempt", 401)
     else:
