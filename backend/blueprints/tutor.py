@@ -12,7 +12,7 @@ from helpers.error_handlers import (
 tutor = Blueprint("tutor", __name__)
 
 
-@tutor.route("/", methods=["GET"])
+@tutor.route("/tutor/profile", methods=["GET"])
 @error_decorator
 def get_profile():
     args = request.args
@@ -78,7 +78,7 @@ def formatRating(rating):
     return rating.score
 
 
-@tutor.route("/", methods=["PUT"])
+@tutor.route("/tutor/profile", methods=["PUT"])
 @error_decorator
 def modify_profile():
     args = request.get_json()
@@ -86,13 +86,21 @@ def modify_profile():
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
 
-    # may not be necessary
     admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
-    if admin is None and session["user_id"] != args["id"]:
-        raise ExpectedError("Insufficient permission to modify this profile", 403)
+
+    if admin is not None and "id" not in args:
+        raise ExpectedError("Id of tutor being modified is required", 400)
+
+    if admin is None and "id" in args:
+        raise ExpectedError("Insufficient permission to delete this profile", 403)
+
+    if admin:
+        modifyTutorId = args["id"]
+    else:
+        modifyTutorId = session["user_id"]
 
     tutor = Tutor.prisma().find_unique(
-        where={"id": args["id"]},
+        where={"id": modifyTutorId},
         include={
             "courseOfferings": {"include": {"tutorsTeaching": True}},
             "timesAvailable": True,
@@ -133,10 +141,10 @@ def modify_profile():
         phoneNumber = args["phoneNumber"]
 
     if "courseOfferings" in args:
-        addingSubjects(args["courseOfferings"], args["id"])
+        addingSubjects(args["courseOfferings"], modifyTutorId)
 
     if "timesAvailable" in args:
-        addingTimes(args["timesAvailable"], args["id"])
+        addingTimes(args["timesAvailable"], modifyTutorId)
 
     Tutor.prisma().update(
         where={"id": tutor.id},
@@ -153,7 +161,7 @@ def modify_profile():
     return jsonify({"success": True})
 
 
-@tutor.route("/", methods=["DELETE"])
+@tutor.route("/tutor", methods=["DELETE"])
 @error_decorator
 def delete_profile():
     args = request.get_json()
@@ -161,14 +169,20 @@ def delete_profile():
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
 
-    if "id" not in args or len(args["id"]) == 0:
-        raise ExpectedError("id field was missing", 400)
+    admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
 
-    admin = Admin.prisma().find_unique(where={"id": args["id"]})
-    if admin is None and session["user_id"] != args["id"]:
+    if admin is not None and "id" not in args:
+        raise ExpectedError("Id of tutor being deleted is required", 400)
+
+    if admin is None and "id" in args:
         raise ExpectedError("Insufficient permission to delete this profile", 403)
 
-    tutor = Tutor.prisma().find_unique(where={"id": args["id"]})
+    if admin:
+        deleteTutorId = args["id"]
+    else:
+        deleteTutorId = session["user_id"]
+
+    tutor = Tutor.prisma().find_unique(where={"id": deleteTutorId})
 
     if tutor is None:
         raise ExpectedError("Profile does not exist", 404)
@@ -201,17 +215,6 @@ def addingSubjects(courseOfferings, tutorId):
         },
     )
 
-    # tutor is changing their subjects offered to zero
-    # wipe previous stuff if required
-    if courseOfferings == None or len(courseOfferings) == 0:
-        if tutor.courseOfferings != None:
-            for subject in tutor.courseOfferings:
-                Tutor.prisma().update(
-                    where={"id": tutorId},
-                    data={"courseOfferings": {"disconnect": {"name": subject.name}}},
-                )
-        return
-
     # tutor is adding/deleting subjects
     # wipe previous stuff, if there is any
     if tutor.courseOfferings != None:
@@ -221,6 +224,10 @@ def addingSubjects(courseOfferings, tutorId):
                 data={"courseOfferings": {"disconnect": {"name": subject.name}}},
             )
 
+    # tutor is changing their subjects offered to zero
+    if courseOfferings == None or len(courseOfferings) == 0:
+        return
+
     # connect all subjects in the courseofferings list back to the tutor record
     # connect the tutor to the respective subject
 
@@ -228,7 +235,7 @@ def addingSubjects(courseOfferings, tutorId):
         subject = Subject.prisma().find_first(where={"name": subjectName})
 
         if subject is None:
-            raise ExpectedError("Subject isnt offered", 404)
+            Subject.prisma().create(data={"name": subjectName})
 
         Tutor.prisma().update(
             where={"id": tutorId},
@@ -244,9 +251,6 @@ def addingTimes(timesAvailable, tutorId):
     )
 
     if timesAvailable is None or len(timesAvailable) == 0:
-        Tutor.prisma().update(
-            where={"id": tutorId}, data={"timesAvailable": {"deleteMany": {}}}
-        )
         return
 
     # create all the tutoravailability records again with the new timesAvailable

@@ -9,7 +9,6 @@ from datetime import datetime
 @pytest.fixture
 def generate_tutor() -> str:
     Subject.prisma().create(data={"name": "science"})
-    Subject.prisma().create(data={"name": "math"})
 
     tutor = Tutor.prisma().create(
         data={
@@ -127,9 +126,10 @@ def test_modify_invalid_args(
     client = setup_test
 
     tutorId = generate_tutor
+    dummyId = generate_dummy_tutor
 
     # No user logged in
-    resp = client.put("/tutor/profile/", json={"id": tutorId})
+    resp = client.put("/tutor/profile/", json={})
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 400
 
@@ -144,10 +144,16 @@ def test_modify_invalid_args(
 
     assert resp.status_code == 200
 
-    # User doesnt have permission to modify profile
-    resp = client.put("/tutor/profile/", json={"id": generate_dummy_tutor})
-    assert resp.json == {"error": "Insufficient permission to modify this profile"}
+    # Non admin user tries deleting other user
+    resp = client.put("/tutor/profile/", json={"id": dummyId})
+    assert resp.json == {"error": "Insufficient permission to delete this profile"}
     assert resp.status_code == 403
+
+    # need admin implemented
+    # admin logs in, and modifies tutor profile without id
+    # resp = client.put("/tutor/profile/", json={})
+    # assert resp.json == {"error": "Id of tutor being modified is required"}
+    # assert resp.status_code == 400
 
     # need admin implemented
     # profile doesnt exist
@@ -171,7 +177,7 @@ def test_modify_missing_args(setup_test: FlaskClient, generate_tutor: str):
     )
 
     # missing fields
-    resp = client.put("/tutor/profile/", json={"id": tutorId})
+    resp = client.put("/tutor/profile/", json={})
     assert resp.status_code == 200
 
     resp = client.get("/tutor/profile/", query_string={"id": tutorId})
@@ -215,7 +221,6 @@ def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
     resp = client.put(
         "/tutor/profile/",
         json={
-            "id": tutorId,
             "name": "Terry",
             "bio": "band 1 at HSC Maths",
             "email": "validemail@mail.com",
@@ -276,7 +281,6 @@ def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
     resp = client.put(
         "/tutor/profile/",
         json={
-            "id": tutorId,
             "name": "Juan",
             "bio": "band 6 at HSC Maths",
             "email": "valid@mail.com",
@@ -323,24 +327,6 @@ def test_delete_no_user(setup_test: FlaskClient):
     assert resp.status_code == 400
 
 
-def test_delete_invalid_arg(setup_test: FlaskClient, generate_tutor: str):
-    client = setup_test
-
-    resp = client.post(
-        "/login",
-        json={
-            "email": "validemail@mail.com",
-            "password": "12345678",
-            "accountType": "tutor",
-        },
-    )
-    assert resp.status_code == 200
-
-    resp = client.delete("/tutor/profile/", json={"id": ""})
-    assert resp.json == {"error": "id field was missing"}
-    assert resp.status_code == 400
-
-
 def test_delete_permission(
     setup_test: FlaskClient, generate_dummy_tutor: str, generate_tutor: str
 ):
@@ -380,7 +366,7 @@ def test_delete_valid(setup_test: FlaskClient, generate_tutor: str):
     )
     assert resp.status_code == 200
 
-    resp = client.delete("/tutor/profile/", json={"id": tutorId})
+    resp = client.delete("/tutor/profile/", json={})
     assert resp.status_code == 200
 
     resp = client.get("/tutor/profile/", query_string={"id": tutorId})
