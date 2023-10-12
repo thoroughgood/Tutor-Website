@@ -22,3 +22,10 @@ basic deployment of said server. Furthermore, I worked on integrating session ba
 in a working `/register` route which successfully registers new users, adding their information
 to the PostgreSQL server and, returning appropriate information to the frontend whilst also doing some
 basic error checks.
+
+Week 4
+Worked on refining the `/register` route after assigning appropriate work to the backend team. Mid week was 
+much of me working as support for the other group members in the aforementioned backend team with setup
+and, code related issues. Late in the week I took over coding the `/searchtutor` route and finished an initial
+implementation of it. After, I setup unit testing for backend using pytest and wrote tests for both the routes
+I worked on and spent the rest of the week helping the backend team.
