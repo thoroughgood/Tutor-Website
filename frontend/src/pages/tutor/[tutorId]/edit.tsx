@@ -31,17 +31,10 @@ import { useQuery } from "react-query"
 import { Textarea } from "@/components/ui/textarea"
 import { X } from "lucide-react"
 import toast from "react-hot-toast"
-import {
-  DialogTrigger,
-  Dialog,
-  DialogTitle,
-  DialogHeader,
-  DialogContent,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import { DialogDescription } from "@radix-ui/react-dialog"
+
 import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
+import DeleteModal from "@/components/deleteModal"
 
 const authService = new HTTPAuthService()
 
@@ -70,7 +63,6 @@ export default function Edit() {
   const { user } = useUser()
   const tutorId = router.query.tutorId as string
   const isOwnProfile = tutorId === user?.userId
-  const [open, setOpen] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
 
   const { data } = useQuery({
@@ -113,15 +105,7 @@ export default function Edit() {
   }
 
   const courses: string[] = []
-  const deleteProfile = async () => {
-    setSubmitLoading(true)
-    try {
-      const deletion = await profileService.deleteOwnUserProfile("1337")
-      console.log(deletion)
-    } catch {
-      toast.error(getErrorMessage)
-    }
-  }
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     //need to modify to convert from image to base64URI values.profilePicture
     setSubmitLoading(true)
@@ -260,45 +244,7 @@ export default function Edit() {
         <Button asChild className="m-3 p-6" variant="secondary">
           <Link href={`../${user?.userId}`}> Back </Link>
         </Button>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button variant="destructive" className="m-3 p-6">
-              Delete Profile
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle> Delete Profile </DialogTitle>
-              <DialogDescription>
-                This action cannot be undone. This will permanently remove your
-                account and your data from our servers.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="secondary"
-                type="submit"
-                onClick={() => {
-                  setOpen(false)
-                }}
-              >
-                Cancel
-              </Button>
-              <LoadingButton
-                variant="destructive"
-                type="submit"
-                isLoading={submitLoading}
-                onClick={async () => {
-                  await deleteProfile()
-                  setOpen(false)
-                  setSubmitLoading(false)
-                }}
-              >
-                Delete
-              </LoadingButton>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DeleteModal />
       </div>
     </div>
   )
