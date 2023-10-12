@@ -23,18 +23,18 @@ import { Label } from "@/components/ui/label"
 import { useEffect, useState } from "react"
 import LoadingButton from "@/components/loadingButton"
 import { HTTPAuthService } from "@/service/authService"
-import { cn, getErrorMessage } from "@/lib/utils"
+import { getErrorMessage } from "@/lib/utils"
 import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
 import { MockProfileService } from "@/service/profileService"
 import { useQuery } from "react-query"
 import { Textarea } from "@/components/ui/textarea"
-import { X } from "lucide-react"
 import toast from "react-hot-toast"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
 import DeleteModal from "@/components/deleteModal"
+import EditOfferings from "@/components/editOfferings"
 
 const authService = new HTTPAuthService()
 
@@ -185,48 +185,7 @@ export default function Edit() {
                   inputType="string"
                 />
               </div>
-
-              <div>
-                {fields.map((field, index) => (
-                  <FormField
-                    control={form.control}
-                    key={field.id}
-                    name={`courseOfferings.${index}.name`}
-                    render={({ field }) => (
-                      <div className="w-full items-center space-x-2">
-                        <FormItem>
-                          <FormLabel
-                            className={cn(index !== 0 && "grid-span sr-only")}
-                          >
-                            Course Offerings
-                          </FormLabel>
-                          <FormControl>
-                            <div className="flex items-center gap-2">
-                              <Input {...field} />
-                              <Button
-                                variant="destructive"
-                                onClick={() => remove(index)}
-                              >
-                                <X />
-                              </Button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      </div>
-                    )}
-                  />
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => append({ value: "" })}
-                >
-                  Add Course Offerings
-                </Button>
-              </div>
+              <EditOfferings />
               <div className=" mt-4">
                 <LoadingButton
                   role="submit"
