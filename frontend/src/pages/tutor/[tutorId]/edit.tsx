@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/dialog"
 import { DialogDescription } from "@radix-ui/react-dialog"
 import { zodResolver } from "@hookform/resolvers/zod"
+import Link from "next/link"
 
 const authService = new HTTPAuthService()
 
@@ -111,19 +112,11 @@ export default function Edit() {
     return <div> loading screen </div>
   }
 
-  //if there is empty string -> convert undefined null
-  // if data -> do code inside here so that there are no undefined values
-
-  //manually enter forms
-
   const courses: string[] = []
-  const tester = () => {
-    console.log("hello")
-  }
   const deleteProfile = async () => {
     setSubmitLoading(true)
     try {
-      const deletion = await profileService.deleteOwnUserProfile(tutorId)
+      const deletion = await profileService.deleteOwnUserProfile("1337")
       console.log(deletion)
     } catch {
       toast.error(getErrorMessage)
@@ -161,7 +154,6 @@ export default function Edit() {
     }
     setSubmitLoading(false)
   }
-
   return (
     <div className="grid h-full w-full  place-content-center overflow-hidden p-16">
       <Card className="flex w-screen max-w-2xl flex-col overflow-y-auto">
@@ -266,7 +258,7 @@ export default function Edit() {
       </Card>
       <div className="p-auto relative mx-auto my-5 max-w-sm text-center">
         <Button asChild className="m-3 p-6" variant="secondary">
-          <a href={`../${user?.userId}`}> Back </a>
+          <Link href={`../${user?.userId}`}> Back </Link>
         </Button>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
