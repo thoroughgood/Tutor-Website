@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, session
+from re import fullmatch
 from prisma.models import Student, Admin
 from helpers.error_handlers import (
     ExpectedError,
@@ -45,16 +46,13 @@ def modify_profile():
         raise ExpectedError("No user is logged in", 401)
     mod_id = admin_id_check(args, session)
 
-    if "name" not in args or len(str(args["name"]).lower().strip()) == 0:
-        raise ExpectedError("name field was missing", 400)
-    if "bio" not in args:
-        raise ExpectedError("bio field was missing", 400)
-    if "profilePicture" not in args:
-        raise ExpectedError("profilePicture field was missing", 400)
-    if "location" not in args:
-        raise ExpectedError("location field was missing", 400)
-    if "phoneNumber" not in args:
-        raise ExpectedError("phoneNumber field was missing", 400)
+    if "name" in args and len(str(args["name"]).lower().strip()) == 0:
+        raise ExpectedError("name field is invalid", 400)
+    if "email" in args and not fullmatch(
+        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
+        str(args["email"]).lower().strip(),
+    ):
+        raise ExpectedError("email field is invalid", 400)
 
     student = Student.prisma().find_unique(where={"id": mod_id})
     if not student:
@@ -62,21 +60,41 @@ def modify_profile():
 
     name = (
         args["name"]
-        if ("name" in args and len(str(args["name"]).lower().strip()) != 0)
+        if (
+            "name" in args
+            and len(str(args["name"]).lower().strip()) != 0
+            and args["name"] is not None
+        )
         else student.name
     )
-    bio = args["bio"] if "bio" in args else student.bio
-    profilePicture = (
-        args["profilePicture"] if "profilePicture" in args else student.profilePicture
+    bio = args["bio"] if ("bio" in args and args["bio"] is not None) else student.bio
+    email = (
+        args["email"]
+        if ("email" in args and args["email"] is not None)
+        else student.email
     )
-    location = args["location"] if "location" in args else student.location
-    phoneNumber = args["phoneNumber"] if "phoneNumber" in args else student.phoneNumber
+    profilePicture = (
+        args["profilePicture"]
+        if ("profilePicture" in args and args["profilePicture"] is not None)
+        else student.profilePicture
+    )
+    location = (
+        args["location"]
+        if ("location" in args and args["location"] is not None)
+        else student.location
+    )
+    phoneNumber = (
+        args["phoneNumber"]
+        if ("phoneNumber" in args and args["phoneNumber"] is not None)
+        else student.phoneNumber
+    )
 
     Student.prisma().update(
         where={"id": student.id},
         data={
             "name": name,
             "bio": bio,
+            "email": email,
             "profilePicture": profilePicture,
             "location": location,
             "phoneNumber": phoneNumber,

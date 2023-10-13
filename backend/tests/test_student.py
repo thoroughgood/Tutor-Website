@@ -113,39 +113,24 @@ def test_modify_args(setup_test: FlaskClient, initialise_student: str):
         },
     )
 
-    # Missing name
-    resp = client.put("/student/profile/", json={})
-    assert resp.json == {"error": "name field was missing"}
-    assert resp.status_code == 400
-
-    # Missing name 2
+    # Invalid name
     resp = client.put("/student/profile/", json={"name": ""})
-    assert resp.json == {"error": "name field was missing"}
+    assert resp.json == {"error": "name field is invalid"}
     assert resp.status_code == 400
 
-    # Missing bio
-    resp = client.put("/student/profile/", json={"name": "Jerry"})
-    assert resp.json == {"error": "bio field was missing"}
+    # Invalid email
+    resp = client.put("/student/profile/", json={"name": "Jerry", "email": ""})
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
-    # Missing profilePicture
-    resp = client.put("/student/profile/", json={"name": "Jerry", "bio": "bio"})
-    assert resp.json == {"error": "profilePicture field was missing"}
+    # Invalid email 2
+    resp = client.put("/student/profile/", json={"name": "Jerry", "email": "hi"})
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
-    # Missing location
-    resp = client.put(
-        "/student/profile/", json={"name": "Name1", "bio": "bio", "profilePicture": ""}
-    )
-    assert resp.json == {"error": "location field was missing"}
-    assert resp.status_code == 400
-
-    # Missing phoneNumber
-    resp = client.put(
-        "/student/profile/",
-        json={"name": "Name1", "bio": "", "profilePicture": "", "location": ""},
-    )
-    assert resp.json == {"error": "phoneNumber field was missing"}
+    # Invalid email 3
+    resp = client.put("/student/profile/", json={"name": "Jerry", "email": "hello@hi"})
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
     # Valid modification
@@ -153,6 +138,7 @@ def test_modify_args(setup_test: FlaskClient, initialise_student: str):
         "/student/profile/",
         json={
             "name": "Name1",
+            "email": "hello@hi.com",
             "bio": "",
             "profilePicture": "",
             "location": "Australia",
@@ -196,56 +182,32 @@ def test_admin_modify_args(
     assert resp.json == {"error": "id field was missing"}
     assert resp.status_code == 400
 
-    # Missing name
-    resp = client.put("/student/profile/", json={"id": initialise_student})
-    assert resp.json == {"error": "name field was missing"}
-    assert resp.status_code == 400
-
-    # Missing name 2
+    # Invalid name
     resp = client.put("/student/profile/", json={"id": initialise_student, "name": ""})
-    assert resp.json == {"error": "name field was missing"}
+    assert resp.json == {"error": "name field is invalid"}
     assert resp.status_code == 400
 
-    # Missing bio
+    # Invalid email
     resp = client.put(
-        "/student/profile/", json={"id": initialise_student, "name": "Jerry"}
+        "/student/profile/", json={"id": initialise_student, "name": "Hi", "email": ""}
     )
-    assert resp.json == {"error": "bio field was missing"}
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
-    # Missing profilePicture
-    resp = client.put(
-        "/student/profile/",
-        json={"id": initialise_student, "name": "Name1", "bio": "bio"},
-    )
-    assert resp.json == {"error": "profilePicture field was missing"}
-    assert resp.status_code == 400
-
-    # Missing location
+    # Invalid email 2
     resp = client.put(
         "/student/profile/",
-        json={
-            "id": initialise_student,
-            "name": "Name1",
-            "bio": "bio",
-            "profilePicture": "",
-        },
+        json={"id": initialise_student, "name": "Hi", "email": "hi"},
     )
-    assert resp.json == {"error": "location field was missing"}
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
-    # Missing phoneNumber
+    # Invalid email 3
     resp = client.put(
         "/student/profile/",
-        json={
-            "id": initialise_student,
-            "name": "Name1",
-            "bio": "",
-            "profilePicture": "",
-            "location": "",
-        },
+        json={"id": initialise_student, "name": "Hi", "email": "hello@hi"},
     )
-    assert resp.json == {"error": "phoneNumber field was missing"}
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
     # Invalid id
@@ -255,6 +217,7 @@ def test_admin_modify_args(
             "id": "invalid",
             "name": "Name1",
             "bio": "",
+            "email": "hello@hi.com",
             "profilePicture": "",
             "location": "Australia",
             "phoneNumber": "",
@@ -270,6 +233,7 @@ def test_admin_modify_args(
             "id": initialise_student,
             "name": "Name123",
             "bio": "hi",
+            "email": "hello@hi.com",
             "profilePicture": "hi",
             "location": "Sydney",
             "phoneNumber": "000",
