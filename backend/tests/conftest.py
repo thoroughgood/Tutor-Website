@@ -1,7 +1,6 @@
 from flask.testing import FlaskClient
 import pytest
 from prisma.cli import prisma
-import prisma.client
 import prisma.models as models
 import sys
 import subprocess
