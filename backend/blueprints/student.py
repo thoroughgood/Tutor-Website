@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, session
 from prisma.models import User
-from helpers.views import student_view
+from helpers.views import admin_view, student_view
+from helpers.admin_id_check import admin_id_check
 from helpers.error_handlers import (
     ExpectedError,
     error_decorator,
@@ -9,7 +10,7 @@ from helpers.error_handlers import (
 student = Blueprint("student", __name__)
 
 
-@student.route("/", methods=["GET"])
+@student.route("profile/", methods=["GET"])
 @error_decorator
 def get_profile():
     args = request.args
@@ -37,13 +38,14 @@ def get_profile():
     )
 
 
-@student.route("/", methods=["PUT"])
+@student.route("profile/", methods=["PUT"])
 @error_decorator
 def modify_profile():
     args = request.get_json()
 
     if "user_id" not in session:
-        raise ExpectedError("No user is logged in", 400)
+        raise ExpectedError("No user is logged in", 401)
+    mod_id = admin_id_check(args)
 
     if "name" not in args or len(str(args["name"]).lower().strip()) == 0:
         raise ExpectedError("name field was missing", 400)
@@ -56,11 +58,7 @@ def modify_profile():
     if "phoneNumber" not in args:
         raise ExpectedError("phoneNumber field was missing", 400)
 
-    # admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
-    # if not admin and session["user_id"] != args["id"]:
-    #     raise ExpectedError("Insufficient permission to modify this profile", 403)
-
-    student = student_view(id=session["user_id"])
+    student = student_view(id=mod_id)
     if not student:
         raise ExpectedError("Profile does not exist", 404)
 
@@ -98,20 +96,15 @@ def delete_profile():
     args = request.get_json()
 
     if "user_id" not in session:
-        raise ExpectedError("No user is logged in", 400)
+        raise ExpectedError("No user is logged in", 401)
 
-    if "id" not in args:
-        raise ExpectedError("id field was missing", 400)
+    mod_id = admin_id_check(args)
 
-    # admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
-    # if not admin and session["user_id"] != args["id"]:
-    #     raise ExpectedError("Insufficient permission to delete this profile", 403)
-
-    student = student_view(id=args["id"])
+    student = student_view(id=mod_id)
 
     if not student:
         raise ExpectedError("Profile does not exist", 404)
 
-    User.prisma().delete(where={"id": args["id"]})
+    User.prisma().delete(where={"id": mod_id})
 
     return jsonify({"success": True}), 200

@@ -45,7 +45,7 @@ model Tutor {
   id              String              @id
   userInfo        User                @relation(fields: [userInfoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userInfoId      String              @unique
-  rating          Rating[]
+  ratings         Rating[]
   courseOfferings Subject[]
   timesAvailable  TutorAvailability[]
   appointments    Appointment[]

@@ -21,7 +21,7 @@ def search():
     tutors = Tutor.prisma().find_many(
         include={
             "userInfo": True,
-            "rating": True,
+            "ratings": True,
             "courseOfferings": True,
             "timesAvailable": {"order_by": {"startTime": "asc"}},
         }
@@ -76,7 +76,7 @@ def search():
             continue
 
         if "rating" in args:
-            valid &= rating_calc(tutor.rating) >= float(args["rating"])
+            valid &= rating_calc(tutor.ratings) >= float(args["rating"])
 
         if "courseOfferings" in args:
             args_offerings = [

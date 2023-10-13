@@ -3,7 +3,7 @@ from prisma.models import User
 from re import fullmatch
 from uuid import uuid4
 from hashlib import sha256
-from helpers.views import user_view, admin_view
+from helpers.views import user_view, admin_view, tutor_view, student_view
 from helpers.error_handlers import (
     ExpectedError,
     error_decorator,
@@ -84,7 +84,13 @@ def login():
         or args["accountType"] == "tutor"
         or args["accountType"] == "admin"
     ):
-        user = user_view(email=args["email"])
+        match args["accountType"]:
+            case "student":
+                user = student_view(email=args["email"])
+            case "tutor":
+                user = tutor_view(email=args["email"])
+            case "admin":
+                user = admin_view(email=args["email"])
         if (
             user
             and user.hashed_password

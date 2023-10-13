@@ -22,7 +22,7 @@ def generate_tutors() -> None:
             "tutorInfo": {
                 "create": {
                     "id": "tutorId1",
-                    "rating": {
+                    "ratings": {
                         "create": {"id": str(uuid4()), "score": 2, "createdById": ""}
                     },
                     "courseOfferings": {"connect": {"name": "math"}},
@@ -40,7 +40,7 @@ def generate_tutors() -> None:
             "tutorInfo": {
                 "create": {
                     "id": "tutorId2",
-                    "rating": {
+                    "ratings": {
                         "create": {"id": str(uuid4()), "score": 4, "createdById": ""}
                     },
                     "courseOfferings": {"connect": {"name": "science"}},
@@ -67,7 +67,7 @@ def generate_tutors() -> None:
             "tutorInfo": {
                 "create": {
                     "id": "tutorId3",
-                    "rating": {
+                    "ratings": {
                         "create": {"id": str(uuid4()), "score": 3, "createdById": ""}
                     },
                     "courseOfferings": {

@@ -62,7 +62,7 @@ class StudentView(UserView):
 
 
 class TutorView(UserView):
-    rating: List[Rating] | None
+    ratings: List[Rating] | None
     appointments: List[Appointment] | None
     course_offerings: List[Subject] | None
     times_available: List[TutorAvailability] | None
@@ -77,7 +77,7 @@ class TutorView(UserView):
         profile_picture: str | None,
         location: str | None,
         phone_number: str | None,
-        rating: List[Rating] | None,
+        ratings: List[Rating] | None,
         appointments: List[Appointment] | None,
         course_offerings: List[Subject] | None,
         times_available: List[TutorAvailability] | None,
@@ -94,7 +94,7 @@ class TutorView(UserView):
         )
         self.appointments = appointments
         self.course_offerings = course_offerings
-        self.rating = rating
+        self.ratings = ratings
         self.times_available = times_available
 
 
@@ -182,6 +182,7 @@ def tutor_view(id: str = None, email: str = None) -> TutorView | None:
         include={
             "tutorInfo": {
                 "include": {
+                    "ratings": True,
                     "appointments": True,
                     "courseOfferings": True,
                     "timesAvailable": True,
@@ -199,7 +200,7 @@ def tutor_view(id: str = None, email: str = None) -> TutorView | None:
             user.profilePicture,
             user.location,
             user.phoneNumber,
-            user.tutorInfo.rating,
+            user.tutorInfo.ratings,
             user.tutorInfo.appointments,
             user.tutorInfo.courseOfferings,
             user.tutorInfo.timesAvailable,
