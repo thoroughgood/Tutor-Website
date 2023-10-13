@@ -4,6 +4,7 @@ import pytest
 from flask.testing import FlaskClient
 from prisma.models import Subject, User
 from datetime import datetime, timedelta
+from helpers.views import tutor_view
 
 
 @pytest.fixture
@@ -373,6 +374,17 @@ def test_delete_valid(setup_test: FlaskClient, generate_tutor: str):
 
 def test_modify_time_available(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
+    tutor_id = generate_tutor
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+    assert resp.status_code == 200
     # valid modification
     resp = client.put(
         "/tutor/profile/",
@@ -389,7 +401,7 @@ def test_modify_time_available(setup_test: FlaskClient, generate_tutor: str):
             ],
         },
     )
-    resp.status_code == 200
+    assert resp.status_code == 200
 
     # overlapping time availabilities
     resp = client.put(
@@ -407,5 +419,9 @@ def test_modify_time_available(setup_test: FlaskClient, generate_tutor: str):
             ],
         },
     )
-    resp.status_code == 400
-    resp.json["error"] == "Time availabilities should not overlap"
+    assert resp.status_code == 400
+    assert resp.json["error"] == "Time availabilities should not overlap"
+
+    resp = client.get("/tutor/profile/", query_string={"id": tutor_id})
+    assert resp.status_code == 200
+    assert len(resp.json["timesAvailable"]) == 2

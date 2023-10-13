@@ -23,15 +23,15 @@ def get_profile():
         raise ExpectedError("id field was missing", 400)
 
     tutor = tutor_view(id=args["id"])
-    if tutor is None:
+    if tutor == None:
         raise ExpectedError("Profile does not exist", 404)
 
-    if tutor.course_offerings is None:
+    if tutor.course_offerings == None:
         course_offerings = []
     else:
         course_offerings = list(map(lambda c: c.name, tutor.course_offerings))
 
-    if tutor.times_available is None:
+    if tutor.times_available == None:
         times_available = []
     else:
         times_available = list(
@@ -44,7 +44,7 @@ def get_profile():
             )
         )
 
-    if tutor.ratings is None:
+    if tutor.ratings == None:
         rating = 0
     else:
         rating = rating_calc(tutor.ratings)
@@ -76,7 +76,7 @@ def modify_profile():
     modify_tutor_id = admin_id_check(args)
 
     tutor = tutor_view(id=modify_tutor_id)
-    if tutor is None:
+    if tutor == None:
         raise ExpectedError("Profile does not exist", 404)
 
     name = tutor.name if "name" not in args else args["name"]
@@ -129,7 +129,7 @@ def delete_profile():
     delete_tutor_id = admin_id_check(args)
 
     tutor = tutor_view(id=delete_tutor_id)
-    if tutor is None:
+    if tutor == None:
         raise ExpectedError("Profile does not exist", 404)
 
     # All fields other than course_offerings will cascade delete in the db
@@ -165,7 +165,7 @@ def addingSubjects(course_offerings, tutor_id):
     for subject_name in course_offerings:
         subject = Subject.prisma().find_first(where={"name": subject_name})
 
-        if subject is None:
+        if subject == None:
             Subject.prisma().create(data={"name": subject_name})
 
         Tutor.prisma().update(
@@ -190,11 +190,10 @@ def process_time_block(timeblock):
 
 
 def addingTimes(times_available, tutor_id):
-    Tutor.prisma().update(
-        where={"id": tutor_id}, data={"timesAvailable": {"deleteMany": {}}}
-    )
-
-    if times_available is None or len(times_available) == 0:
+    if times_available == None or len(times_available) == 0:
+        Tutor.prisma().update(
+            where={"id": tutor_id}, data={"timesAvailable": {"deleteMany": {}}}
+        )
         return
 
     formatted_availabilities = sorted(
@@ -216,6 +215,10 @@ def addingTimes(times_available, tutor_id):
 
         to_create.append(time_block)
         prev_block = time_block
+
+    Tutor.prisma().update(
+        where={"id": tutor_id}, data={"timesAvailable": {"deleteMany": {}}}
+    )
 
     Tutor.prisma().update(
         where={"id": tutor_id},
