@@ -1,6 +1,6 @@
 import pytest
 from flask.testing import FlaskClient
-from prisma.models import Tutor, Subject, User
+from prisma.models import Subject, User
 from uuid import uuid4
 import datetime
 import json
