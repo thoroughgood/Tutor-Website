@@ -4,7 +4,6 @@ import pytest
 from flask.testing import FlaskClient
 from prisma.models import Subject, User
 from datetime import datetime, timedelta
-from helpers.views import tutor_view
 
 
 @pytest.fixture

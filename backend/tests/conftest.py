@@ -11,7 +11,7 @@ from pathlib import Path
 # Courtesy of https://stackoverflow.com/questions/714063/importing-modules-from-parent-folder/28712742#28712742
 # ? Probably more idiomatic/less hacky way of doing this
 sys.path.insert(0, "..")
-from backend.app import app
+from app import app
 
 
 @pytest.fixture
