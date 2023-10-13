@@ -1,3 +1,6 @@
+# config file for gunicorn
+# see https://docs.gunicorn.org/en/stable/settings.html for more
+
 bind = "127.0.0.1:8000"
 wsgi_app = "wsgi:app"
 workers = 4
