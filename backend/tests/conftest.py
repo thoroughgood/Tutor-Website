@@ -1,7 +1,7 @@
 from flask.testing import FlaskClient
 import pytest
 from prisma.cli import prisma
-from prisma import Prisma
+import prisma.client
 import prisma.models as models
 import sys
 import subprocess
@@ -18,9 +18,6 @@ from app import app
 def setup_test():
     # to reset the test_db and update test schema if necessary
     prisma.run(["db", "push", "--force-reset"], check=True)
-    # * The below is needed if app is not imported
-    # db = Prisma(auto_register=True)
-    # db.connect()
     yield app.test_client()
 
 

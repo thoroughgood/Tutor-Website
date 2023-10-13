@@ -2,7 +2,7 @@ from hashlib import sha256
 from uuid import uuid4
 import pytest
 from flask.testing import FlaskClient
-from prisma.models import Admin, Tutor, Student, User
+from prisma.models import User
 
 
 def test_register_not_json(setup_test: FlaskClient):

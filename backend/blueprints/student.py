@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 from prisma.models import User
-from helpers.views import admin_view, student_view
+from helpers.views import student_view
 from helpers.admin_id_check import admin_id_check
 from helpers.error_handlers import (
     ExpectedError,

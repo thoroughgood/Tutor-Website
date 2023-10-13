@@ -3,7 +3,7 @@ from uuid import uuid4
 import pytest
 from flask.testing import FlaskClient
 from prisma.models import User
-from prisma.models import Admin, Tutor, Student
+from prisma.models import Student
 
 
 @pytest.fixture
