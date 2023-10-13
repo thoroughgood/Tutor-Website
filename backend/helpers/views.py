@@ -125,6 +125,8 @@ class AdminView(UserView):
 def user_view(id: str = None, email: str = None) -> UserView | None:
     if id == None and email == None:
         return None
+    elif id and email:
+        raise ValueError("You cannot filter on both id and email")
 
     search_by = {"id": id} if id else {"email": email}
     user = User.prisma().find_unique(where=search_by)
@@ -148,6 +150,8 @@ def user_view(id: str = None, email: str = None) -> UserView | None:
 def student_view(id: str = None, email: str = None) -> StudentView | None:
     if id == None and email == None:
         return None
+    elif id and email:
+        raise ValueError("You cannot filter on both id and email")
 
     search_by = {"id": id} if id else {"email": email}
     user = User.prisma().find_unique(
@@ -175,6 +179,8 @@ def student_view(id: str = None, email: str = None) -> StudentView | None:
 def tutor_view(id: str = None, email: str = None) -> TutorView | None:
     if id == None and email == None:
         return None
+    elif id and email:
+        raise ValueError("You cannot filter on both id and email")
 
     search_by = {"id": id} if id else {"email": email}
     user = User.prisma().find_unique(
@@ -213,6 +219,8 @@ def tutor_view(id: str = None, email: str = None) -> TutorView | None:
 def admin_view(id: str = None, email: str = None) -> AdminView | None:
     if id == None and email == None:
         return None
+    elif id and email:
+        raise ValueError("You cannot filter on both id and email")
 
     search_by = {"id": id} if id else {"email": email}
     user = User.prisma().find_unique(
