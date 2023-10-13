@@ -3,7 +3,7 @@ from uuid import uuid4
 import pytest
 from flask.testing import FlaskClient
 from prisma.models import Subject, User
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 @pytest.fixture
@@ -369,3 +369,43 @@ def test_delete_valid(setup_test: FlaskClient, generate_tutor: str):
     resp = client.get("/tutor/profile/", query_string={"id": tutorId})
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
+
+
+def test_modify_time_available(setup_test: FlaskClient, generate_tutor: str):
+    client = setup_test
+    # valid modification
+    resp = client.put(
+        "/tutor/profile/",
+        json={
+            "timesAvailable": [
+                {
+                    "startTime": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+                    "endTime": (datetime.utcnow() + timedelta(days=2)).isoformat(),
+                },
+                {
+                    "startTime": (datetime.utcnow() + timedelta(days=3)).isoformat(),
+                    "endTime": (datetime.utcnow() + timedelta(days=4)).isoformat(),
+                },
+            ],
+        },
+    )
+    resp.status_code == 200
+
+    # overlapping time availabilities
+    resp = client.put(
+        "/tutor/profile/",
+        json={
+            "timesAvailable": [
+                {
+                    "startTime": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+                    "endTime": (datetime.utcnow() + timedelta(days=2)).isoformat(),
+                },
+                {
+                    "startTime": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+                    "endTime": (datetime.utcnow() + timedelta(days=5)).isoformat(),
+                },
+            ],
+        },
+    )
+    resp.status_code == 400
+    resp.json["error"] == "Time availabilities should not overlap"
