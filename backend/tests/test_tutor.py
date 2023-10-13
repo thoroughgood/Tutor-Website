@@ -95,11 +95,11 @@ def test_get_empty_id(setup_test: FlaskClient):
 def test_get_valid(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    tutorId = generate_tutor
-    resp = client.get("/tutor/profile/", query_string={"id": tutorId})
+    d = generate_tutor
+    resp = client.get("/tutor/profile/", query_string={"id": d})
 
     assert resp.status_code == 200
-    assert resp.json["id"] == tutorId
+    assert resp.json["id"] == d
     assert resp.json["email"] == "validemail@mail.com"
     assert resp.json["name"] == "Terry"
     assert resp.json["bio"] == "band 1 at HSC Maths"
@@ -168,7 +168,7 @@ def test_modify_invalid_args(
 def test_modify_missing_args(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    tutorId = generate_tutor
+    d = generate_tutor
 
     resp = client.post(
         "/login",
@@ -183,9 +183,9 @@ def test_modify_missing_args(setup_test: FlaskClient, generate_tutor: str):
     resp = client.put("/tutor/profile/", json={})
     assert resp.status_code == 200
 
-    resp = client.get("/tutor/profile/", query_string={"id": tutorId})
+    resp = client.get("/tutor/profile/", query_string={"id": d})
     assert resp.status_code == 200
-    assert resp.json["id"] == tutorId
+    assert resp.json["id"] == d
     assert resp.json["email"] == "validemail@mail.com"
     assert resp.json["name"] == "Terry"
     assert resp.json["bio"] == "band 1 at HSC Maths"
@@ -206,7 +206,7 @@ def test_modify_missing_args(setup_test: FlaskClient, generate_tutor: str):
 def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    tutorId = generate_tutor
+    d = generate_tutor
 
     resp = client.post(
         "/login",
@@ -241,10 +241,10 @@ def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
 
     assert resp.status_code == 200
 
-    resp = client.get("/tutor/profile/", query_string={"id": tutorId})
+    resp = client.get("/tutor/profile/", query_string={"id": d})
 
     assert resp.status_code == 200
-    assert resp.json["id"] == tutorId
+    assert resp.json["id"] == d
     assert resp.json["email"] == "validemail@mail.com"
     assert resp.json["name"] == "Terry"
     assert resp.json["bio"] == "band 1 at HSC Maths"
@@ -265,7 +265,7 @@ def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
 def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    tutorId = generate_tutor
+    d = generate_tutor
 
     resp = client.post(
         "/login",
@@ -293,10 +293,10 @@ def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
     )
     assert resp.status_code == 200
 
-    resp = client.get("/tutor/profile/", query_string={"id": tutorId})
+    resp = client.get("/tutor/profile/", query_string={"id": d})
     assert resp.status_code == 200
 
-    assert resp.json["id"] == tutorId
+    assert resp.json["id"] == d
     assert resp.json["email"] == "valid@mail.com"
     assert resp.json["name"] == "Juan"
     assert resp.json["bio"] == "band 6 at HSC Maths"
@@ -352,7 +352,7 @@ def test_delete_permission(
 def test_delete_valid(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    tutorId = generate_tutor
+    d = generate_tutor
 
     resp = client.post(
         "/login",
@@ -367,7 +367,7 @@ def test_delete_valid(setup_test: FlaskClient, generate_tutor: str):
     resp = client.delete("/tutor/", json={})
     assert resp.status_code == 200
 
-    resp = client.get("/tutor/profile/", query_string={"id": tutorId})
+    resp = client.get("/tutor/profile/", query_string={"id": d})
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
