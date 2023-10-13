@@ -1,7 +1,7 @@
 from flask.testing import FlaskClient
 import pytest
 from prisma.cli import prisma
-from prisma import Prisma
+import prisma.client
 import prisma.models as models
 import sys
 import subprocess
@@ -11,16 +11,13 @@ from pathlib import Path
 # Courtesy of https://stackoverflow.com/questions/714063/importing-modules-from-parent-folder/28712742#28712742
 # ? Probably more idiomatic/less hacky way of doing this
 sys.path.insert(0, "..")
-from main import app
+from app import app
 
 
 @pytest.fixture
 def setup_test():
     # to reset the test_db and update test schema if necessary
     prisma.run(["db", "push", "--force-reset"], check=True)
-    # * The below is needed if app is not imported
-    # db = Prisma(auto_register=True)
-    # db.connect()
     yield app.test_client()
 
 

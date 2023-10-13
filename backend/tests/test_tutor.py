@@ -2,35 +2,43 @@ from hashlib import sha256
 from uuid import uuid4
 import pytest
 from flask.testing import FlaskClient
-from prisma.models import Tutor, Subject, Admin
-from datetime import datetime
+from prisma.models import Subject, User
+from datetime import datetime, timedelta
 
 
 @pytest.fixture
 def generate_tutor() -> str:
     Subject.prisma().create(data={"name": "science"})
 
-    tutor = Tutor.prisma().create(
+    id = str(uuid4())
+    tutor = User.prisma().create(
         data={
-            "id": str(uuid4()),
+            "id": id,
             "email": "validemail@mail.com",
             "hashedPassword": sha256("12345678".encode()).hexdigest(),
             "name": "Terry",
             "bio": "band 1 at HSC Maths",
             "location": "Australia",
-            "rating": {"create": {"id": str(uuid4()), "score": 2, "createdById": ""}},
             "profilePicture": None,
             "phoneNumber": "0411123901",
-            "courseOfferings": {"connect": {"name": "science"}},
-            "timesAvailable": {
+            "tutorInfo": {
                 "create": {
-                    "id": "1",
-                    "startTime": datetime.fromisoformat(
-                        "2023-10-14T15:48:26.297000+00:00"
-                    ),
-                    "endTime": datetime.fromisoformat(
-                        "2023-10-14T21:48:26.297000+00:00"
-                    ),
+                    "id": id,
+                    "ratings": {
+                        "create": {"id": str(uuid4()), "score": 2, "createdById": ""}
+                    },
+                    "courseOfferings": {"connect": {"name": "science"}},
+                    "timesAvailable": {
+                        "create": {
+                            "id": "1",
+                            "startTime": datetime.fromisoformat(
+                                "2023-10-14T15:48:26.297000+00:00"
+                            ),
+                            "endTime": datetime.fromisoformat(
+                                "2023-10-14T21:48:26.297000+00:00"
+                            ),
+                        }
+                    },
                 }
             },
         }
@@ -41,9 +49,10 @@ def generate_tutor() -> str:
 
 @pytest.fixture
 def generate_dummy_tutor() -> str:
-    tutor = Tutor.prisma().create(
+    id = str(uuid4())
+    tutor = User.prisma().create(
         data={
-            "id": str(uuid4()),
+            "id": id,
             "email": "dummy@mail.com",
             "name": "dummy",
             "hashedPassword": sha256("dfknsdkjd".encode()).hexdigest(),
@@ -51,8 +60,7 @@ def generate_dummy_tutor() -> str:
             "location": None,
             "profilePicture": None,
             "phoneNumber": None,
-            "courseOfferings": {},
-            "timesAvailable": {},
+            "tutorInfo": {"create": {"id": id}},
         }
     )
 
@@ -86,28 +94,23 @@ def test_get_empty_id(setup_test: FlaskClient):
 def test_get_valid(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    tutorId = generate_tutor
-    resp = client.get("/tutor/profile/", query_string={"id": tutorId})
+    d = generate_tutor
+    resp = client.get("/tutor/profile/", query_string={"id": d})
 
     assert resp.status_code == 200
-
-    assert resp.json == {
-        "id": tutorId,
-        "email": "validemail@mail.com",
-        "name": "Terry",
-        "bio": "band 1 at HSC Maths",
-        "rating": [2],
-        "location": "Australia",
-        "profilePicture": None,
-        "phoneNumber": "0411123901",
-        "courseOfferings": ["science"],
-        "timesAvailable": [
-            {
-                "startTime": "2023-10-14T15:48:26.297000+00:00",
-                "endTime": "2023-10-14T21:48:26.297000+00:00",
-            }
-        ],
-    }
+    assert resp.json["id"] == d
+    assert resp.json["email"] == "validemail@mail.com"
+    assert resp.json["name"] == "Terry"
+    assert resp.json["bio"] == "band 1 at HSC Maths"
+    assert resp.json["rating"] == 2
+    assert resp.json["location"] == "Australia"
+    assert resp.json["profilePicture"] == None
+    assert resp.json["phoneNumber"] == "0411123901"
+    assert "science" in resp.json["courseOfferings"]
+    assert {
+        "startTime": "2023-10-14T15:48:26.297000+00:00",
+        "endTime": "2023-10-14T21:48:26.297000+00:00",
+    } in resp.json["timesAvailable"]
 
 
 # Modify Tutor Profile Tests
@@ -125,7 +128,6 @@ def test_modify_invalid_args(
 ):
     client = setup_test
 
-    tutorId = generate_tutor
     dummyId = generate_dummy_tutor
 
     # No user logged in
@@ -144,9 +146,9 @@ def test_modify_invalid_args(
 
     assert resp.status_code == 200
 
-    # Non admin user tries deleting other user
+    # Non admin user tries modifying other user
     resp = client.put("/tutor/profile/", json={"id": dummyId})
-    assert resp.json == {"error": "Insufficient permission to delete this profile"}
+    assert resp.json == {"error": "id field should not be supplied by a non admin user"}
     assert resp.status_code == 403
 
     # need admin implemented
@@ -165,7 +167,7 @@ def test_modify_invalid_args(
 def test_modify_missing_args(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    tutorId = generate_tutor
+    d = generate_tutor
 
     resp = client.post(
         "/login",
@@ -180,31 +182,30 @@ def test_modify_missing_args(setup_test: FlaskClient, generate_tutor: str):
     resp = client.put("/tutor/profile/", json={})
     assert resp.status_code == 200
 
-    resp = client.get("/tutor/profile/", query_string={"id": tutorId})
+    resp = client.get("/tutor/profile/", query_string={"id": d})
     assert resp.status_code == 200
-    assert resp.json == {
-        "id": tutorId,
-        "email": "validemail@mail.com",
-        "name": "Terry",
-        "bio": "band 1 at HSC Maths",
-        "rating": [2],
-        "location": "Australia",
-        "profilePicture": None,
-        "phoneNumber": "0411123901",
-        "courseOfferings": ["science"],
-        "timesAvailable": [
-            {
-                "startTime": "2023-10-14T15:48:26.297000+00:00",
-                "endTime": "2023-10-14T21:48:26.297000+00:00",
-            }
-        ],
-    }
+    assert resp.json["id"] == d
+    assert resp.json["email"] == "validemail@mail.com"
+    assert resp.json["name"] == "Terry"
+    assert resp.json["bio"] == "band 1 at HSC Maths"
+    assert resp.json["rating"] == 2
+    assert resp.json["location"] == "Australia"
+    assert resp.json["profilePicture"] == None
+    assert resp.json["phoneNumber"] == "0411123901"
+    assert "science" in resp.json["courseOfferings"]
+    assert (
+        resp.json["timesAvailable"][0]["startTime"]
+        == "2023-10-14T15:48:26.297000+00:00"
+    )
+    assert (
+        resp.json["timesAvailable"][0]["endTime"] == "2023-10-14T21:48:26.297000+00:00"
+    )
 
 
 def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    tutorId = generate_tutor
+    d = generate_tutor
 
     resp = client.post(
         "/login",
@@ -239,33 +240,31 @@ def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
 
     assert resp.status_code == 200
 
-    resp = client.get("/tutor/profile/", query_string={"id": tutorId})
+    resp = client.get("/tutor/profile/", query_string={"id": d})
 
     assert resp.status_code == 200
-
-    assert resp.json == {
-        "id": tutorId,
-        "email": "validemail@mail.com",
-        "name": "Terry",
-        "bio": "band 1 at HSC Maths",
-        "rating": [2],
-        "location": "Australia",
-        "profilePicture": None,
-        "phoneNumber": "0411123901",
-        "courseOfferings": ["science"],
-        "timesAvailable": [
-            {
-                "startTime": "2023-10-14T15:48:26.297000+00:00",
-                "endTime": "2023-10-14T21:48:26.297000+00:00",
-            }
-        ],
-    }
+    assert resp.json["id"] == d
+    assert resp.json["email"] == "validemail@mail.com"
+    assert resp.json["name"] == "Terry"
+    assert resp.json["bio"] == "band 1 at HSC Maths"
+    assert resp.json["rating"] == 2
+    assert resp.json["location"] == "Australia"
+    assert resp.json["profilePicture"] == None
+    assert resp.json["phoneNumber"] == "0411123901"
+    assert "science" in resp.json["courseOfferings"]
+    assert (
+        resp.json["timesAvailable"][0]["startTime"]
+        == "2023-10-14T15:48:26.297000+00:00"
+    )
+    assert (
+        resp.json["timesAvailable"][0]["endTime"] == "2023-10-14T21:48:26.297000+00:00"
+    )
 
 
 def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    tutorId = generate_tutor
+    d = generate_tutor
 
     resp = client.post(
         "/login",
@@ -293,21 +292,22 @@ def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
     )
     assert resp.status_code == 200
 
-    resp = client.get("/tutor/profile/", query_string={"id": tutorId})
+    resp = client.get("/tutor/profile/", query_string={"id": d})
     assert resp.status_code == 200
 
-    assert resp.json == {
-        "id": tutorId,
-        "name": "Juan",
-        "bio": "band 6 at HSC Maths",
-        "email": "valid@mail.com",
-        "rating": [2],
-        "profilePicture": "",
-        "location": "Sydney",
-        "phoneNumber": "0411123888",
-        "courseOfferings": ["science", "math"],
-        "timesAvailable": [],
-    }
+    assert resp.json["id"] == d
+    assert resp.json["email"] == "valid@mail.com"
+    assert resp.json["name"] == "Juan"
+    assert resp.json["bio"] == "band 6 at HSC Maths"
+    assert resp.json["rating"] == 2
+    assert resp.json["location"] == "Sydney"
+    assert resp.json["profilePicture"] == ""
+    assert resp.json["phoneNumber"] == "0411123888"
+    assert (
+        "science" in resp.json["courseOfferings"]
+        and "math" in resp.json["courseOfferings"]
+    )
+    assert len(resp.json["timesAvailable"]) == 0
 
 
 # Delete Profile Tests
@@ -332,9 +332,6 @@ def test_delete_permission(
 ):
     client = setup_test
 
-    dummyId = generate_dummy_tutor
-    tutorId = generate_tutor
-
     resp = client.post(
         "/login",
         json={
@@ -347,14 +344,14 @@ def test_delete_permission(
 
     resp = client.delete("/tutor/", json={"id": generate_dummy_tutor})
 
-    assert resp.json == {"error": "Insufficient permission to delete this profile"}
+    assert resp.json == {"error": "id field should not be supplied by a non admin user"}
     assert resp.status_code == 403
 
 
 def test_delete_valid(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    tutorId = generate_tutor
+    d = generate_tutor
 
     resp = client.post(
         "/login",
@@ -369,6 +366,61 @@ def test_delete_valid(setup_test: FlaskClient, generate_tutor: str):
     resp = client.delete("/tutor/", json={})
     assert resp.status_code == 200
 
-    resp = client.get("/tutor/profile/", query_string={"id": tutorId})
+    resp = client.get("/tutor/profile/", query_string={"id": d})
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
+
+
+def test_modify_time_available(setup_test: FlaskClient, generate_tutor: str):
+    client = setup_test
+    tutor_id = generate_tutor
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+    assert resp.status_code == 200
+    # valid modification
+    resp = client.put(
+        "/tutor/profile/",
+        json={
+            "timesAvailable": [
+                {
+                    "startTime": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+                    "endTime": (datetime.utcnow() + timedelta(days=2)).isoformat(),
+                },
+                {
+                    "startTime": (datetime.utcnow() + timedelta(days=3)).isoformat(),
+                    "endTime": (datetime.utcnow() + timedelta(days=4)).isoformat(),
+                },
+            ],
+        },
+    )
+    assert resp.status_code == 200
+
+    # overlapping time availabilities
+    resp = client.put(
+        "/tutor/profile/",
+        json={
+            "timesAvailable": [
+                {
+                    "startTime": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+                    "endTime": (datetime.utcnow() + timedelta(days=2)).isoformat(),
+                },
+                {
+                    "startTime": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+                    "endTime": (datetime.utcnow() + timedelta(days=5)).isoformat(),
+                },
+            ],
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json["error"] == "Time availabilities should not overlap"
+
+    resp = client.get("/tutor/profile/", query_string={"id": tutor_id})
+    assert resp.status_code == 200
+    assert len(resp.json["timesAvailable"]) == 2

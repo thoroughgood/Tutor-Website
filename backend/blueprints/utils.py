@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, session
 from helpers.error_handlers import error_decorator
-from prisma.models import Tutor, Student, Admin
+from prisma.models import Tutor, Student
 
 utils = Blueprint("utils", __name__)
 
