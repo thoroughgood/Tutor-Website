@@ -9,6 +9,6 @@ pip3 install -r requirements.txt
 # will stop here if db push fails
 prisma db push --schema ./schema.prisma || exit 1
 
-python3 main.py
+python3 .venv/bin/gunicorn
 
 deactivate
