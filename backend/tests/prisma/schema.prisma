@@ -8,10 +8,10 @@ datasource db {
 
 // generator
 generator client {
-  provider             = "prisma-client-py"
+  provider               = "prisma-client-py"
   partial_type_generator = "prisma/partial_types.py"
-  interface            = "sync"
-  recursive_type_depth = 5
+  interface              = "sync"
+  recursive_type_depth   = 5
 }
 
 // data models

@@ -36,10 +36,17 @@ tomli = "==2.0.1"
 tomlkit = "==0.12.1"
 typing-extensions = "==4.8.0"
 werkzeug = "==2.3.7"
+pipenv = "*"
 
 [dev-packages]
 pytest = "==7.4.2"
 watchdog = "==3.0.0"
+
+[scripts]
+tests = "bash -c 'cd tests > /dev/null 2>&1 \n ./updateTestSchema.sh && pytest && cd .. && prisma db push'"
+# specify the argument to pytest like so:
+# pipenv run test_one -- `test_filename`
+test_one = "bash -c 'cd tests > /dev/null 2>&1 \n ./updateTestSchema.sh && pytest $1 && cd .. && prisma db push'"
 
 [requires]
 python_version = "3.10"
