@@ -1,14 +1,14 @@
 #!/bin/bash
 
+export PIPENV_DEFAULT_PYTHON_VERSION=3.10
+export PIPENV_VENV_IN_PROJECT=true
+
 python3 -m venv .venv
-
-source .venv/bin/activate
-
-pip3 install -r requirements.txt
+.venv/bin/pip3 install pipenv
+.venv/bin/pipenv install
 
 # will stop here if db push fails
-prisma db push --schema ./schema.prisma || exit 1
+.venv/bin/pipenv run prisma db push --schema prisma/schema.prisma || exit 1
 
-python3 main.py
-
-deactivate
+# as suggested by https://docs.gunicorn.org/en/stable/deploy.html#using-virtualenv
+.venv/bin/pipenv run python3 .venv/bin/gunicorn

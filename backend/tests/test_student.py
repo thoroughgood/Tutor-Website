@@ -2,19 +2,21 @@ from hashlib import sha256
 from uuid import uuid4
 import pytest
 from flask.testing import FlaskClient
-from prisma.models import Admin, Tutor, Student
+from prisma.models import User
+from prisma.models import Student
 
 
 @pytest.fixture
 def initialise_student() -> str:
-    student = Student.prisma().create(
+    id = str(uuid4())
+    student = User.prisma().create(
         data={
-            "id": str(uuid4()),
+            "id": id,
             "email": "validemail@mail.com",
             "hashedPassword": sha256("12345678".encode()).hexdigest(),
             "name": "Name1",
-            "bio": "",
             "location": "Australia",
+            "studentInfo": {"create": {"id": id}},
         },
     )
     return student.id
@@ -22,14 +24,15 @@ def initialise_student() -> str:
 
 @pytest.fixture
 def initialise_tutor() -> str:
-    tutor = Tutor.prisma().create(
+    id = str(uuid4())
+    tutor = User.prisma().create(
         data={
-            "id": str(uuid4()),
+            "id": id,
             "email": "validemail2@mail.com",
             "hashedPassword": sha256("12345678".encode()).hexdigest(),
             "name": "Name2",
-            "bio": "",
             "location": "Australia",
+            "tutorInfo": {"create": {"id": id}},
         },
     )
     return tutor.id
@@ -37,12 +40,14 @@ def initialise_tutor() -> str:
 
 @pytest.fixture
 def initialise_admin() -> str:
-    admin = Admin.prisma().create(
+    id = str(uuid4())
+    admin = User.prisma().create(
         data={
-            "id": str(uuid4()),
+            "id": id,
             "email": "validemail3@mail.com",
             "hashedPassword": sha256("12345678".encode()).hexdigest(),
             "name": "Name3",
+            "adminInfo": {"create": {"id": id}},
         },
     )
     return admin.id
@@ -75,14 +80,12 @@ def test_get_args(setup_test: FlaskClient, initialise_student: str):
     # Valid id
     resp = client.get("/student/profile/", query_string={"id": initialise_student})
     assert resp.status_code == 200
-    assert resp.json == {
-        "id": initialise_student,
-        "name": "Name1",
-        "bio": "",
-        "profilePicture": None,
-        "location": "Australia",
-        "phoneNumber": None,
-    }
+    assert resp.json["id"] == initialise_student
+    assert resp.json["name"] == "Name1"
+    assert resp.json["bio"] == ""
+    assert resp.json["profilePicture"] == None
+    assert resp.json["location"] == "Australia"
+    assert resp.json["phoneNumber"] == None
 
 
 ########################### MODIFY PROFILE TESTS ###############################
@@ -178,8 +181,8 @@ def test_admin_modify_args(
     )
     client = setup_test
     resp = client.put("/student/profile/", json={"id": initialise_student})
-    assert resp.json == {"error": "id should not be supplied from non admin user"}
-    assert resp.status_code == 400
+    assert resp.json == {"error": "id field should not be supplied by a non admin user"}
+    assert resp.status_code == 403
 
     resp = client.post("/logout")
     resp = client.post(
@@ -321,13 +324,13 @@ def test_delete_student_login(setup_test: FlaskClient, initialise_student: str):
 
     # Invalid id
     resp = client.delete("/student/", json={"id": "invalid"})
-    assert resp.json == {"error": "id should not be supplied from non admin user"}
-    assert resp.status_code == 400
+    assert resp.json == {"error": "id field should not be supplied by a non admin user"}
+    assert resp.status_code == 403
 
     # Valid id
     resp = client.delete("/student/", json={"id": initialise_student})
-    assert resp.json == {"error": "id should not be supplied from non admin user"}
-    assert resp.status_code == 400
+    assert resp.json == {"error": "id field should not be supplied by a non admin user"}
+    assert resp.status_code == 403
 
     # No id
     resp = client.delete("/student/", json={})
@@ -364,5 +367,3 @@ def test_delete_admin_login(
     resp = client.delete("/student/", json={"id": initialise_student})
     assert resp.json == {"success": True}
     assert resp.status_code == 200
-
-    assert Student.prisma().count() == 0

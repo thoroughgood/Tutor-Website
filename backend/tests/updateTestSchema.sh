@@ -1,6 +1,7 @@
 #!/bin/bash
 
-cp "../schema.prisma" "./prisma/schema.prisma"
+cp "../prisma/partial_types.py" "./prisma/partial_types.py"
+cp "../prisma/schema.prisma" "./prisma/schema.prisma"
 # replace datasource fields
 sed -i 's/provider[ \t]*=[ \t]*"postgresql"/provider = "sqlite"/g' "./prisma/schema.prisma"
 sed -i 's/url[ \t]*=[ \t]*env("DATABASE_URL")/url      = "file:test.db"/g' "./prisma/schema.prisma"

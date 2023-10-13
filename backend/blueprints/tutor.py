@@ -1,9 +1,11 @@
 from flask import Blueprint, request, jsonify, session
-from prisma.models import Tutor, Student, Admin, Subject, TutorAvailability
+from prisma.models import Tutor, Subject, User
 from re import fullmatch
 from uuid import uuid4
 from datetime import datetime
-from hashlib import sha256
+from helpers.views import tutor_view
+from helpers.admin_id_check import admin_id_check
+from helpers.rating_calc import rating_calc
 from helpers.error_handlers import (
     ExpectedError,
     error_decorator,
@@ -20,62 +22,47 @@ def get_profile():
     if "id" not in args or len(args["id"]) == 0:
         raise ExpectedError("id field was missing", 400)
 
-    tutor = Tutor.prisma().find_unique(
-        where={"id": args["id"]},
-        include={
-            "rating": True,
-            "courseOfferings": {"include": {"tutorsTeaching": True}},
-            "timesAvailable": True,
-        },
-    )
-
-    if tutor is None:
+    tutor = tutor_view(id=args["id"])
+    if tutor == None:
         raise ExpectedError("Profile does not exist", 404)
 
-    if tutor.courseOfferings is None:
-        courseOfferings = []
+    if tutor.course_offerings == None:
+        course_offerings = []
     else:
-        courseOfferings = list(map(formatCourseOfferings, tutor.courseOfferings))
+        course_offerings = list(map(lambda c: c.name, tutor.course_offerings))
 
-    if tutor.timesAvailable is None:
-        timesAvailable = []
+    if tutor.times_available == None:
+        times_available = []
     else:
-        timesAvailable = list(map(formatTimesAvailable, tutor.timesAvailable))
+        times_available = list(
+            map(
+                lambda d: {
+                    "startTime": d.startTime.isoformat(),
+                    "endTime": d.endTime.isoformat(),
+                },
+                tutor.times_available,
+            )
+        )
 
-    if tutor.rating is None:
-        rating = []
+    if tutor.ratings == None:
+        rating = 0
     else:
-        rating = list(map(formatRating, tutor.rating))
+        rating = rating_calc(tutor.ratings)
 
     return jsonify(
         {
             "id": tutor.id,
             "name": tutor.name,
-            "bio": tutor.bio,
+            "bio": tutor.bio if tutor.bio else "",
             "email": tutor.email,
             "rating": rating,
-            "profilePicture": tutor.profilePicture,
+            "profilePicture": tutor.profile_picture,
             "location": tutor.location,
-            "phoneNumber": tutor.phoneNumber,
-            "courseOfferings": courseOfferings,
-            "timesAvailable": timesAvailable,
+            "phoneNumber": tutor.phone_number,
+            "courseOfferings": course_offerings,
+            "timesAvailable": times_available,
         }
     )
-
-
-def formatCourseOfferings(subject):
-    return subject.name
-
-
-def formatTimesAvailable(timeBlock):
-    return {
-        "startTime": timeBlock.startTime.isoformat(),
-        "endTime": timeBlock.endTime.isoformat(),
-    }
-
-
-def formatRating(rating):
-    return rating.score
 
 
 @tutor.route("profile/", methods=["PUT"])
@@ -86,75 +73,45 @@ def modify_profile():
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
 
-    admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
+    modify_tutor_id = admin_id_check(args)
 
-    if admin is not None and "id" not in args:
-        raise ExpectedError("Id of tutor being modified is required", 400)
-
-    if admin is None and "id" in args:
-        raise ExpectedError("Insufficient permission to delete this profile", 403)
-
-    if admin:
-        modifyTutorId = args["id"]
-    else:
-        modifyTutorId = session["user_id"]
-
-    tutor = Tutor.prisma().find_unique(
-        where={"id": modifyTutorId},
-        include={
-            "courseOfferings": {"include": {"tutorsTeaching": True}},
-            "timesAvailable": True,
-        },
-    )
-
-    if tutor is None:
+    tutor = tutor_view(id=modify_tutor_id)
+    if tutor == None:
         raise ExpectedError("Profile does not exist", 404)
 
-    if "name" not in args:
-        name = tutor.name
-    else:
-        name = args["name"]
+    name = tutor.name if "name" not in args else args["name"]
+    bio = tutor.bio if "bio" not in args else args["bio"]
+    email = tutor.email if "email" not in args else args["email"]
+    if "email" in args and not fullmatch(
+        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
+        str(args["email"]).lower().strip(),
+    ):
+        raise ExpectedError("New email is invalid", 400)
 
-    if "bio" not in args:
-        bio = tutor.bio
-    else:
-        bio = args["bio"]
-
-    if "email" not in args:
-        email = tutor.email
-    else:
-        email = args["email"]
-
-    if "profilePicture" not in args:
-        profilePicture = tutor.profilePicture
-    else:
-        profilePicture = args["profilePicture"]
-
-    if "location" not in args:
-        location = tutor.location
-    else:
-        location = args["location"]
-
-    if "phoneNumber" not in args:
-        phoneNumber = tutor.phoneNumber
-    else:
-        phoneNumber = args["phoneNumber"]
-
+    profile_picture = (
+        tutor.profile_picture
+        if "profilePicture" not in args
+        else args["profilePicture"]
+    )
+    location = tutor.location if "location" not in args else args["location"]
+    phone_number = (
+        tutor.phone_number if "phoneNumber" not in args else args["phoneNumber"]
+    )
     if "courseOfferings" in args:
-        addingSubjects(args["courseOfferings"], modifyTutorId)
+        addingSubjects(args["courseOfferings"], modify_tutor_id)
 
     if "timesAvailable" in args:
-        addingTimes(args["timesAvailable"], modifyTutorId)
+        addingTimes(args["timesAvailable"], modify_tutor_id)
 
-    Tutor.prisma().update(
+    User.prisma().update(
         where={"id": tutor.id},
         data={
             "name": name,
             "bio": bio,
             "email": email,
-            "profilePicture": profilePicture,
+            "profilePicture": profile_picture,
             "location": location,
-            "phoneNumber": phoneNumber,
+            "phoneNumber": phone_number,
         },
     )
 
@@ -169,34 +126,16 @@ def delete_profile():
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
 
-    admin = Admin.prisma().find_unique(where={"id": session["user_id"]})
+    delete_tutor_id = admin_id_check(args)
 
-    if admin is not None and "id" not in args:
-        raise ExpectedError("Id of tutor being deleted is required", 400)
-
-    if admin is None and "id" in args:
-        raise ExpectedError("Insufficient permission to delete this profile", 403)
-
-    if admin:
-        deleteTutorId = args["id"]
-    else:
-        deleteTutorId = session["user_id"]
-
-    tutor = Tutor.prisma().find_unique(where={"id": deleteTutorId})
-
-    if tutor is None:
+    tutor = tutor_view(id=delete_tutor_id)
+    if tutor == None:
         raise ExpectedError("Profile does not exist", 404)
 
-    Tutor.prisma().update(
-        where={"id": tutor.id},
-        data={"rating": {"deleteMany": {}}, "timesAvailable": {"deleteMany": {}}},
-    )
-
-    if tutor.courseOfferings != None:
-        subjectList = list(map(formatCourseOfferings, tutor.courseOfferings))
-
-        for subject in subjectList:
-            Tutor.prisma().delete(
+    # All fields other than course_offerings will cascade delete in the db
+    if tutor.course_offerings != None:
+        for subject in map(lambda c: c.name, tutor.course_offerings):
+            Tutor.prisma().update(
                 where={"id": tutor.id},
                 data={"courseOfferings": {"disconnect": {"name": subject}}},
             )
@@ -206,75 +145,82 @@ def delete_profile():
     return jsonify({"success": True})
 
 
-def addingSubjects(courseOfferings, tutorId):
-    tutor = Tutor.prisma().find_unique(
-        where={"id": tutorId},
-        include={
-            "courseOfferings": {"include": {"tutorsTeaching": True}},
-            "timesAvailable": True,
-        },
-    )
-
+def addingSubjects(course_offerings, tutor_id):
+    tutor = tutor_view(id=tutor_id)
     # tutor is adding/deleting subjects
     # wipe previous stuff, if there is any
-    if tutor.courseOfferings != None:
-        for subject in tutor.courseOfferings:
+    if tutor.course_offerings != None:
+        for subject in tutor.course_offerings:
             Tutor.prisma().update(
-                where={"id": tutorId},
+                where={"id": tutor_id},
                 data={"courseOfferings": {"disconnect": {"name": subject.name}}},
             )
 
     # tutor is changing their subjects offered to zero
-    if courseOfferings == None or len(courseOfferings) == 0:
+    if course_offerings == None or len(course_offerings) == 0:
         return
 
     # connect all subjects in the courseofferings list back to the tutor record
     # connect the tutor to the respective subject
+    for subject_name in course_offerings:
+        subject = Subject.prisma().find_first(where={"name": subject_name})
 
-    for subjectName in courseOfferings:
-        subject = Subject.prisma().find_first(where={"name": subjectName})
-
-        if subject is None:
-            Subject.prisma().create(data={"name": subjectName})
+        if subject == None:
+            Subject.prisma().create(data={"name": subject_name})
 
         Tutor.prisma().update(
-            where={"id": tutorId},
-            data={"courseOfferings": {"connect": {"name": subjectName}}},
+            where={"id": tutor_id},
+            data={"courseOfferings": {"connect": {"name": subject_name}}},
         )
 
 
-def addingTimes(timesAvailable, tutorId):
-    tutor = Tutor.prisma().find_unique(where={"id": tutorId})
+def process_time_block(timeblock):
+    try:
+        st = datetime.fromisoformat(timeblock["startTime"])
+        et = datetime.fromisoformat(timeblock["endTime"])
+    except ValueError:
+        raise ExpectedError("timeRange field(s) were malformed", 400)
 
-    Tutor.prisma().update(
-        where={"id": tutorId}, data={"timesAvailable": {"deleteMany": {}}}
-    )
+    if st > et:
+        raise ExpectedError("endTime cannot be less than startTime", 400)
+    elif st.replace(tzinfo=None) < datetime.now():
+        raise ExpectedError("startTime must be in the future", 400)
 
-    if timesAvailable is None or len(timesAvailable) == 0:
+    return {"id": str(uuid4()), "startTime": st, "endTime": et}
+
+
+def addingTimes(times_available, tutor_id):
+    if times_available == None or len(times_available) == 0:
+        Tutor.prisma().update(
+            where={"id": tutor_id}, data={"timesAvailable": {"deleteMany": {}}}
+        )
         return
 
+    formatted_availabilities = sorted(
+        map(lambda t: process_time_block(t), times_available),
+        key=lambda d: d["startTime"],
+    )
+
+    to_create = []
+    prev_block = None
     # create all the tutoravailability records again with the new timesAvailable
-    for timeBlock in timesAvailable:
-        try:
-            st = datetime.fromisoformat(timeBlock["startTime"])
-            et = datetime.fromisoformat(timeBlock["endTime"])
-        except ValueError:
-            raise ExpectedError("timeRange field(s) were malformed", 400)
+    for i, time_block in enumerate(formatted_availabilities):
+        if i == 0:
+            to_create.append(time_block)
+            prev_block = time_block
+            continue
 
-        if st > et:
-            raise ExpectedError("endTime cannot be less than startTime", 400)
-        elif st.replace(tzinfo=None) < datetime.now():
-            raise ExpectedError("startTime must be in the future", 400)
+        if prev_block["endTime"] > time_block["startTime"]:
+            raise ExpectedError("Time availabilities should not overlap", 400)
 
-        Tutor.prisma().update(
-            where={"id": tutorId},
-            data={
-                "timesAvailable": {
-                    "create": {
-                        "id": str(uuid4()),
-                        "startTime": st,
-                        "endTime": et,
-                    }
-                }
-            },
-        )
+        to_create.append(time_block)
+        prev_block = time_block
+
+    Tutor.prisma().update(
+        where={"id": tutor_id}, data={"timesAvailable": {"deleteMany": {}}}
+    )
+
+    Tutor.prisma().update(
+        where={"id": tutor_id},
+        data={"timesAvailable": {"create": to_create}},
+    )
