@@ -21,10 +21,24 @@ const formSchema = z.object({
   ),
 })
 
-export default function EditOfferings() {
+interface editOfferingsProps {
+  data: string[]
+}
+//need to grab the code where i update defalut values into here
+
+export default function EditOfferings({ data }: editOfferingsProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   })
+  const courseObj: { name: string }[] = []
+
+  //push in courses from profile
+
+  data.forEach((course) => {
+    courseObj.push({ name: course })
+  })
+  //need to figure out how to set values for course offerings in the function
+  //form.setValue(courseObj, "courseOfferings")
   const { fields, append, remove } = useFieldArray({
     name: "courseOfferings",
     control: form.control,

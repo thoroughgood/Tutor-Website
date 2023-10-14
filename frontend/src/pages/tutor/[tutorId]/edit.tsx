@@ -27,7 +27,7 @@ import { getErrorMessage } from "@/lib/utils"
 import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
 import { MockProfileService } from "@/service/profileService"
-import { useQuery } from "react-query"
+import { useQuery, useQueryClient } from "react-query"
 import { Textarea } from "@/components/ui/textarea"
 import toast from "react-hot-toast"
 
@@ -59,6 +59,7 @@ const formSchema = z.object({
 })
 const profileService = new MockProfileService()
 export default function Edit() {
+  const queryClient = useQueryClient()
   const router = useRouter()
   const { user } = useUser()
   const tutorId = router.query.tutorId as string
@@ -76,6 +77,7 @@ export default function Edit() {
       const courseObj: { name: string }[] = []
 
       //push in courses from profile
+
       data.courseOfferings.forEach((course) => {
         courseObj.push({ name: course })
       })
@@ -136,6 +138,7 @@ export default function Edit() {
     } catch (error) {
       toast.error(getErrorMessage(error))
     }
+    queryClient.invalidateQueries({ queryKey: ["tutors", tutorId] })
     setSubmitLoading(false)
   }
   return (
@@ -185,7 +188,7 @@ export default function Edit() {
                   inputType="string"
                 />
               </div>
-              <EditOfferings />
+              <EditOfferings data={data.courseOfferings} />
               <div className=" mt-4">
                 <LoadingButton
                   role="submit"
