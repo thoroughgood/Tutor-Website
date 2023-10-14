@@ -56,7 +56,7 @@ run = "./runBackend.sh"
 [tool.poe.tasks.tests]
 shell = "cd tests && ./updateTestSchema.sh && pytest && cd .. && prisma db push"
 
-# run in this format: poetry poe test_one -t `filename`
+# run in this format: poetry poe test_one -f `filename`
 [tool.poe.tasks.test_one]
 shell = "cd tests && ./updateTestSchema.sh && pytest $testname && cd .. && prisma db push"
     [[tool.poe.tasks.test_one.args]]
