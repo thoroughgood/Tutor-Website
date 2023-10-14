@@ -11,7 +11,8 @@ generator client {
   provider               = "prisma-client-py"
   partial_type_generator = "prisma/partial_types.py"
   interface              = "sync"
-  recursive_type_depth   = 5
+  // see https://prisma-client-py.readthedocs.io/en/stable/reference/config/#recursive
+  recursive_type_depth   = -1
 }
 
 // data models
@@ -48,14 +49,14 @@ model Tutor {
   id              String              @id
   userInfo        User                @relation(fields: [userInfoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userInfoId      String              @unique
-  documents       Documents[]
+  documents       Document[]
   ratings         Rating[]
   courseOfferings Subject[]
   timesAvailable  TutorAvailability[]
   appointments    Appointment[]
 }
 
-model Documents {
+model Document {
   id       String @id
   tutor    Tutor  @relation(fields: [tutorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   tutorId  String
