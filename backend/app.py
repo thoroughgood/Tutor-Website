@@ -9,6 +9,7 @@ from blueprints.tutor import tutor
 from blueprints.student import student
 from blueprints.search import search_tutor
 from blueprints.utils import utils
+from blueprints.appointment import appointment
 from helpers.my_request import MyRequest
 
 prisma = Prisma(auto_register=True)
@@ -32,6 +33,7 @@ app.register_blueprint(tutor, url_prefix="/tutor")
 app.register_blueprint(student, url_prefix="/student")
 app.register_blueprint(search_tutor, url_prefix="/")
 app.register_blueprint(utils, url_prefix="/utils")
+app.register_blueprint(appointment, url_prefix="/appointment")
 
 
 # default route
