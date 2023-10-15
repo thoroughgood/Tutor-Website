@@ -50,14 +50,17 @@ poethepoet = "^0.24.1"
 
 [tool.poe.tasks]
 # run in this format: poetry poe run
+help = "run backend in dev environment"
 run = "./runBackend.sh"
 
 # run in this format: poetry poe tests
 [tool.poe.tasks.tests]
+help = "pytest all test files"
 shell = "cd tests && ./updateTestSchema.sh && pytest && cd .. && prisma db push"
 
 # run in this format: poetry poe test_one -f `filename`
 [tool.poe.tasks.test_one]
+help = "pytest one test file"
 shell = "cd tests && ./updateTestSchema.sh && pytest $testname && cd .. && prisma db push"
     [[tool.poe.tasks.test_one.args]]
     name = "testname"

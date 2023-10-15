@@ -118,7 +118,7 @@ def resetpassword():
     args = request.get_json()
 
     if "user_id" not in session:
-        raise ExpectedError("No user is logged in", 400)
+        raise ExpectedError("No user is logged in", 401)
 
     admin = admin_view(id=session["user_id"])
     if not admin:

@@ -433,7 +433,7 @@ def test_resetpassword_no_user(setup_test: FlaskClient):
     with client.session_transaction() as session:
         assert ("user_id" not in session) == True
     resp = client.put("/resetpassword", json={})
-    assert resp.status_code == 400
+    assert resp.status_code == 401
     assert resp.json == {"error": "No user is logged in"}
 
 
