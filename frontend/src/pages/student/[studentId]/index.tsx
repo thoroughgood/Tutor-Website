@@ -2,12 +2,12 @@ import ProfileHeader from "@/components/profileHeader"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import useUser from "@/hooks/useUser"
-import { MockProfileService } from "@/service/profileService"
+import { HTTPProfileService } from "@/service/profileService"
 import { MessageCircle, User } from "lucide-react"
 import { useRouter } from "next/router"
 import { useQuery } from "react-query"
 
-const profileService = new MockProfileService()
+const profileService = new HTTPProfileService()
 export default function StudentProfile() {
   const router = useRouter()
   const { user } = useUser()

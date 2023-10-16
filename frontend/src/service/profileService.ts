@@ -1,5 +1,7 @@
 import TutorProfile from "@/pages/tutor/[tutorId]"
+import wretch from "wretch"
 import { SuccessResponse } from "./types"
+import { HTTPService } from "./helpers"
 
 interface UserProfile {
   id: string
@@ -49,16 +51,49 @@ export interface ProfileService {
   ) => Promise<SuccessResponse>
 }
 
-// export class HTTPProfileService extends HTTPService implements ProfileService {
-//   async searchTutors(searchParams): Promise<{ tutorIds: string[] }> {
-//     const url = new URL(`${this.backendURL}/searchtutor`)
-//     const params = new URLSearchParams(searchParams)
-//     url.search = params.toString()
-//     console.log(url)
-//     const data = wretch(`${this.backendURL}/searchtutor`).get()
-//     return await data.json()
-//   }
-// }
+export class HTTPProfileService extends HTTPService implements ProfileService {
+  async searchTutors(
+    searchParams: TutorSearchParams,
+  ): Promise<{ tutorIds: string[] }> {
+    const url = new URL(`${this.backendURL}/searchtutor`)
+    const params = new URLSearchParams({
+      ...searchParams,
+      courseOfferings: JSON.stringify(searchParams.courseOfferings),
+      timeRange: JSON.stringify(searchParams.timeRange),
+    })
+    url.search = params.toString()
+    console.log(url)
+    const data = wretch(`${this.backendURL}/searchtutor`).get()
+    return await data.json()
+  }
+  async getTutorProfile(tutorId: string): Promise<TutorProfile> {
+    const resp = wretch(`${this.backendURL}/tutor/${tutorId}`).get()
+    return await resp.json()
+  }
+
+  async setOwnTutorProfile(
+    tutorProfile: TutorSelfEditReqBody,
+  ): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/tutor/profile`)
+      .json(tutorProfile)
+      .put()
+    return resp.json()
+  }
+
+  async getStudentProfile(studentId: string): Promise<StudentProfile> {
+    const resp = wretch(`${this.backendURL}/student/${studentId}`).get()
+    return await resp.json()
+  }
+
+  async setOwnStudentProfile(
+    studentProfile: StudentSelfEditReqBody,
+  ): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/student/profile`)
+      .json(studentProfile)
+      .put()
+    return resp.json()
+  }
+}
 
 export class MockProfileService implements ProfileService {
   private mockTutorProfile: TutorProfile = {
