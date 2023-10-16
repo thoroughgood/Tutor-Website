@@ -7,7 +7,7 @@ trap "exit 0" SIGINT
 
 # Loads environment variables from .env file
 set -a # automatically export all variables
-source .env
+source .env > /dev/null 2>&1
 set +a
 
 python3 -m venv .venv
