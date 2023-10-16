@@ -22,7 +22,6 @@ export default function DeleteModal() {
     setSubmitLoading(true)
     try {
       const deletion = await profileService.deleteOwnUserProfile("1337")
-      console.log(deletion)
     } catch {
       toast.error(getErrorMessage)
     }
