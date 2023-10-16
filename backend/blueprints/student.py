@@ -10,15 +10,10 @@ from helpers.error_handlers import (
 student = Blueprint("student", __name__)
 
 
-@student.route("profile/", methods=["GET"])
+@student.route("profile/<id>", methods=["GET"])
 @error_decorator
-def get_profile():
-    args = request.args
-
-    if "id" not in args:
-        raise ExpectedError("id field was missing", 400)
-
-    student = student_view(id=args["id"])
+def get_profile(id):
+    student = student_view(id=id)
 
     if not student:
         raise ExpectedError("Profile does not exist", 404)
