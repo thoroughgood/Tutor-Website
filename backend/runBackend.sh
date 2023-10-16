@@ -1,14 +1,18 @@
 #!/bin/bash
 
-export PIPENV_DEFAULT_PYTHON_VERSION=3.10
-export PIPENV_VENV_IN_PROJECT=true
+export POETRY_VIRTUALENVS_IN_PROJECT=true
 
 python3 -m venv .venv
-.venv/bin/pip3 install pipenv
-.venv/bin/pipenv install
+.venv/bin/pip3 install -U pip setuptools
+.venv/bin/pip3 install poetry==1.6.1
+yes | .venv/bin/poetry cache clear PyPI --all
+yes | .venv/bin/poetry cache clear _default_cache --all
 
-# will stop here if db push fails
-.venv/bin/pipenv run prisma db push --schema prisma/schema.prisma || exit 1
+# uncomment if problem with lock file
+# .venv/bin/poetry lock --no-update
 
-# as suggested by https://docs.gunicorn.org/en/stable/deploy.html#using-virtualenv
-.venv/bin/pipenv run python3 .venv/bin/gunicorn
+.venv/bin/poetry install
+
+.venv/bin/poetry run prisma db push --schema prisma/schema.prisma || exit 1
+
+.venv/bin/poetry run .venv/bin/gunicorn

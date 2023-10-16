@@ -1,17 +1,18 @@
 import pytest
 from flask.testing import FlaskClient
-from prisma.models import Subject, User
+from prisma.models import Subject, User, Tutor
 from uuid import uuid4
 import datetime
 import json
 
 
 @pytest.fixture
-def generate_tutors() -> None:
+def generate_tutors(generate_dummy_appointment) -> None:
     Subject.prisma().create(data={"name": "math"})
     Subject.prisma().create(data={"name": "science"})
 
     # * irrelevant information are left empty
+    apt_id1 = generate_dummy_appointment[0]()
     User.prisma().create(
         data={
             "id": "tutorId1",
@@ -20,16 +21,28 @@ def generate_tutors() -> None:
             "name": "James",
             "location": "Australia",
             "tutorInfo": {
+                "create": {"id": "tutorId1"},
+            },
+        },
+    )
+    Tutor.prisma().update(
+        where={
+            "id": "tutorId1",
+        },
+        data={
+            "appointments": {"connect": {"id": apt_id1}},
+            "courseOfferings": {"connect": {"name": "math"}},
+            "ratings": {
                 "create": {
-                    "id": "tutorId1",
-                    "ratings": {
-                        "create": {"id": str(uuid4()), "score": 2, "createdById": ""}
-                    },
-                    "courseOfferings": {"connect": {"name": "math"}},
+                    "id": str(uuid4()),
+                    "score": 2,
+                    "appointment": {"connect": {"id": apt_id1}},
                 }
             },
         },
     )
+
+    apt_id2 = generate_dummy_appointment[0]()
     User.prisma().create(
         data={
             "id": "tutorId2",
@@ -37,26 +50,37 @@ def generate_tutors() -> None:
             "hashedPassword": "12345678",
             "name": "Jan",
             "location": "Tasmania",
-            "tutorInfo": {
+            "tutorInfo": {"create": {"id": "tutorId2"}},
+        },
+    )
+    Tutor.prisma().update(
+        where={
+            "id": "tutorId2",
+        },
+        data={
+            "appointments": {"connect": {"id": apt_id2}},
+            "courseOfferings": {"connect": {"name": "science"}},
+            "timesAvailable": {
                 "create": {
-                    "id": "tutorId2",
-                    "ratings": {
-                        "create": {"id": str(uuid4()), "score": 4, "createdById": ""}
-                    },
-                    "courseOfferings": {"connect": {"name": "science"}},
-                    "timesAvailable": {
-                        "create": {
-                            "id": "1",
-                            "startTime": datetime.datetime.utcnow()
-                            + datetime.timedelta(days=4, hours=0),
-                            "endTime": datetime.datetime.utcnow()
-                            + datetime.timedelta(days=4, hours=6),
-                        }
-                    },
+                    "id": "1",
+                    "startTime": datetime.datetime.utcnow()
+                    + datetime.timedelta(days=4, hours=0),
+                    "endTime": datetime.datetime.utcnow()
+                    + datetime.timedelta(days=4, hours=6),
+                }
+            },
+            "ratings": {
+                "create": {
+                    "id": str(uuid4()),
+                    "score": 4,
+                    "appointment": {"connect": {"id": apt_id2}},
                 }
             },
         },
     )
+
+    f, dummy_tutor_id, _ = generate_dummy_appointment
+    apt_id3 = f()
     User.prisma().create(
         data={
             "id": "tutorId3",
@@ -64,28 +88,39 @@ def generate_tutors() -> None:
             "hashedPassword": "12345678",
             "name": "John",
             "location": "Tasmania",
-            "tutorInfo": {
+            "tutorInfo": {"create": {"id": "tutorId3"}},
+        },
+    )
+    Tutor.prisma().update(
+        where={
+            "id": "tutorId3",
+        },
+        data={
+            "appointments": {"connect": {"id": apt_id3}},
+            "courseOfferings": {"connect": [{"name": "science"}, {"name": "math"}]},
+            "timesAvailable": {
                 "create": {
-                    "id": "tutorId3",
-                    "ratings": {
-                        "create": {"id": str(uuid4()), "score": 3, "createdById": ""}
-                    },
-                    "courseOfferings": {
-                        "connect": [{"name": "science"}, {"name": "math"}]
-                    },
-                    "timesAvailable": {
-                        "create": {
-                            "id": "2",
-                            "startTime": datetime.datetime.utcnow()
-                            + datetime.timedelta(days=3, hours=0),
-                            "endTime": datetime.datetime.utcnow()
-                            + datetime.timedelta(days=3, hours=6),
-                        }
-                    },
+                    "id": "2",
+                    "startTime": datetime.datetime.utcnow()
+                    + datetime.timedelta(days=3, hours=0),
+                    "endTime": datetime.datetime.utcnow()
+                    + datetime.timedelta(days=3, hours=6),
+                }
+            },
+            "ratings": {
+                "create": {
+                    "id": str(uuid4()),
+                    "score": 3,
+                    "appointment": {"connect": {"id": apt_id3}},
                 }
             },
         },
     )
+    # removing the dummy tutor from the db so it doesn't impact
+    # test results
+    User.prisma().delete(where={"id": dummy_tutor_id})
+    assert Tutor.prisma().count() == 3
+
     return None
 
 

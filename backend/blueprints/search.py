@@ -1,7 +1,7 @@
 import json
 import re
 from flask import Blueprint, request, jsonify
-from prisma.models import Tutor
+from prisma.models import Tutor, Subject
 from datetime import datetime
 from helpers.rating_calc import rating_calc
 from helpers.error_handlers import (

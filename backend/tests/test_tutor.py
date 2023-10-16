@@ -2,13 +2,14 @@ from hashlib import sha256
 from uuid import uuid4
 import pytest
 from flask.testing import FlaskClient
-from prisma.models import Subject, User
+from prisma.models import Subject, User, Tutor
 from datetime import datetime, timedelta
 
 
 @pytest.fixture
-def generate_tutor() -> str:
+def generate_tutor(generate_dummy_appointment) -> str:
     Subject.prisma().create(data={"name": "science"})
+    appointment_id = generate_dummy_appointment[0]()
 
     id = str(uuid4())
     tutor = User.prisma().create(
@@ -21,47 +22,41 @@ def generate_tutor() -> str:
             "location": "Australia",
             "profilePicture": None,
             "phoneNumber": "0411123901",
-            "tutorInfo": {
+            "tutorInfo": {"create": {"id": id}},
+        }
+    )
+
+    # separated to keep queries small
+    Tutor.prisma().update(
+        where={
+            "id": id,
+        },
+        data={
+            "appointments": {"connect": {"id": appointment_id}},
+            "courseOfferings": {"connect": {"name": "science"}},
+            "timesAvailable": {
                 "create": {
-                    "id": id,
-                    "ratings": {
-                        "create": {"id": str(uuid4()), "score": 2, "createdById": ""}
-                    },
-                    "courseOfferings": {"connect": {"name": "science"}},
-                    "timesAvailable": {
-                        "create": {
-                            "id": "1",
-                            "startTime": datetime.fromisoformat(
-                                "2023-10-14T15:48:26.297000+00:00"
-                            ),
-                            "endTime": datetime.fromisoformat(
-                                "2023-10-14T21:48:26.297000+00:00"
-                            ),
+                    "id": "1",
+                    "startTime": datetime.fromisoformat(
+                        "2023-10-14T15:48:26.297000+00:00"
+                    ),
+                    "endTime": datetime.fromisoformat(
+                        "2023-10-14T21:48:26.297000+00:00"
+                    ),
+                }
+            },
+            "ratings": {
+                "create": {
+                    "id": str(uuid4()),
+                    "score": 2,
+                    "appointment": {
+                        "connect": {
+                            "id": appointment_id,
                         }
                     },
                 }
             },
-        }
-    )
-
-    return tutor.id
-
-
-@pytest.fixture
-def generate_dummy_tutor() -> str:
-    id = str(uuid4())
-    tutor = User.prisma().create(
-        data={
-            "id": id,
-            "email": "dummy@mail.com",
-            "name": "dummy",
-            "hashedPassword": sha256("dfknsdkjd".encode()).hexdigest(),
-            "bio": "",
-            "location": None,
-            "profilePicture": None,
-            "phoneNumber": None,
-            "tutorInfo": {"create": {"id": id}},
-        }
+        },
     )
 
     return tutor.id
