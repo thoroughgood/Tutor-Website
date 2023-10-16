@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify, session
-from prisma.models import Tutor, Student, Admin
+from prisma.models import User
 from re import fullmatch
 from uuid import uuid4
 from hashlib import sha256
+from helpers.views import user_view, admin_view, tutor_view, student_view
 from helpers.error_handlers import (
     ExpectedError,
     error_decorator,
@@ -30,43 +31,27 @@ def register():
 
     new_user_id = None
     if "accountType" in args:
-        student = Student.prisma().find_unique(where={"email": args["email"]})
-        tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
-        if student or tutor:
+        user = user_view(email=args["email"])
+        if user:
             raise ExpectedError("user already exists with this email", 400)
 
+        new_user_id = str(uuid4())
+        data = {
+            "id": new_user_id,
+            "name": args["name"],
+            "email": args["email"],
+            "hashedPassword": sha256(str(args["password"]).encode()).hexdigest(),
+        }
+
         match str(args["accountType"]).lower().strip():
+            # id the of 'typed' tables are the same such it's possible
+            # to still query on those tables with id
             case "student":
-                new_user_id = str(uuid4())
-                Student.prisma().create(
-                    data={
-                        "id": new_user_id,
-                        "name": args["name"],
-                        "email": args["email"],
-                        "hashedPassword": sha256(
-                            str(args["password"]).encode()
-                        ).hexdigest(),
-                        "bio": "",
-                        "appointments": {},
-                    }
-                )
+                data["studentInfo"] = {"create": {"id": new_user_id}}
+                User.prisma().create(data=data)
             case "tutor":
-                new_user_id = str(uuid4())
-                Tutor.prisma().create(
-                    data={
-                        "id": new_user_id,
-                        "name": args["name"],
-                        "email": args["email"],
-                        "hashedPassword": sha256(
-                            str(args["password"]).encode()
-                        ).hexdigest(),
-                        "bio": "",
-                        "rating": {},
-                        "courseOfferings": {},
-                        "timesAvailable": {},
-                        "appointments": {},
-                    }
-                )
+                data["tutorInfo"] = {"create": {"id": new_user_id}}
+                User.prisma().create(data=data)
             case _:
                 raise ExpectedError("accountType must be 'student' or 'tutor'", 400)
     else:
@@ -99,30 +84,20 @@ def login():
         or args["accountType"] == "tutor"
         or args["accountType"] == "admin"
     ):
-        student = Student.prisma().find_unique(where={"email": args["email"]})
-        tutor = Tutor.prisma().find_unique(where={"email": args["email"]})
-        admin = Admin.prisma().find_unique(where={"email": args["email"]})
+        match args["accountType"]:
+            case "student":
+                user = student_view(email=args["email"])
+            case "tutor":
+                user = tutor_view(email=args["email"])
+            case "admin":
+                user = admin_view(email=args["email"])
         if (
-            student
-            and student.hashedPassword
+            user
+            and user.hashed_password
             == sha256(str(args["password"]).encode()).hexdigest()
         ):
-            session["user_id"] = student.id
-            return jsonify({"id": student.id}), 200
-        elif (
-            tutor
-            and tutor.hashedPassword
-            == sha256(str(args["password"]).encode()).hexdigest()
-        ):
-            session["user_id"] = tutor.id
-            return jsonify({"id": tutor.id}), 200
-        elif (
-            admin
-            and admin.hashedPassword
-            == sha256(str(args["password"]).encode()).hexdigest()
-        ):
-            session["user_id"] = admin.id
-            return jsonify({"id": admin.id}), 200
+            session["user_id"] = user.id
+            return jsonify({"id": user.id}), 200
         else:
             raise ExpectedError("Invalid login attempt", 401)
     else:
@@ -143,39 +118,27 @@ def resetpassword():
     args = request.get_json()
 
     if "user_id" not in session:
-        raise ExpectedError("No user is logged in", 400)
+        raise ExpectedError("No user is logged in", 401)
 
-    admin = Admin.prisma().find_first(where={"id": session["user_id"]})
+    admin = admin_view(id=session["user_id"])
     if not admin:
         raise ExpectedError("Insufficient permission to modify this profile", 403)
 
     if "id" not in args:
         raise ExpectedError("id field is missing", 400)
 
-    student = Student.prisma().find_unique(where={"id": args["id"]})
-    tutor = Tutor.prisma().find_unique(where={"id": args["id"]})
-    if not student and not tutor:
+    user = user_view(id=args["id"])
+    # ? we'll tentatively say an admin may reset their own password
+    if not user:
         raise ExpectedError("Profile does not exist", 404)
 
     if "newPassword" not in args or len(str(args["newPassword"]).lower().strip()) < 8:
         raise ExpectedError("password field must be at least 8 characters long", 400)
 
-    newPassword = sha256(str(args["newPassword"]).encode()).hexdigest()
-    if student:
-        if student.hashedPassword == newPassword:
-            raise ExpectedError(
-                "New password cannot be the same as the old password", 400
-            )
-        Student.prisma().update(
-            where={"id": student.id}, data={"hashedPassword": newPassword}
-        )
-    if tutor:
-        if tutor.hashedPassword == newPassword:
-            raise ExpectedError(
-                "New password cannot be the same as the old password", 400
-            )
-        Tutor.prisma().update(
-            where={"id": tutor.id}, data={"hashedPassword": newPassword}
-        )
+    new_password = sha256(str(args["newPassword"]).encode()).hexdigest()
+    if new_password == user.hashed_password:
+        raise ExpectedError("New password cannot be the same as the old password", 400)
+
+    User.prisma().update(where={"id": user.id}, data={"hashedPassword": new_password})
 
     return jsonify({"success": True}), 200

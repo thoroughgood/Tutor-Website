@@ -2,7 +2,7 @@ from hashlib import sha256
 from uuid import uuid4
 import pytest
 from flask.testing import FlaskClient
-from prisma.models import Admin, Tutor, Student
+from prisma.models import User
 
 
 def test_register_not_json(setup_test: FlaskClient):
@@ -13,9 +13,6 @@ def test_register_not_json(setup_test: FlaskClient):
 
 
 def test_register_args(setup_test: FlaskClient):
-    assert Student.prisma().count() == 0
-    assert Tutor.prisma().count() == 0
-
     client = setup_test
     resp = client.post("/register", json={})
     assert resp.json == {"error": "name field was missing"}
@@ -115,9 +112,6 @@ def test_register_args(setup_test: FlaskClient):
     with client.session_transaction() as session:
         assert session["user_id"] == resp.json["id"]
 
-    assert Student.prisma().count() == 1
-    assert Tutor.prisma().count() == 1
-
 
 ################################# LOGIN TESTS ##################################
 
@@ -131,14 +125,13 @@ def test_login_not_json(setup_test: FlaskClient):
 
 @pytest.fixture
 def initialise_student() -> str:
-    student = Student.prisma().create(
+    student = User.prisma().create(
         data={
             "id": str(uuid4()),
             "email": "validemail@mail.com",
             "hashedPassword": sha256("12345678".encode()).hexdigest(),
             "name": "Name1",
-            "bio": "",
-            "location": "Australia",
+            "studentInfo": {"create": {"id": str(uuid4())}},
         },
     )
     return student.id
@@ -146,14 +139,13 @@ def initialise_student() -> str:
 
 @pytest.fixture
 def initialise_tutor() -> str:
-    tutor = Tutor.prisma().create(
+    tutor = User.prisma().create(
         data={
             "id": str(uuid4()),
             "email": "validemail2@mail.com",
             "hashedPassword": sha256("12345678".encode()).hexdigest(),
             "name": "Name2",
-            "bio": "",
-            "location": "Australia",
+            "tutorInfo": {"create": {"id": str(uuid4())}},
         },
     )
     return tutor.id
@@ -161,12 +153,13 @@ def initialise_tutor() -> str:
 
 @pytest.fixture
 def initialise_admin() -> str:
-    admin = Admin.prisma().create(
+    admin = User.prisma().create(
         data={
             "id": str(uuid4()),
             "email": "validemail3@mail.com",
             "hashedPassword": sha256("12345678".encode()).hexdigest(),
             "name": "Admean",
+            "adminInfo": {"create": {"id": str(uuid4())}},
         }
     )
     return admin.id
@@ -274,6 +267,80 @@ def test_admin_login(setup_test: FlaskClient, initialise_admin: str):
         assert session["user_id"] == resp.json["id"]
 
 
+def test_login_as_other(
+    setup_test: FlaskClient,
+    initialise_admin: str,
+    initialise_tutor: str,
+    initialise_student: str,
+):
+    client = setup_test
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+    assert resp.json == {"error": "Invalid login attempt"}
+    assert resp.status_code == 401
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+    assert resp.json == {"error": "Invalid login attempt"}
+    assert resp.status_code == 401
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+    assert resp.json == {"error": "Invalid login attempt"}
+    assert resp.status_code == 401
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+    assert resp.json == {"error": "Invalid login attempt"}
+    assert resp.status_code == 401
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+    assert resp.json == {"error": "Invalid login attempt"}
+    assert resp.status_code == 401
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+    assert resp.json == {"error": "Invalid login attempt"}
+    assert resp.status_code == 401
+
+
 ################################# LOGOUT TESTS #################################
 
 
@@ -366,7 +433,7 @@ def test_resetpassword_no_user(setup_test: FlaskClient):
     with client.session_transaction() as session:
         assert ("user_id" not in session) == True
     resp = client.put("/resetpassword", json={})
-    assert resp.status_code == 400
+    assert resp.status_code == 401
     assert resp.json == {"error": "No user is logged in"}
 
 
