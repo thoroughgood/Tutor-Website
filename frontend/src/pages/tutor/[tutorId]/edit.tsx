@@ -38,8 +38,7 @@ import EditOfferings from "@/components/editOfferings"
 
 const authService = new HTTPAuthService()
 
-//changed courseOfferings into an object -> have to then manipulate it to be an array upon data submission
-//need to change
+//null if the string value is empty
 const formSchema = z.object({
   name: z
     .string()
@@ -48,9 +47,9 @@ const formSchema = z.object({
     })
     .max(50),
   bio: z.string(),
-  profilePicture: z.string().nullable().optional(),
-  location: z.string().nullable(),
-  phoneNumber: z.string().nullable(),
+  profilePicture: z.string(),
+  location: z.string(),
+  phoneNumber: z.string(),
   courseOfferings: z.array(
     z.object({
       name: z.string(),
@@ -71,36 +70,32 @@ export default function Edit() {
     queryFn: () => profileService.getTutorProfile(tutorId),
   })
 
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+  })
+
   useEffect(() => {
     if (data) {
-      //create an empty array of objects
       const courseObj: { name: string }[] = []
 
       //push in courses from profile
-
       data.courseOfferings.forEach((course) => {
         courseObj.push({ name: course })
       })
 
       form.setValue("name", data.name)
       form.setValue("bio", data.bio)
-      form.setValue("location", data.location)
-      form.setValue("phoneNumber", data.phoneNumber)
+      form.setValue("location", data.location || "")
+      form.setValue("phoneNumber", data.phoneNumber || "")
       form.setValue("courseOfferings", courseObj)
-      console.log(courseObj + "hey")
     }
-  }, data)
-
-  //if data hasnt loaded, give them a loading screen or skeleton
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-  })
+  }, [data, form])
 
   const { fields, append, remove } = useFieldArray({
     name: "courseOfferings",
     control: form.control,
   })
+  //if data hasnt loaded, give them a loading screen or skeleton
 
   if (!data) {
     return <div> loading screen </div>
@@ -112,15 +107,6 @@ export default function Edit() {
     //need to modify to convert from image to base64URI values.profilePicture
     setSubmitLoading(true)
     try {
-      /* for (const val in values) {
-        console.log(val + val.valueOf)
-        if (val == "") {
-          val === null
-        }
-      } */
-
-      console.log(values)
-
       const tutorObj = {
         id: tutorId,
         name: values.name,
@@ -188,7 +174,12 @@ export default function Edit() {
                   inputType="string"
                 />
               </div>
-              <EditOfferings data={data.courseOfferings} />
+              <EditOfferings
+                form={form}
+                fields={fields}
+                append={append}
+                remove={remove}
+              />
               <div className=" mt-4">
                 <LoadingButton
                   role="submit"

@@ -1,50 +1,19 @@
-import { useFieldArray, useForm } from "react-hook-form"
+import React from "react"
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "./ui/form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
+} from "@/components/ui/form"
 import { cn } from "@/lib/utils"
 import { X } from "lucide-react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 
-const formSchema = z.object({
-  courseOfferings: z.array(
-    z.object({
-      name: z.string(),
-    }),
-  ),
-})
-
-interface editOfferingsProps {
-  data: string[]
-}
-//need to grab the code where i update defalut values into here
-
-export default function EditOfferings({ data }: editOfferingsProps) {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-  })
-  const courseObj: { name: string }[] = []
-
-  //push in courses from profile
-
-  data.forEach((course) => {
-    courseObj.push({ name: course })
-  })
-  //need to figure out how to set values for course offerings in the function
-  //form.setValue(courseObj, "courseOfferings")
-  const { fields, append, remove } = useFieldArray({
-    name: "courseOfferings",
-    control: form.control,
-  })
+export default function editOfferings({ form, fields, remove, append }) {
   return (
-    <>
+    <div>
       {fields.map((field, index) => (
         <FormField
           control={form.control}
@@ -70,17 +39,15 @@ export default function EditOfferings({ data }: editOfferingsProps) {
           )}
         />
       ))}
-      <div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="mt-2"
-          onClick={() => append({ value: "" })}
-        >
-          Add Course Offerings
-        </Button>
-      </div>
-    </>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="mt-2"
+        onClick={() => append({ value: "" })}
+      >
+        Add Course Offerings
+      </Button>
+    </div>
   )
 }
