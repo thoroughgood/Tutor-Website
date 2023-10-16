@@ -11,15 +11,13 @@ from helpers.error_handlers import (
 student = Blueprint("student", __name__)
 
 
-@student.route("profile/", methods=["GET"])
+@student.route("/<studentId>", methods=["GET"])
 @error_decorator
-def get_profile():
-    args = request.args
+def get_profile(studentId=None):
+    if not studentId or len(studentId.lower().strip()) == 0:
+        raise ExpectedError("id field was missing", 405)
 
-    if "id" not in args:
-        raise ExpectedError("id field was missing", 400)
-
-    student = student_view(id=args["id"])
+    student = student_view(id=studentId)
 
     if not student:
         raise ExpectedError("Profile does not exist", 404)
@@ -39,7 +37,7 @@ def get_profile():
     )
 
 
-@student.route("profile/", methods=["PUT"])
+@student.route("profile", methods=["PUT"])
 @error_decorator
 def modify_profile():
     args = request.get_json()
@@ -94,7 +92,7 @@ def modify_profile():
     return jsonify({"success": True}), 200
 
 
-@student.route("/", methods=["DELETE"])
+@student.route("", methods=["DELETE"])
 @error_decorator
 def delete_profile():
     args = request.get_json()
