@@ -72,3 +72,13 @@ interpreter = "bash"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+# Specify options/flags to be added to pytests
+# https://docs.pytest.org/en/7.1.x/reference/reference.html#confval-addopts
+addopts = '--color=yes --code-highlight=yes'
+xfail_strict = true
+log_cli = true
+testpaths = [
+    "tests",
+]
