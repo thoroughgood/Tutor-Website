@@ -58,7 +58,7 @@ export interface ProfileService {
 //     const data = wretch(`${this.backendURL}/searchtutor`).get()
 //     return await data.json()
 //   }
-// }
+// }const profileService = new MockProfileService()
 
 export class MockProfileService implements ProfileService {
   private mockTutorProfile: TutorProfile = {
@@ -104,7 +104,8 @@ export class MockProfileService implements ProfileService {
   }
 
   async setOwnTutorProfile(tutorProfile: TutorSelfEditReqBody) {
-    this.mockTutorProfile = { ...tutorProfile, id: "1337" }
+    this.mockTutorProfile = { ...tutorProfile, id: this.mockTutorProfile.id }
+    console.log(tutorProfile)
     return { success: true }
   }
 

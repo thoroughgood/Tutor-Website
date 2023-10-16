@@ -88,6 +88,7 @@ export default function Edit() {
       form.setValue("location", data.location || "")
       form.setValue("phoneNumber", data.phoneNumber || "")
       form.setValue("courseOfferings", courseObj)
+      form.setValue("profilePicture", data.profilePicture || "")
     }
   }, [data, form])
 
@@ -103,11 +104,30 @@ export default function Edit() {
 
   const courses: string[] = []
 
+  type tutor = {
+    id: string
+    name: string
+    bio: string
+    email: string
+    profilePicture: string | null
+    location: string | null
+    phoneNumber: string | null
+    courseOfferings: string[]
+    timeAvailable: {
+      startTime: string
+      endTime: string
+    }[]
+  }
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     //need to modify to convert from image to base64URI values.profilePicture
     setSubmitLoading(true)
     try {
-      const tutorObj = {
+      values.courseOfferings.forEach((course) => {
+        courses.push(course.name)
+      })
+
+      const tutorObj: tutor = {
         id: tutorId,
         name: values.name,
         bio: values.bio,
@@ -119,7 +139,18 @@ export default function Edit() {
         timeAvailable: data?.timeAvailable,
       }
 
+      if (values.phoneNumber === "") {
+        tutorObj.phoneNumber = null
+      }
+      if (values.location === "") {
+        tutorObj.location = null
+      }
+      if (values.profilePicture === "") {
+        tutorObj.profilePicture = null
+      }
+
       const id = await profileService.setOwnTutorProfile(tutorObj)
+      const test = await profileService.getTutorProfile(tutorId)
       console.log(id)
     } catch (error) {
       toast.error(getErrorMessage(error))

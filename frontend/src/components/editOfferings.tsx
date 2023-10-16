@@ -10,8 +10,46 @@ import { cn } from "@/lib/utils"
 import { X } from "lucide-react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
-
-export default function editOfferings({ form, fields, remove, append }) {
+import {
+  FieldArrayWithId,
+  UseFieldArrayAppend,
+  UseFieldArrayRemove,
+  UseFormReturn,
+} from "react-hook-form"
+import { z } from "zod"
+const formSchema = z.object({
+  name: z
+    .string()
+    .min(1, {
+      message: "Name is too short",
+    })
+    .max(50),
+  bio: z.string(),
+  profilePicture: z.string(),
+  location: z.string(),
+  phoneNumber: z.string(),
+  courseOfferings: z.array(
+    z.object({
+      name: z.string(),
+    }),
+  ),
+})
+interface editOfferingsProps {
+  form: UseFormReturn<z.infer<typeof formSchema>, any, undefined>
+  fields: FieldArrayWithId<
+    z.infer<typeof formSchema>,
+    "courseOfferings",
+    "id"
+  >[]
+  append: UseFieldArrayAppend<z.infer<typeof formSchema>, "courseOfferings">
+  remove: UseFieldArrayRemove
+}
+export default function editOfferings({
+  form,
+  fields,
+  remove,
+  append,
+}: editOfferingsProps) {
   return (
     <div>
       {fields.map((field, index) => (
@@ -44,7 +82,7 @@ export default function editOfferings({ form, fields, remove, append }) {
         variant="outline"
         size="sm"
         className="mt-2"
-        onClick={() => append({ value: "" })}
+        onClick={() => append({ name: "" })}
       >
         Add Course Offerings
       </Button>
