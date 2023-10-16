@@ -13,10 +13,10 @@ from helpers.error_handlers import (
 tutor = Blueprint("tutor", __name__)
 
 
-@tutor.route("profile/<id>", methods=["GET"])
+@tutor.route("/<tutorId>", methods=["GET"])
 @error_decorator
-def get_profile(id):
-    tutor = tutor_view(id=id)
+def get_profile(tutorId):
+    tutor = tutor_view(id=tutorId)
     if tutor == None:
         raise ExpectedError("Profile does not exist", 404)
 
