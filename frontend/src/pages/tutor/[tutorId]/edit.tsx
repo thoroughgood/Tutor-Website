@@ -96,7 +96,6 @@ export default function Edit() {
     name: "courseOfferings",
     control: form.control,
   })
-  //if data hasnt loaded, give them a loading screen or skeleton
 
   if (!data) {
     return <div> loading screen </div>
