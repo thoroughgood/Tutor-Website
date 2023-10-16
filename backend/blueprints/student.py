@@ -1,3 +1,4 @@
+from re import fullmatch
 from flask import Blueprint, request, jsonify, session
 from datetime import datetime, timezone
 from prisma.models import User
@@ -11,10 +12,10 @@ from helpers.error_handlers import (
 student = Blueprint("student", __name__)
 
 
-@student.route("profile/<id>", methods=["GET"])
+@student.route("/<studentId>", methods=["GET"])
 @error_decorator
-def get_profile(id):
-    student = student_view(id=id)
+def get_profile(studentId):
+    student = student_view(id=studentId)
 
     if not student:
         raise ExpectedError("Profile does not exist", 404)
@@ -34,7 +35,7 @@ def get_profile(id):
     )
 
 
-@student.route("profile/", methods=["PUT"])
+@student.route("profile", methods=["PUT"])
 @error_decorator
 def modify_profile():
     args = request.get_json()
@@ -43,16 +44,13 @@ def modify_profile():
         raise ExpectedError("No user is logged in", 401)
     mod_id = admin_id_check(args)
 
-    if "name" not in args or len(str(args["name"]).lower().strip()) == 0:
-        raise ExpectedError("name field was missing", 400)
-    if "bio" not in args:
-        raise ExpectedError("bio field was missing", 400)
-    if "profilePicture" not in args:
-        raise ExpectedError("profilePicture field was missing", 400)
-    if "location" not in args:
-        raise ExpectedError("location field was missing", 400)
-    if "phoneNumber" not in args:
-        raise ExpectedError("phoneNumber field was missing", 400)
+    if "name" in args and len(str(args["name"]).lower().strip()) == 0:
+        raise ExpectedError("name field is invalid", 400)
+    if "email" in args and not fullmatch(
+        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
+        str(args["email"]).lower().strip(),
+    ):
+        raise ExpectedError("email field is invalid", 400)
 
     student = student_view(id=mod_id)
     if not student:
@@ -60,10 +58,15 @@ def modify_profile():
 
     name = (
         args["name"]
-        if ("name" in args and len(str(args["name"]).lower().strip()) != 0)
+        if (
+            "name" in args
+            and len(str(args["name"]).lower().strip()) != 0
+            and args["name"] is not None
+        )
         else student.name
     )
     bio = args["bio"] if "bio" in args else student.bio
+    email = args["email"] if "email" in args else student.email
     profile_picture = (
         args["profilePicture"] if "profilePicture" in args else student.profile_picture
     )
@@ -77,6 +80,7 @@ def modify_profile():
         data={
             "name": name,
             "bio": bio if bio else "",
+            "email": email,
             "profilePicture": profile_picture,
             "location": location,
             "phoneNumber": phone_number,
@@ -86,7 +90,7 @@ def modify_profile():
     return jsonify({"success": True}), 200
 
 
-@student.route("/", methods=["DELETE"])
+@student.route("", methods=["DELETE"])
 @error_decorator
 def delete_profile():
     args = request.get_json()
