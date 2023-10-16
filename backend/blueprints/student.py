@@ -13,11 +13,7 @@ student = Blueprint("student", __name__)
 
 @student.route("/<studentId>", methods=["GET"])
 @error_decorator
-def get_profile(studentId=None):
-    raise ExpectedError(studentId, 405)
-    if not studentId or len(studentId.lower().strip()) == 0:
-        raise ExpectedError("id field was missing", 405)
-
+def get_profile(studentId):
     student = student_view(id=studentId)
 
     if not student:

@@ -59,8 +59,7 @@ def initialise_admin() -> str:
 def test_get_args(setup_test: FlaskClient, initialise_student: str):
     client = setup_test
 
-    # Missing id CLARIFY THIS TMR
-
+    # Missing id
     # resp = client.get("/student/")
     # assert resp.json == {"error": "id field was missing"}
     # assert resp.status_code == 405
