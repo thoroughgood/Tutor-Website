@@ -14,19 +14,19 @@ from helpers.error_handlers import (
 tutor = Blueprint("tutor", __name__)
 
 
-@tutor.route("profile/<id>", methods=["GET"])
+@tutor.route("<id>", methods=["GET"])
 @error_decorator
 def get_profile(id):
     tutor = tutor_view(id=id)
-    if tutor == None:
+    if tutor is None:
         raise ExpectedError("Profile does not exist", 404)
 
-    if tutor.course_offerings == None:
+    if tutor.course_offerings is None:
         course_offerings = []
     else:
         course_offerings = list(map(lambda c: c.name, tutor.course_offerings))
 
-    if tutor.times_available == None:
+    if tutor.times_available is None:
         times_available = []
     else:
         times_available = list(
@@ -39,7 +39,7 @@ def get_profile(id):
             )
         )
 
-    if tutor.ratings == None:
+    if tutor.ratings is None:
         rating = 0
     else:
         rating = rating_calc(tutor.ratings)
