@@ -12,7 +12,7 @@ from helpers.error_handlers import (
 appointment = Blueprint("appointment", __name__)
 
 
-@appointment.route("request/", methods=["POST"])
+@appointment.route("request", methods=["POST"])
 @error_decorator
 def request():
     args = request.get_json()
@@ -26,11 +26,19 @@ def request():
     if "endTime" not in args or len(str(args["endTime"]).lower().strip()) == 0:
         raise ExpectedError("endTime field was missing", 400)
 
-    st = datetime.fromisoformat(args["startTime"])
-    et = datetime.fromisoformat(args["endTime"])
+    if "tutorId" not in args:
+        raise ExpectedError("Tutor Id field was missing", 400)
 
-    if (et - st).total_seconds() <= 0:
-        raise ExpectedError("endTime is before startTime", 400)
+    try:
+        st = datetime.fromisoformat(args["startTime"])
+        et = datetime.fromisoformat(args["endTime"])
+    except ValueError:
+        raise ExpectedError("timeRange field(s) were malformed", 400)
+
+    if st > et:
+        raise ExpectedError("endTime cannot be less than startTime", 400)
+    elif st.replace(tzinfo=None) < datetime.now():
+        raise ExpectedError("startTime must be in the future", 400)
 
     tutor = tutor_view(id=args["id"])
     if not tutor:
@@ -71,7 +79,7 @@ def request():
     )
 
 
-@appointment.route("rating/", methods=["POST"])
+@appointment.route("rating", methods=["POST"])
 @error_decorator
 def rating():
     args = request.get_json()
