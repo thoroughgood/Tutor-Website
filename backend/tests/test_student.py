@@ -2,7 +2,8 @@ from hashlib import sha256
 from uuid import uuid4
 import pytest
 from flask.testing import FlaskClient
-from prisma.models import User
+from datetime import datetime, timedelta
+from prisma.models import User, Appointment
 from prisma.models import Student
 
 
@@ -323,3 +324,96 @@ def test_delete_admin_login(
     resp = client.delete("/student", json={"id": initialise_student})
     assert resp.json == {"success": True}
     assert resp.status_code == 200
+
+
+########################### STUDENT APPOINTMENT TESTS ##########################
+
+
+@pytest.fixture
+def generate_appointments(generate_dummy_tutor, initialise_student):
+    id1 = str(uuid4())
+    Appointment.prisma().create(
+        data={
+            "id": id1,
+            "student": {"connect": {"id": initialise_student}},
+            "tutor": {"connect": {"id": generate_dummy_tutor}},
+            "startTime": datetime.now() + timedelta(days=1, hours=0),
+            "endTime": datetime.now() + timedelta(days=1, hours=1),
+            "tutorAccepted": False,
+        }
+    )
+
+    id2 = str(uuid4())
+    Appointment.prisma().create(
+        data={
+            "id": id2,
+            "student": {"connect": {"id": initialise_student}},
+            "tutor": {"connect": {"id": generate_dummy_tutor}},
+            "startTime": datetime.now() + timedelta(days=1, hours=0),
+            "endTime": datetime.now() + timedelta(days=1, hours=1),
+            "tutorAccepted": True,
+        }
+    )
+
+    id3 = str(uuid4())
+    Appointment.prisma().create(
+        data={
+            "id": id3,
+            "student": {"connect": {"id": initialise_student}},
+            "tutor": {"connect": {"id": generate_dummy_tutor}},
+            "startTime": datetime.now() - timedelta(days=1, hours=1),
+            "endTime": datetime.now() - timedelta(days=1),
+            "tutorAccepted": True,
+        }
+    )
+
+    return (id1, id2, id3)
+
+
+def test_student_appointment_not_login(setup_test: FlaskClient):
+    client = setup_test
+    resp = client.get("/student/appointments")
+    assert resp.json["error"] == "No user is logged in"
+    assert resp.status_code == 401
+
+
+def test_student_appointment_not_student_login(
+    setup_test: FlaskClient, initialise_tutor
+):
+    client = setup_test
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    resp = client.get("/student/appointments")
+    assert resp.json["error"] == "Current user is not a student"
+    assert resp.status_code == 400
+
+
+def test_student_appointments(setup_test: FlaskClient, generate_appointments):
+    client = setup_test
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+
+    resp = client.get("student/appointments")
+    resp.status_code == 200
+
+    id1, id2, id3 = generate_appointments
+    assert "requested" in resp.json
+    assert "accepted" in resp.json
+    assert "completed" in resp.json
+
+    assert id1 in resp.json["requested"]
+    assert id2 in resp.json["accepted"]
+    assert id3 in resp.json["completed"]

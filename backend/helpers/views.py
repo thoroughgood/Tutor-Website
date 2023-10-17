@@ -1,5 +1,12 @@
 from typing import List
-from prisma.models import User, Appointment, Subject, Rating, TutorAvailability
+from prisma.models import (
+    User,
+    Appointment,
+    Subject,
+    Rating,
+    TutorAvailability,
+    Document,
+)
 
 
 class UserView:
@@ -66,6 +73,7 @@ class TutorView(UserView):
     appointments: List[Appointment] | None
     course_offerings: List[Subject] | None
     times_available: List[TutorAvailability] | None
+    documents: List[Document] | None
 
     def __init__(
         self,
@@ -81,6 +89,7 @@ class TutorView(UserView):
         appointments: List[Appointment] | None,
         course_offerings: List[Subject] | None,
         times_available: List[TutorAvailability] | None,
+        documents: List[Document] | None,
     ):
         super().__init__(
             id,
@@ -96,6 +105,7 @@ class TutorView(UserView):
         self.course_offerings = course_offerings
         self.ratings = ratings
         self.times_available = times_available
+        self.documents = documents
 
 
 class AdminView(UserView):
@@ -192,6 +202,7 @@ def tutor_view(id: str = None, email: str = None) -> TutorView | None:
                     "appointments": True,
                     "courseOfferings": True,
                     "timesAvailable": True,
+                    "documents": True,
                 }
             }
         },
@@ -210,6 +221,7 @@ def tutor_view(id: str = None, email: str = None) -> TutorView | None:
             user.tutorInfo.appointments,
             user.tutorInfo.courseOfferings,
             user.tutorInfo.timesAvailable,
+            user.tutorInfo.documents,
         )
         if user != None and user.tutorInfo != None
         else None

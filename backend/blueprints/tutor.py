@@ -1,8 +1,7 @@
 from flask import Blueprint, request, jsonify, session
 from prisma.models import Tutor, Subject, User
 from re import fullmatch
-from uuid import uuid4
-from datetime import datetime
+from helpers.process_time_block import process_time_block
 from helpers.views import tutor_view
 from helpers.admin_id_check import admin_id_check
 from helpers.rating_calc import rating_calc
@@ -14,10 +13,10 @@ from helpers.error_handlers import (
 tutor = Blueprint("tutor", __name__)
 
 
-@tutor.route("profile/<id>", methods=["GET"])
+@tutor.route("/<tutor_id>", methods=["GET"])
 @error_decorator
-def get_profile(id):
-    tutor = tutor_view(id=id)
+def get_profile(tutor_id):
+    tutor = tutor_view(id=tutor_id)
     if tutor == None:
         raise ExpectedError("Profile does not exist", 404)
 
@@ -167,21 +166,6 @@ def addingSubjects(course_offerings, tutor_id):
             where={"id": tutor_id},
             data={"courseOfferings": {"connect": {"name": subject_name}}},
         )
-
-
-def process_time_block(timeblock):
-    try:
-        st = datetime.fromisoformat(timeblock["startTime"])
-        et = datetime.fromisoformat(timeblock["endTime"])
-    except ValueError:
-        raise ExpectedError("timeRange field(s) were malformed", 400)
-
-    if st > et:
-        raise ExpectedError("endTime cannot be less than startTime", 400)
-    elif st.replace(tzinfo=None) < datetime.now():
-        raise ExpectedError("startTime must be in the future", 400)
-
-    return {"id": str(uuid4()), "startTime": st, "endTime": et}
 
 
 def addingTimes(times_available, tutor_id):

@@ -63,9 +63,9 @@ def generate_tutors(generate_dummy_appointment) -> None:
             "timesAvailable": {
                 "create": {
                     "id": "1",
-                    "startTime": datetime.datetime.utcnow()
+                    "startTime": datetime.datetime.now()
                     + datetime.timedelta(days=4, hours=0),
-                    "endTime": datetime.datetime.utcnow()
+                    "endTime": datetime.datetime.now()
                     + datetime.timedelta(days=4, hours=6),
                 }
             },
@@ -101,9 +101,9 @@ def generate_tutors(generate_dummy_appointment) -> None:
             "timesAvailable": {
                 "create": {
                     "id": "2",
-                    "startTime": datetime.datetime.utcnow()
+                    "startTime": datetime.datetime.now()
                     + datetime.timedelta(days=3, hours=0),
-                    "endTime": datetime.datetime.utcnow()
+                    "endTime": datetime.datetime.now()
                     + datetime.timedelta(days=3, hours=6),
                 }
             },

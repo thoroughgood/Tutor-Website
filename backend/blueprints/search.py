@@ -1,8 +1,8 @@
 import json
 import re
 from flask import Blueprint, request, jsonify
-from prisma.models import Tutor, Subject
-from datetime import datetime
+from prisma.models import Tutor
+from helpers.process_time_block import process_time_block
 from helpers.rating_calc import rating_calc
 from helpers.error_handlers import (
     ExpectedError,
@@ -14,7 +14,7 @@ search_tutor = Blueprint("search_tutor", __name__)
 
 @search_tutor.route("/searchtutor", methods=["GET"])
 @error_decorator
-def search():
+def tutor_search():
     args = request.args
 
     # * Note: timesAvailable should never overlap and is assumed not to
@@ -43,27 +43,20 @@ def search():
         # ? May need to change datetimes here to utc
         if "timeRange" in args and len(tutor.timesAvailable) != 0:
             try:
-                timeRange = json.loads(args["timeRange"])
+                time_range = json.loads(args["timeRange"])
             except json.decoder.JSONDecodeError:
                 raise ExpectedError("timeRange field must be valid JSON", 400)
 
-            if "startTime" not in timeRange or "endTime" not in timeRange:
+            if "startTime" not in time_range or "endTime" not in time_range:
                 raise ExpectedError("field(s) were missing in 'timeRange'", 400)
 
-            try:
-                st = datetime.fromisoformat(timeRange["startTime"])
-                et = datetime.fromisoformat(timeRange["endTime"])
-            except ValueError:
-                raise ExpectedError("timeRange field(s) was malformed", 400)
+            data = process_time_block(time_range)
+            st = data["startTime"]
+            et = data["endTime"]
 
-            if st > et:
-                raise ExpectedError("endTime cannot be less than startTime", 400)
-            elif st < datetime.now():
-                # ? May not be a necessary check
-                raise ExpectedError("startTime must be in the future", 400)
-
-            tutor_st = tutor.timesAvailable[0].startTime.replace(tzinfo=None)
-            tutor_et = tutor.timesAvailable[-1].endTime.replace(tzinfo=None)
+            # Note: datetimes extracted from the db are default UTC
+            tutor_st = tutor.timesAvailable[0].startTime
+            tutor_et = tutor.timesAvailable[-1].endTime
             valid &= et >= tutor_st and st <= tutor_et
         elif "timeRange" in args:
             continue
