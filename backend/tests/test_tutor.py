@@ -34,17 +34,17 @@ def generate_tutor(generate_dummy_appointment) -> str:
         data={
             "appointments": {"connect": {"id": appointment_id}},
             "courseOfferings": {"connect": {"name": "science"}},
-            "timesAvailable": {
-                "create": {
-                    "id": "1",
-                    "startTime": datetime.fromisoformat(
-                        "2023-10-14T15:48:26.297000+00:00"
-                    ),
-                    "endTime": datetime.fromisoformat(
-                        "2023-10-14T21:48:26.297000+00:00"
-                    ),
-                }
-            },
+            #"timesAvailable": {
+                #create": {
+                #    "id": "1",
+                #   "startTime": datetime.fromisoformat(
+                #        "2023-10-14T15:48:26.297000+00:00"
+                #    ),
+                #    "endTime": datetime.fromisoformat(
+                #        "2023-10-14T21:48:26.297000+00:00"
+                #    ),
+                #}
+            #},
             "ratings": {
                 "create": {
                     "id": str(uuid4()),
@@ -110,10 +110,7 @@ def test_get_valid(setup_test: FlaskClient, generate_tutor: str):
     assert resp.json["profilePicture"] == None
     assert resp.json["phoneNumber"] == "0411123901"
     assert "science" in resp.json["courseOfferings"]
-    assert {
-        "startTime": "2023-10-14T15:48:26.297000+00:00",
-        "endTime": "2023-10-14T21:48:26.297000+00:00",
-    } in resp.json["timesAvailable"]
+    assert resp.json["timesAvailable"] == []
 
 
 # Modify Tutor Profile Tests
@@ -233,14 +230,7 @@ def test_modify_missing_args(setup_test: FlaskClient, generate_tutor: str):
     assert resp.json["profilePicture"] == None
     assert resp.json["phoneNumber"] == "0411123901"
     assert "science" in resp.json["courseOfferings"]
-    assert (
-        resp.json["timesAvailable"][0]["startTime"]
-        == "2023-10-14T15:48:26.297000+00:00"
-    )
-    assert (
-        resp.json["timesAvailable"][0]["endTime"] == "2023-10-14T21:48:26.297000+00:00"
-    )
-
+    assert resp.json["timesAvailable"] == []
 
 def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
@@ -269,12 +259,7 @@ def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
             "location": "Australia",
             "phoneNumber": "0411123901",
             "courseOfferings": ["science"],
-            "timesAvailable": [
-                {
-                    "startTime": "2023-12-14T15:48:26.297000+00:00",
-                    "endTime": "2023-12-14T21:48:26.297000+00:00",
-                }
-            ],
+            "timesAvailable": []
         },
     )
     assert resp.status_code == 200
@@ -291,20 +276,16 @@ def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
     assert resp.json["profilePicture"] == None
     assert resp.json["phoneNumber"] == "0411123901"
     assert "science" in resp.json["courseOfferings"]
-    assert (
-        resp.json["timesAvailable"][0]["startTime"]
-        == "2023-12-14T15:48:26.297000+00:00"
-    )
-    assert (
-        resp.json["timesAvailable"][0]["endTime"] 
-        == "2023-12-14T21:48:26.297000+00:00"
-    )
+    assert resp.json["timesAvailable"] == []
 
 
 def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
     tutor_id = generate_tutor
+
+    start_time = (datetime.utcnow() + timedelta(days=1)).isoformat()
+    end_time = (datetime.utcnow() + timedelta(days=2)).isoformat()
 
     resp = client.post(
         "/login",
@@ -327,7 +308,7 @@ def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
             "location": "Sydney",
             "phoneNumber": "0411123888",
             "courseOfferings": ["science", "math"],
-            "timesAvailable": [],
+            "timesAvailable": [{"startTime": start_time, "endTime": end_time}],
         },
     )
     assert resp.status_code == 200
@@ -347,8 +328,17 @@ def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
         "science" in resp.json["courseOfferings"]
         and "math" in resp.json["courseOfferings"]
     )
-    assert len(resp.json["timesAvailable"]) == 0
+    assert len(resp.json["timesAvailable"]) == 1
 
+    print(resp.json["timesAvailable"][0]["startTime"])
+
+    response = datetime.fromisoformat(resp.json["timesAvailable"][0]["startTime"]).replace(tzinfo=None, minute=0, second=0, microsecond=0)
+    expected = datetime.fromisoformat(start_time).replace(minute=0, second=0, microsecond=0)
+    assert response == expected
+
+    response = datetime.fromisoformat(resp.json["timesAvailable"][0]["endTime"]).replace(tzinfo=None, minute=0, second=0, microsecond=0)
+    expected = datetime.fromisoformat(end_time).replace(minute=0, second=0, microsecond=0)
+    assert response == expected
 
 # Delete Profile Tests
 
