@@ -62,9 +62,35 @@ def test_setup_test_client(setup_test: FlaskClient):
 # mocks / fake data ############################################################
 
 
+# ! Note: Assumes a db of exactly one fake admin, student, and tutor
+# with the ids and emails of the 'fake' admin, student, user
+# such, if tests rely on removal/addition of these cases this will not work
 @pytest.fixture
-def find_unique_users_mock(mocker: MockerFixture) -> MockType:
-    return mocker.patch("tests.conftest.UserActions.find_unique")
+def find_unique_users_mock(
+    mocker: MockerFixture, fake_student, fake_admin, fake_tutor
+) -> MockType:
+    def mocked_find_unique(**kwargs):
+        # where must exist
+        if ("id" in kwargs["where"] and kwargs["where"]["id"] == fake_admin.id) or (
+            "email" in kwargs["where"] and kwargs["where"]["email"] == fake_admin.email
+        ):
+            return fake_admin
+        elif ("id" in kwargs["where"] and kwargs["where"]["id"] == fake_student.id) or (
+            "email" in kwargs["where"]
+            and kwargs["where"]["email"] == fake_student.email
+        ):
+            return fake_student
+        elif ("id" in kwargs["where"] and kwargs["where"]["id"] == fake_tutor.id) or (
+            "email" in kwargs["where"] and kwargs["where"]["email"] == fake_tutor.email
+        ):
+            return fake_tutor
+
+        return None
+
+    return mocker.patch(
+        "tests.conftest.UserActions.find_unique",
+        new=mocker.Mock(side_effect=mocked_find_unique),
+    )
 
 
 @pytest.fixture

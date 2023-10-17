@@ -20,14 +20,11 @@ def test_get_args(
     # assert resp.json == {"error": "id field was missing"}
     # assert resp.status_code == 405
 
-    find_unique_users_mock.return_value = None
-
     # Invalid id
     resp = client.get("/student/1")
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
-    find_unique_users_mock.return_value = fake_student
     fake_student.location = "Australia"
     fake_student.name = "Name1"
 
@@ -64,8 +61,6 @@ def test_modify_args(
     resp = client.put("/student/profile", json={})
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
-
-    find_unique_users_mock.return_value = fake_student
 
     resp = client.post(
         "/login",
@@ -130,8 +125,6 @@ def test_admin_modify_args(
 ):
     client = setup_test
 
-    find_unique_users_mock.return_value = fake_student
-
     resp = client.post(
         "/login",
         json={
@@ -144,20 +137,12 @@ def test_admin_modify_args(
         where={"email": fake_student.email}, include=mocker.ANY
     )
 
-    # make sure admin_view return isn't overwritten by previous mock
-    admin_view_mock = mocker.patch("helpers.admin_id_check.admin_view")
-    admin_view_mock.return_value = None
-
     resp = client.put("/student/profile", json={"id": fake_student.id})
     assert resp.json == {"error": "id field should not be supplied by a non admin user"}
     assert resp.status_code == 403
 
-    admin_view_mock.assert_called()
-    mocker.stop(admin_view_mock)
-
     resp = client.post("/logout")
 
-    find_unique_users_mock.return_value = fake_admin
     resp = client.post(
         "/login",
         json={
@@ -169,11 +154,6 @@ def test_admin_modify_args(
     find_unique_users_mock.assert_called_with(
         where={"email": fake_admin.email}, include=mocker.ANY
     )
-
-    # preventing overlap
-    admin_view_mock = mocker.patch("helpers.admin_id_check.admin_view")
-    admin_view_mock.return_value = fake_admin
-    find_unique_users_mock.return_value = fake_student
 
     # Missing id
     resp = client.put("/student/profile", json={})
@@ -208,7 +188,6 @@ def test_admin_modify_args(
     assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
-    find_unique_users_mock.return_value = None
     # Invalid id
     resp = client.put(
         "/student/profile",
@@ -230,7 +209,6 @@ def test_admin_modify_args(
     assert resp.status_code == 404
 
     update_mock = mocker.patch("tests.conftest.UserActions.update")
-    find_unique_users_mock.return_value = fake_student
 
     # Valid modification
     resp = client.put(
@@ -250,7 +228,6 @@ def test_admin_modify_args(
     assert resp.json == {"success": True}
     assert resp.status_code == 200
 
-    find_unique_users_mock.return_value = fake_student
     fake_student.name = "Name123"
     fake_student.bio = "hi"
     fake_student.location = "Sydney"
@@ -296,8 +273,6 @@ def test_delete_student_login(
 ):
     client = setup_test
 
-    find_unique_users_mock.return_value = fake_student
-
     resp = client.post(
         "/login",
         json={
@@ -310,10 +285,6 @@ def test_delete_student_login(
     find_unique_users_mock.assert_called_with(
         where={"email": fake_student.email}, include=mocker.ANY
     )
-
-    # make sure admin_view return isn't overwritten by previous mock
-    admin_view_mock = mocker.patch("helpers.admin_id_check.admin_view")
-    admin_view_mock.return_value = None
 
     # Invalid id
     resp = client.delete("/student", json={"id": "invalid"})
@@ -340,8 +311,6 @@ def test_delete_admin_login(
 ):
     client = setup_test
 
-    find_unique_users_mock.return_value = fake_admin
-
     resp = client.post(
         "/login",
         json={
@@ -354,17 +323,11 @@ def test_delete_admin_login(
     find_unique_users_mock.assert_called_with(
         where={"email": fake_admin.email}, include=mocker.ANY
     )
-    # make sure admin_view return isn't overwritten by previous mock
-    admin_view_mock = mocker.patch("helpers.admin_id_check.admin_view")
-    admin_view_mock.return_value = fake_admin
-    find_unique_users_mock.return_value = fake_student
 
     # No id
     resp = client.delete("/student", json={})
     assert resp.json == {"error": "id field was missing"}
     assert resp.status_code == 400
-
-    find_unique_users_mock.return_value = None
 
     # Invalid id
     resp = client.delete("/student", json={"id": "invalid"})
@@ -372,7 +335,6 @@ def test_delete_admin_login(
     assert resp.status_code == 404
 
     delete_mock = mocker.patch("tests.conftest.UserActions.delete")
-    find_unique_users_mock.return_value = fake_student
 
     # Valid id
     resp = client.delete("/student", json={"id": fake_student.id})
@@ -439,8 +401,6 @@ def test_student_appointment_not_student_login(
 ):
     client = setup_test
 
-    find_unique_users_mock.return_value = fake_tutor
-
     resp = client.post(
         "/login",
         json={
@@ -467,7 +427,6 @@ def test_student_appointments(
     client = setup_test
 
     data = fake_appointments
-    find_unique_users_mock.return_value = data[0]
 
     resp = client.post(
         "/login",

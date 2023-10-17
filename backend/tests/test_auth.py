@@ -2,6 +2,7 @@ from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockType
 from flask.testing import FlaskClient
 from prisma.models import User
+from tests.conftest import fake_admin
 
 
 def test_register_not_json(setup_test: FlaskClient):
@@ -14,7 +15,6 @@ def test_register_not_json(setup_test: FlaskClient):
 def test_register_args(
     setup_test: FlaskClient,
     mocker: MockerFixture,
-    find_unique_users_mock: MockType,
     fake_student: User,
 ):
     client = setup_test
@@ -54,7 +54,8 @@ def test_register_args(
     assert resp.json == {"error": "accountType field missing"}
     assert resp.status_code == 400
 
-    find_unique_users_mock.return_value = None
+    find_unique_mock = mocker.patch("tests.conftest.UserActions.find_unique")
+    find_unique_mock.return_value = None
 
     resp = client.post(
         "/register",
@@ -68,7 +69,7 @@ def test_register_args(
     assert resp.json == {"error": "accountType must be 'student' or 'tutor'"}
     assert resp.status_code == 400
 
-    find_unique_users_mock.assert_called_with(where={"email": fake_student.email})
+    find_unique_mock.assert_called_with(where={"email": fake_student.email})
 
     # successfully signup (student)
     resp = client.post(
@@ -85,9 +86,8 @@ def test_register_args(
     with client.session_transaction() as session:
         assert session["user_id"] == resp.json["id"]
 
-    find_unique_users_mock.assert_called_with(where={"email": fake_student.email})
-
-    find_unique_users_mock.return_value = fake_student
+    find_unique_mock.assert_called_with(where={"email": fake_student.email})
+    find_unique_mock.return_value = fake_student
 
     resp = client.post(
         "/register",
@@ -101,7 +101,7 @@ def test_register_args(
     assert resp.json == {"error": "user already exists with this email"}
     assert resp.status_code == 400
 
-    find_unique_users_mock.assert_called_with(where={"email": fake_student.email})
+    find_unique_mock.assert_called_with(where={"email": fake_student.email})
 
     resp = client.post(
         "/register",
@@ -115,8 +115,8 @@ def test_register_args(
     assert resp.json == {"error": "user already exists with this email"}
     assert resp.status_code == 400
 
-    find_unique_users_mock.assert_called_with(where={"email": fake_student.email})
-    find_unique_users_mock.return_value = None
+    find_unique_mock.assert_called_with(where={"email": fake_student.email})
+    find_unique_mock.return_value = None
 
     # successfully signup (tutor)
     resp = client.post(
@@ -204,8 +204,6 @@ def test_login_args(
     assert resp.json == {"error": "Invalid login attempt"}
     assert resp.status_code == 401
 
-    find_unique_users_mock.return_value = fake_student
-
     # Successful login attempt (student)
     resp = client.post(
         "/login",
@@ -225,8 +223,6 @@ def test_tutor_login(
     setup_test: FlaskClient, find_unique_users_mock: MockType, fake_tutor: User
 ):
     client = setup_test
-
-    find_unique_users_mock.return_value = fake_tutor
 
     resp = client.post(
         "/login",
@@ -249,8 +245,6 @@ def test_admin_login(
     fake_admin: User,
 ):
     client = setup_test
-
-    find_unique_users_mock.return_value = fake_admin
 
     resp = client.post(
         "/login",
@@ -275,8 +269,6 @@ def test_login_as_other(
 ):
     client = setup_test
 
-    find_unique_users_mock.return_value = fake_student
-
     resp = client.post(
         "/login",
         json={
@@ -307,8 +299,6 @@ def test_login_as_other(
         where={"email": fake_student.email}, include=mocker.ANY
     )
 
-    find_unique_users_mock.return_value = fake_tutor
-
     resp = client.post(
         "/login",
         json={
@@ -338,8 +328,6 @@ def test_login_as_other(
     find_unique_users_mock.assert_called_with(
         where={"email": fake_tutor.email}, include=mocker.ANY
     )
-
-    find_unique_users_mock.return_value = fake_admin
 
     resp = client.post(
         "/login",
@@ -392,8 +380,6 @@ def test_logout_student(
 ):
     client = setup_test
 
-    find_unique_users_mock.return_value = fake_student
-
     resp1 = client.post(
         "/login",
         json={
@@ -425,8 +411,6 @@ def test_logout_tutor(
 ):
     client = setup_test
 
-    find_unique_users_mock.return_value = fake_tutor
-
     resp1 = client.post(
         "/login",
         json={
@@ -457,8 +441,6 @@ def test_logout_admin(
     fake_admin: User,
 ):
     client = setup_test
-
-    find_unique_users_mock.return_value = fake_admin
 
     resp1 = client.post(
         "/login",
@@ -513,8 +495,6 @@ def test_resetpassword_student_login(
 ):
     client = setup_test
 
-    find_unique_users_mock.return_value = fake_student
-
     resp = client.post(
         "/login",
         json={
@@ -541,8 +521,6 @@ def test_resetpassword_tutor_login(
     fake_tutor: User,
 ):
     client = setup_test
-
-    find_unique_users_mock.return_value = fake_tutor
 
     resp = client.post(
         "/login",
@@ -573,7 +551,6 @@ def test_resetpassword_student(
 ):
     client = setup_test
 
-    find_unique_users_mock.return_value = fake_admin
     client.post(
         "/login",
         json={
@@ -586,22 +563,17 @@ def test_resetpassword_student(
     find_unique_users_mock.assert_called_with(
         where={"email": fake_admin.email}, include=mocker.ANY
     )
-    # to prevent overlap with find_unique mock later
-    admin_view_mock = mocker.patch("blueprints.auth.admin_view")
-    admin_view_mock.return_value = fake_admin
 
     # Missing id
     resp = client.put("/resetpassword", json={})
     assert resp.json == {"error": "id field is missing"}
     assert resp.status_code == 400
 
-    find_unique_users_mock.return_value = None
     # Invalid id
     resp = client.put("/resetpassword", json={"id": "notvalid"})
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
-    find_unique_users_mock.return_value = fake_student
     # Missing newPassword
     resp = client.put("/resetpassword", json={"id": fake_student.id})
     assert resp.json == {"error": "password field must be at least 8 characters long"}
@@ -641,6 +613,8 @@ def test_resetpassword_student(
     # Test login with new password
     client.post("/logout", json={})
 
+    mocker.stop(find_unique_users_mock)
+    find_unique_users_mock = mocker.patch("tests.conftest.UserActions.find_unique")
     find_unique_users_mock.return_value = fake_user(
         fake_student.email, "123456789", "student"
     )
@@ -688,7 +662,6 @@ def test_resetpassword_tutor(
 ):
     client = setup_test
 
-    find_unique_users_mock.return_value = fake_admin
     client.post(
         "/login",
         json={
@@ -701,11 +674,7 @@ def test_resetpassword_tutor(
     find_unique_users_mock.assert_called_with(
         where={"email": fake_admin.email}, include=mocker.ANY
     )
-    # to prevent overlap with find_unique mock later
-    admin_view_mock = mocker.patch("blueprints.auth.admin_view")
-    admin_view_mock.return_value = fake_admin
 
-    find_unique_users_mock.return_value = fake_tutor
     # Missing newPassword
     resp = client.put("/resetpassword", json={"id": fake_tutor.id})
     assert resp.json == {"error": "password field must be at least 8 characters long"}
@@ -739,6 +708,8 @@ def test_resetpassword_tutor(
     find_unique_users_mock.assert_called_with(where={"id": fake_tutor.id})
     update_mock.assert_called()
 
+    mocker.stop(find_unique_users_mock)
+    find_unique_users_mock = mocker.patch("tests.conftest.UserActions.find_unique")
     find_unique_users_mock.return_value = fake_user(
         fake_tutor.email, "123456789", "tutor"
     )
