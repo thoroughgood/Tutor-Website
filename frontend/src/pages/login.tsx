@@ -24,7 +24,6 @@ import LoadingButton from "@/components/loadingButton"
 import { HTTPAuthService } from "@/service/authService"
 import { getErrorMessage } from "@/lib/utils"
 import toast from "react-hot-toast"
-import router from "next/router"
 import useUser from "@/hooks/useUser"
 import {
   Select,
@@ -33,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import router from "next/router"
 
 //this is a template, z.object will condense the information parsed into it as a readable json format, and formaSchema is basically from the form
 

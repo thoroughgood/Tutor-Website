@@ -13,9 +13,13 @@ export default function Layout({ children }: LayoutProps) {
   const router = useRouter()
   const { signedIn } = useUser()
   useEffect(() => {
-    /*     if (!signedIn && !router.pathname.match(/register|login/i)) {
+    if (!signedIn && !router.pathname.match(/register|login/i)) {
       router.push("/login")
-    } */
+    }
+    if (router.pathname.match(/register|login/i) && signedIn) {
+      router.push("/dashboard")
+    }
+
   }, [signedIn, router])
   if (router.pathname.match(/register|login/i)) {
     return (

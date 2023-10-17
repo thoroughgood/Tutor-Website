@@ -47,6 +47,9 @@ export interface ProfileService {
   setOwnStudentProfile: (
     studentProfile: StudentSelfEditReqBody,
   ) => Promise<SuccessResponse>
+  searchTutors: (
+    searchParams: TutorSearchParams,
+  ) => Promise<{ tutorIds: string[] }>
 }
 
 // export class HTTPProfileService extends HTTPService implements ProfileService {
@@ -58,7 +61,7 @@ export interface ProfileService {
 //     const data = wretch(`${this.backendURL}/searchtutor`).get()
 //     return await data.json()
 //   }
-// }const profileService = new MockProfileService()
+// }
 
 export class MockProfileService implements ProfileService {
   private mockTutorProfile: TutorProfile = {
@@ -108,7 +111,7 @@ export class MockProfileService implements ProfileService {
     console.log(tutorProfile)
     return { success: true }
   }
-
+      
   async searchTutors(_searchParams: TutorSearchParams) {
     return { tutorIds: ["1337"] }
   }
@@ -132,4 +135,5 @@ export class MockProfileService implements ProfileService {
       return { success: false }
     }
   }
+
 }

@@ -5,6 +5,7 @@ from prisma import Prisma
 import os
 
 from blueprints.auth import auth
+from blueprints.tutor import tutor
 from blueprints.student import student
 from blueprints.search import search_tutor
 from blueprints.utils import utils
@@ -18,13 +19,17 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", default="not very secret")
 # ? Consider moving to redis in the future?
 app.config["SESSION_TYPE"] = "filesystem"
+# app.config["SESSION_COOKIE_HTTPONLY"] = False # uncomment for debugging in frontend
+app.config["SESSION_COOKIE_SAMESITE"] = "None"
+app.config["SESSION_COOKIE_SECURE"] = True
 server_session = Session(app)
 # todo: figure cors
-cors = CORS(app)
+cors = CORS(app, supports_credentials=True)
 
 # blueprints
 app.register_blueprint(auth, url_prefix="/")
-app.register_blueprint(student, url_prefix="/student/profile")
+app.register_blueprint(tutor, url_prefix="/tutor")
+app.register_blueprint(student, url_prefix="/student")
 app.register_blueprint(search_tutor, url_prefix="/")
 app.register_blueprint(utils, url_prefix="/utils")
 
