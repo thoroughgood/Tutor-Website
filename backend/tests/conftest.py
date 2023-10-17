@@ -9,6 +9,8 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 
+from pytest_mock import MockerFixture
+
 # Little hack to allow easy importing from parent
 # Courtesy of https://stackoverflow.com/questions/714063/importing-modules-from-parent-folder/28712742#28712742
 # ? Probably more idiomatic/less hacky way of doing this
@@ -161,3 +163,18 @@ def fake_user():
                 )
 
     return __fake_user
+
+
+@pytest.fixture
+def fake_student(fake_user) -> models.User:
+    return fake_user("validemail@mail.com", "12345678", "student")
+
+
+@pytest.fixture
+def fake_tutor(fake_user) -> models.User:
+    return fake_user("validemail2@mail.com", "12345678", "tutor")
+
+
+@pytest.fixture
+def fake_admin(fake_user) -> models.User:
+    return fake_user("validemail3@mail.com", "12345678", "admin")

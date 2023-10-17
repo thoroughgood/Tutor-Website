@@ -4,21 +4,6 @@ from flask.testing import FlaskClient
 from prisma.models import User
 
 
-@pytest.fixture
-def fake_student(fake_user) -> User:
-    return fake_user("validemail@mail.com", "12345678", "student")
-
-
-@pytest.fixture
-def fake_tutor(fake_user) -> User:
-    return fake_user("validemail2@mail.com", "12345678", "tutor")
-
-
-@pytest.fixture
-def fake_admin(fake_user) -> User:
-    return fake_user("validemail3@mail.com", "12345678", "admin")
-
-
 def test_register_not_json(setup_test: FlaskClient):
     client = setup_test
     resp = client.post("/register")
