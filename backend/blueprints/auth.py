@@ -9,6 +9,9 @@ from helpers.error_handlers import (
     error_decorator,
 )
 
+# unused import for mocking purposes during tests
+from prisma.actions import UserActions
+
 auth = Blueprint("auth", __name__)
 
 

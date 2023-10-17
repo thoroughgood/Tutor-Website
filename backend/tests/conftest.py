@@ -21,7 +21,7 @@ from app import app
 @pytest.fixture
 def setup_test():
     # to reset the test_db and update test schema if necessary
-    prisma.run(["db", "push", "--force-reset"], check=True)
+    # prisma.run(["db", "push", "--force-reset"], check=True)
     yield app.test_client()
 
 
@@ -123,3 +123,41 @@ def generate_dummy_appointment(generate_dummy_tutor, generate_dummy_student):
         generate_dummy_tutor,  # tutor_id
         generate_dummy_student,  # student_id
     )
+
+
+@pytest.fixture
+def fake_user():
+    def __fake_user(email: str, pword: str, type: str) -> models.User:
+        id = str(uuid4())
+        match type.lower():
+            case "student":
+                user = models.User(
+                    id=id,
+                    name="name",
+                    email=email,
+                    hashedPassword=sha256(pword.encode()).hexdigest(),
+                    studentInfo=models.Student(id="id", userInfoId="id"),
+                )
+                return user
+            case "tutor":
+                return models.User(
+                    id=id,
+                    name="name",
+                    email=email,
+                    hashedPassword=sha256(pword.encode()).hexdigest(),
+                    tutorInfo=models.Tutor(id="id", userInfoId="id"),
+                )
+            case "admin":
+                return models.User(
+                    id=id,
+                    name="name",
+                    email=email,
+                    hashedPassword=sha256(pword.encode()).hexdigest(),
+                    adminInfo=models.Admin(id="id", userInfoId="id"),
+                )
+            case _:
+                return models.User(
+                    id=id, name="name", email=email, hashedPassword=pword
+                )
+
+    return __fake_user
