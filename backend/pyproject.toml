@@ -43,7 +43,6 @@ tomlkit = "0.12.1"
 typing-extensions = "4.8.0"
 werkzeug = "2.3.7"
 pytest = "^7.4.2"
-pytest-mock = "^3.11.1"
 
 
 [tool.poetry.group.dev.dependencies]
