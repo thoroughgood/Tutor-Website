@@ -36,7 +36,6 @@ def request():
     if not tutor:
         raise ExpectedError("Tutor profile does not exist", 400)
 
-    # Check if Logged in user is a student (CLARIFY WITH DANIELS)
     student = student_view(id=session["user_id"])
     if not student:
         raise ExpectedError("Profile is not a student", 400)
@@ -97,6 +96,22 @@ def rating():
         raise ExpectedError("Appointment isn't complete yet", 400)
 
     if session["user_id"] != appointment.studentId:
-        raise ExpectedError("User is not the student of the appointment", 400)
+        raise ExpectedError("User is not the student of the appointment", 403)
 
-    rating = Rating.prisma().create()
+    rating = Rating.prisma().create(
+        data={
+            "id": str(uuid4()),
+            "score": args["rating"],
+            "appointment": {"connect": {"id": args["id"]}},
+            "appointmentId": args["id"],
+            "createdFor": {"connect": {"id": appointment.tutorId}},
+            "tutorId": appointment.tutorId,
+        }
+    )
+
+    User.prisma().update(
+        where={"id": rating["tutorId"]},
+        data={"appointments": tutor_view(id=rating["tutorId"]).ratings + [rating]},
+    )
+
+    return jsonify({"success": True})
