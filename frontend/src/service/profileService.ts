@@ -62,7 +62,6 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
       timeRange: JSON.stringify(searchParams.timeRange),
     })
     url.search = params.toString()
-    console.log(url)
     const data = wretch(`${this.backendURL}/searchtutor`).get()
     return await data.json()
   }
