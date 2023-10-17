@@ -8,4 +8,4 @@ sed -i 's/url[ \t]*=[ \t]*env("DATABASE_URL")/url      = "file:test.db"/g' "./pr
 # additional line 1 comment
 sed -i '1s/^/\/\/ Copy of dev schema in the root directory with datasource changed\n\n/' "./prisma/schema.prisma"
 
-prisma db push --schema "prisma/schema.prisma"
+prisma db push --schema "prisma/schema.prisma" --accept-data-loss
