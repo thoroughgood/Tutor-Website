@@ -27,7 +27,7 @@ def request():
         raise ExpectedError("endTime field was missing", 400)
 
     if "tutorId" not in args:
-        raise ExpectedError("Tutor Id field was missing", 400)
+        raise ExpectedError("Tutor id field was missing", 400)
 
     try:
         st = datetime.fromisoformat(args["startTime"])
