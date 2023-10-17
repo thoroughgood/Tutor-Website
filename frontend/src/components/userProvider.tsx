@@ -39,7 +39,7 @@ export default function UserProvider({
           userType: accountType,
         })
       } catch {
-        console.log("User is not logged in")
+        console.error("User is not logged in")
       }
       setCheckingUser(false)
     })()

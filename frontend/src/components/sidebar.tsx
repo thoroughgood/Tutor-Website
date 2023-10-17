@@ -55,7 +55,6 @@ export default function Sidebar() {
             if (await toastProtectedFnCall(() => authService.logout())) {
               setUser(null)
               router.push("/login")
-              console.log("save me")
             }
           }}
         >
