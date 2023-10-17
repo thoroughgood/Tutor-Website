@@ -2,7 +2,8 @@ from hashlib import sha256
 from uuid import uuid4
 import pytest
 from flask.testing import FlaskClient
-from prisma.models import User
+from datetime import datetime, timedelta
+from prisma.models import User, Appointment
 from prisma.models import Student
 
 
@@ -56,29 +57,21 @@ def initialise_admin() -> str:
 ############################ GET PROFILE TESTS #################################
 
 
-# No query string
-def test_get_no_query(setup_test: FlaskClient):
-    client = setup_test
-    resp = client.get("/student/profile/")
-    assert resp.json == {"error": "id field was missing"}
-    assert resp.status_code == 400
-
-
 def test_get_args(setup_test: FlaskClient, initialise_student: str):
     client = setup_test
 
     # Missing id
-    resp = client.get("/student/profile/", query_string={})
-    assert resp.json == {"error": "id field was missing"}
-    assert resp.status_code == 400
+    # resp = client.get("/student/")
+    # assert resp.json == {"error": "id field was missing"}
+    # assert resp.status_code == 405
 
     # Invalid id
-    resp = client.get("/student/profile/", query_string={"id": "invalid"})
+    resp = client.get("/student/1")
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
     # Valid id
-    resp = client.get("/student/profile/", query_string={"id": initialise_student})
+    resp = client.get(f"/student/{initialise_student}")
     assert resp.status_code == 200
     assert resp.json["id"] == initialise_student
     assert resp.json["name"] == "Name1"
@@ -93,7 +86,7 @@ def test_get_args(setup_test: FlaskClient, initialise_student: str):
 
 def test_modify_not_json(setup_test: FlaskClient):
     client = setup_test
-    resp = client.put("/student/profile/")
+    resp = client.put("/student/profile")
     assert resp.json == {"error": "content-type was not json or data was malformed"}
     assert resp.status_code == 415
 
@@ -103,7 +96,7 @@ def test_modify_args(setup_test: FlaskClient, initialise_student: str):
     client = setup_test
 
     # No user logged in
-    resp = client.put("/student/profile/", json={})
+    resp = client.put("/student/profile", json={})
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
@@ -116,46 +109,32 @@ def test_modify_args(setup_test: FlaskClient, initialise_student: str):
         },
     )
 
-    # Missing name
-    resp = client.put("/student/profile/", json={})
-    assert resp.json == {"error": "name field was missing"}
+    # Invalid name
+    resp = client.put("/student/profile", json={"name": ""})
+    assert resp.json == {"error": "name field is invalid"}
     assert resp.status_code == 400
 
-    # Missing name 2
-    resp = client.put("/student/profile/", json={"name": ""})
-    assert resp.json == {"error": "name field was missing"}
+    # Invalid email
+    resp = client.put("/student/profile", json={"name": "Jerry", "email": ""})
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
-    # Missing bio
-    resp = client.put("/student/profile/", json={"name": "Jerry"})
-    assert resp.json == {"error": "bio field was missing"}
+    # Invalid email 2
+    resp = client.put("/student/profile", json={"name": "Jerry", "email": "hi"})
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
-    # Missing profilePicture
-    resp = client.put("/student/profile/", json={"name": "Jerry", "bio": "bio"})
-    assert resp.json == {"error": "profilePicture field was missing"}
-    assert resp.status_code == 400
-
-    # Missing location
-    resp = client.put(
-        "/student/profile/", json={"name": "Name1", "bio": "bio", "profilePicture": ""}
-    )
-    assert resp.json == {"error": "location field was missing"}
-    assert resp.status_code == 400
-
-    # Missing phoneNumber
-    resp = client.put(
-        "/student/profile/",
-        json={"name": "Name1", "bio": "", "profilePicture": "", "location": ""},
-    )
-    assert resp.json == {"error": "phoneNumber field was missing"}
+    # Invalid email 3
+    resp = client.put("/student/profile", json={"name": "Jerry", "email": "hello@hi"})
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
     # Valid modification
     resp = client.put(
-        "/student/profile/",
+        "/student/profile",
         json={
             "name": "Name1",
+            "email": "hello@hi.com",
             "bio": "",
             "profilePicture": "",
             "location": "Australia",
@@ -180,7 +159,7 @@ def test_admin_modify_args(
         },
     )
     client = setup_test
-    resp = client.put("/student/profile/", json={"id": initialise_student})
+    resp = client.put("/student/profile", json={"id": initialise_student})
     assert resp.json == {"error": "id field should not be supplied by a non admin user"}
     assert resp.status_code == 403
 
@@ -195,69 +174,46 @@ def test_admin_modify_args(
     )
 
     # Missing id
-    resp = client.put("/student/profile/", json={})
+    resp = client.put("/student/profile", json={})
     assert resp.json == {"error": "id field was missing"}
     assert resp.status_code == 400
 
-    # Missing name
-    resp = client.put("/student/profile/", json={"id": initialise_student})
-    assert resp.json == {"error": "name field was missing"}
+    # Invalid name
+    resp = client.put("/student/profile", json={"id": initialise_student, "name": ""})
+    assert resp.json == {"error": "name field is invalid"}
     assert resp.status_code == 400
 
-    # Missing name 2
-    resp = client.put("/student/profile/", json={"id": initialise_student, "name": ""})
-    assert resp.json == {"error": "name field was missing"}
-    assert resp.status_code == 400
-
-    # Missing bio
+    # Invalid email
     resp = client.put(
-        "/student/profile/", json={"id": initialise_student, "name": "Jerry"}
+        "/student/profile", json={"id": initialise_student, "name": "Hi", "email": ""}
     )
-    assert resp.json == {"error": "bio field was missing"}
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
-    # Missing profilePicture
+    # Invalid email 2
     resp = client.put(
-        "/student/profile/",
-        json={"id": initialise_student, "name": "Name1", "bio": "bio"},
+        "/student/profile",
+        json={"id": initialise_student, "name": "Hi", "email": "hi"},
     )
-    assert resp.json == {"error": "profilePicture field was missing"}
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
-    # Missing location
+    # Invalid email 3
     resp = client.put(
-        "/student/profile/",
-        json={
-            "id": initialise_student,
-            "name": "Name1",
-            "bio": "bio",
-            "profilePicture": "",
-        },
+        "/student/profile",
+        json={"id": initialise_student, "name": "Hi", "email": "hello@hi"},
     )
-    assert resp.json == {"error": "location field was missing"}
-    assert resp.status_code == 400
-
-    # Missing phoneNumber
-    resp = client.put(
-        "/student/profile/",
-        json={
-            "id": initialise_student,
-            "name": "Name1",
-            "bio": "",
-            "profilePicture": "",
-            "location": "",
-        },
-    )
-    assert resp.json == {"error": "phoneNumber field was missing"}
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
     # Invalid id
     resp = client.put(
-        "/student/profile/",
+        "/student/profile",
         json={
             "id": "invalid",
             "name": "Name1",
             "bio": "",
+            "email": "hello@hi.com",
             "profilePicture": "",
             "location": "Australia",
             "phoneNumber": "",
@@ -268,11 +224,12 @@ def test_admin_modify_args(
 
     # Valid modification
     resp = client.put(
-        "/student/profile/",
+        "/student/profile",
         json={
             "id": initialise_student,
             "name": "Name123",
             "bio": "hi",
+            "email": "hello@hi.com",
             "profilePicture": "hi",
             "location": "Sydney",
             "phoneNumber": "000",
@@ -281,7 +238,7 @@ def test_admin_modify_args(
     assert resp.json == {"success": True}
     assert resp.status_code == 200
 
-    resp = client.get("/student/profile/", query_string={"id": initialise_student})
+    resp = client.get(f"/student/{initialise_student}")
     assert resp.json == {
         "id": initialise_student,
         "name": "Name123",
@@ -298,7 +255,7 @@ def test_admin_modify_args(
 # No JSON
 def test_delete_not_json(setup_test: FlaskClient):
     client = setup_test
-    resp = client.delete("/student/")
+    resp = client.delete("/student")
     assert resp.json == {"error": "content-type was not json or data was malformed"}
     assert resp.status_code == 415
 
@@ -306,7 +263,7 @@ def test_delete_not_json(setup_test: FlaskClient):
 # No user logged in
 def test_delete_no_user(setup_test: FlaskClient):
     client = setup_test
-    resp = client.delete("/student/", json={})
+    resp = client.delete("/student", json={})
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
@@ -323,17 +280,17 @@ def test_delete_student_login(setup_test: FlaskClient, initialise_student: str):
     )
 
     # Invalid id
-    resp = client.delete("/student/", json={"id": "invalid"})
+    resp = client.delete("/student", json={"id": "invalid"})
     assert resp.json == {"error": "id field should not be supplied by a non admin user"}
     assert resp.status_code == 403
 
     # Valid id
-    resp = client.delete("/student/", json={"id": initialise_student})
+    resp = client.delete("/student", json={"id": initialise_student})
     assert resp.json == {"error": "id field should not be supplied by a non admin user"}
     assert resp.status_code == 403
 
     # No id
-    resp = client.delete("/student/", json={})
+    resp = client.delete("/student", json={})
     assert resp.json == {"success": True}
     assert resp.status_code == 200
 
@@ -354,16 +311,109 @@ def test_delete_admin_login(
     )
 
     # No id
-    resp = client.delete("/student/", json={})
+    resp = client.delete("/student", json={})
     assert resp.json == {"error": "id field was missing"}
     assert resp.status_code == 400
 
     # Invalid id
-    resp = client.delete("/student/", json={"id": "invalid"})
+    resp = client.delete("/student", json={"id": "invalid"})
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
     # Valid id
-    resp = client.delete("/student/", json={"id": initialise_student})
+    resp = client.delete("/student", json={"id": initialise_student})
     assert resp.json == {"success": True}
     assert resp.status_code == 200
+
+
+########################### STUDENT APPOINTMENT TESTS ##########################
+
+
+@pytest.fixture
+def generate_appointments(generate_dummy_tutor, initialise_student):
+    id1 = str(uuid4())
+    Appointment.prisma().create(
+        data={
+            "id": id1,
+            "student": {"connect": {"id": initialise_student}},
+            "tutor": {"connect": {"id": generate_dummy_tutor}},
+            "startTime": datetime.now() + timedelta(days=1, hours=0),
+            "endTime": datetime.now() + timedelta(days=1, hours=1),
+            "tutorAccepted": False,
+        }
+    )
+
+    id2 = str(uuid4())
+    Appointment.prisma().create(
+        data={
+            "id": id2,
+            "student": {"connect": {"id": initialise_student}},
+            "tutor": {"connect": {"id": generate_dummy_tutor}},
+            "startTime": datetime.now() + timedelta(days=1, hours=0),
+            "endTime": datetime.now() + timedelta(days=1, hours=1),
+            "tutorAccepted": True,
+        }
+    )
+
+    id3 = str(uuid4())
+    Appointment.prisma().create(
+        data={
+            "id": id3,
+            "student": {"connect": {"id": initialise_student}},
+            "tutor": {"connect": {"id": generate_dummy_tutor}},
+            "startTime": datetime.now() - timedelta(days=1, hours=1),
+            "endTime": datetime.now() - timedelta(days=1),
+            "tutorAccepted": True,
+        }
+    )
+
+    return (id1, id2, id3)
+
+
+def test_student_appointment_not_login(setup_test: FlaskClient):
+    client = setup_test
+    resp = client.get("/student/appointments")
+    assert resp.json["error"] == "No user is logged in"
+    assert resp.status_code == 401
+
+
+def test_student_appointment_not_student_login(
+    setup_test: FlaskClient, initialise_tutor
+):
+    client = setup_test
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    resp = client.get("/student/appointments")
+    assert resp.json["error"] == "Current user is not a student"
+    assert resp.status_code == 400
+
+
+def test_student_appointments(setup_test: FlaskClient, generate_appointments):
+    client = setup_test
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+
+    resp = client.get("student/appointments")
+    resp.status_code == 200
+
+    id1, id2, id3 = generate_appointments
+    assert "requested" in resp.json
+    assert "accepted" in resp.json
+    assert "completed" in resp.json
+
+    assert id1 in resp.json["requested"]
+    assert id2 in resp.json["accepted"]
+    assert id3 in resp.json["completed"]
