@@ -34,17 +34,6 @@ def generate_tutor(generate_dummy_appointment) -> str:
         data={
             "appointments": {"connect": {"id": appointment_id}},
             "courseOfferings": {"connect": {"name": "science"}},
-            #"timesAvailable": {
-                #create": {
-                #    "id": "1",
-                #   "startTime": datetime.fromisoformat(
-                #        "2023-10-14T15:48:26.297000+00:00"
-                #    ),
-                #    "endTime": datetime.fromisoformat(
-                #        "2023-10-14T21:48:26.297000+00:00"
-                #    ),
-                #}
-            #},
             "ratings": {
                 "create": {
                     "id": str(uuid4()),
