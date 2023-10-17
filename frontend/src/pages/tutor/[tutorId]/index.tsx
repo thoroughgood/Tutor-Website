@@ -37,7 +37,7 @@ export default function TutorProfile() {
           location={data.location}
         />
         <div className="grid grid-cols-2 gap-2">
-          {isOwnProfile || true ? (
+          {isOwnProfile ? (
             <>
               <Button variant="secondary" className="flex gap-2">
                 <User className="w-5" />

@@ -34,17 +34,6 @@ def generate_tutor(generate_dummy_appointment) -> str:
         data={
             "appointments": {"connect": {"id": appointment_id}},
             "courseOfferings": {"connect": {"name": "science"}},
-            "timesAvailable": {
-                "create": {
-                    "id": "1",
-                    "startTime": datetime.fromisoformat(
-                        "2023-10-14T15:48:26.297000+00:00"
-                    ),
-                    "endTime": datetime.fromisoformat(
-                        "2023-10-14T21:48:26.297000+00:00"
-                    ),
-                }
-            },
             "ratings": {
                 "create": {
                     "id": str(uuid4()),
@@ -61,39 +50,47 @@ def generate_tutor(generate_dummy_appointment) -> str:
 
     return tutor.id
 
+@pytest.fixture
+def generate_admin() -> str:
+    id = str(uuid4())
+    admin = User.prisma().create(
+        data={
+            "id": id,
+            "email":"validemail2@mail.com",
+            "hashedPassword": sha256("23456789".encode()).hexdigest(),
+            "name": "Admin",
+            "adminInfo": {"create": {"id": id}},
+        }
+    )
+    return admin.id
+
 
 # Get Tutor Profile Tests
 
 
-def test_get_no_query(setup_test: FlaskClient):
+
+def test_get_missing_id(setup_test: FlaskClient):
     client = setup_test
-    resp = client.get("/tutor/profile/")
-    assert resp.json == {"error": "id field was missing"}
-    assert resp.status_code == 400
+    resp = client.get("/tutor/")
+    # assert resp.json == {"error": "id field was missing"}
+    assert resp.status_code == 405
 
 
 def test_get_nonexisting_profile(setup_test: FlaskClient):
     client = setup_test
-    resp = client.get("/tutor/profile/", query_string={"id": "1"})
+    resp = client.get("/tutor/1")
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
-
-
-def test_get_empty_id(setup_test: FlaskClient):
-    client = setup_test
-    resp = client.get("/tutor/profile/", query_string={"id": ""})
-    assert resp.json == {"error": "id field was missing"}
-    assert resp.status_code == 400
-
 
 def test_get_valid(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    d = generate_tutor
-    resp = client.get("/tutor/profile/", query_string={"id": d})
+    tutor_id = generate_tutor
+
+    resp = client.get(f"/tutor/{tutor_id}")
 
     assert resp.status_code == 200
-    assert resp.json["id"] == d
+    assert resp.json["id"] == tutor_id
     assert resp.json["email"] == "validemail@mail.com"
     assert resp.json["name"] == "Terry"
     assert resp.json["bio"] == "band 1 at HSC Maths"
@@ -102,10 +99,7 @@ def test_get_valid(setup_test: FlaskClient, generate_tutor: str):
     assert resp.json["profilePicture"] == None
     assert resp.json["phoneNumber"] == "0411123901"
     assert "science" in resp.json["courseOfferings"]
-    assert {
-        "startTime": "2023-10-14T15:48:26.297000+00:00",
-        "endTime": "2023-10-14T21:48:26.297000+00:00",
-    } in resp.json["timesAvailable"]
+    assert resp.json["timesAvailable"] == []
 
 
 # Modify Tutor Profile Tests
@@ -119,11 +113,10 @@ def test_modify_not_json(setup_test: FlaskClient):
 
 
 def test_modify_invalid_args(
-    setup_test: FlaskClient, generate_tutor: str, generate_dummy_tutor: str
-):
+    setup_test: FlaskClient, generate_tutor: str, generate_admin: str):
     client = setup_test
 
-    dummyId = generate_dummy_tutor
+    tutor_Id = generate_tutor
 
     # No user logged in
     resp = client.put("/tutor/profile/", json={})
@@ -142,27 +135,65 @@ def test_modify_invalid_args(
     assert resp.status_code == 200
 
     # Non admin user tries modifying other user
-    resp = client.put("/tutor/profile/", json={"id": dummyId})
+    resp = client.put("/tutor/profile/", json={"id": tutor_Id})
     assert resp.json == {"error": "id field should not be supplied by a non admin user"}
     assert resp.status_code == 403
 
-    # need admin implemented
-    # admin logs in, and modifies tutor profile without id
-    # resp = client.put("/tutor/profile/", json={})
-    # assert resp.json == {"error": "Id of tutor being modified is required"}
-    # assert resp.status_code == 400
+    resp = client.post("/logout")
+    assert resp.status_code == 200
 
-    # need admin implemented
-    # profile doesnt exist
-    # resp = client.put("/tutor/profile/", json={"id": "1"})
-    # assert resp.json == {"error": "Profile does not exist"}
-    # assert resp.status_code == 404
+    # admin logs in
+
+    generate_admin
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "23456789",
+            "accountType": "admin",
+        }
+    )
+    assert resp.status_code == 200
+
+    # admin tries to modify with giving id param
+    resp = client.put("/tutor/profile/", json={})
+    assert resp.json == {"error": "id field was missing"}
+    assert resp.status_code == 400
+
+    # admin modifies profile that doesnt exist
+    resp = client.put("/tutor/profile/", json={"id": "1"})
+    assert resp.json == {"error": "Profile does not exist"}
+    assert resp.status_code == 404
+
+def test_modify_invalid_email(setup_test: FlaskClient, generate_tutor: str):
+    client = setup_test
+    tutor_id = generate_tutor
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    resp = client.put(
+        "/tutor/profile/",
+        json={
+            "email": "validemailmail.com",
+        },
+    )
+    
+    assert resp.status_code == 400
+    assert resp.json == {"error": "New email is invalid"}
 
 
 def test_modify_missing_args(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    d = generate_tutor
+    tutor_id = generate_tutor
 
     resp = client.post(
         "/login",
@@ -177,9 +208,9 @@ def test_modify_missing_args(setup_test: FlaskClient, generate_tutor: str):
     resp = client.put("/tutor/profile/", json={})
     assert resp.status_code == 200
 
-    resp = client.get("/tutor/profile/", query_string={"id": d})
+    resp = client.get(f"/tutor/{tutor_id}")
     assert resp.status_code == 200
-    assert resp.json["id"] == d
+    assert resp.json["id"] == tutor_id
     assert resp.json["email"] == "validemail@mail.com"
     assert resp.json["name"] == "Terry"
     assert resp.json["bio"] == "band 1 at HSC Maths"
@@ -188,19 +219,12 @@ def test_modify_missing_args(setup_test: FlaskClient, generate_tutor: str):
     assert resp.json["profilePicture"] == None
     assert resp.json["phoneNumber"] == "0411123901"
     assert "science" in resp.json["courseOfferings"]
-    assert (
-        resp.json["timesAvailable"][0]["startTime"]
-        == "2023-10-14T15:48:26.297000+00:00"
-    )
-    assert (
-        resp.json["timesAvailable"][0]["endTime"] == "2023-10-14T21:48:26.297000+00:00"
-    )
-
+    assert resp.json["timesAvailable"] == []
 
 def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    d = generate_tutor
+    tutor_id = generate_tutor
 
     resp = client.post(
         "/login",
@@ -224,21 +248,15 @@ def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
             "location": "Australia",
             "phoneNumber": "0411123901",
             "courseOfferings": ["science"],
-            "timesAvailable": [
-                {
-                    "startTime": "2023-10-14T15:48:26.297000+00:00",
-                    "endTime": "2023-10-14T21:48:26.297000+00:00",
-                }
-            ],
+            "timesAvailable": []
         },
     )
-
     assert resp.status_code == 200
 
-    resp = client.get("/tutor/profile/", query_string={"id": d})
+    resp = client.get(f"/tutor/{tutor_id}")
 
     assert resp.status_code == 200
-    assert resp.json["id"] == d
+    assert resp.json["id"] == tutor_id
     assert resp.json["email"] == "validemail@mail.com"
     assert resp.json["name"] == "Terry"
     assert resp.json["bio"] == "band 1 at HSC Maths"
@@ -247,19 +265,16 @@ def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
     assert resp.json["profilePicture"] == None
     assert resp.json["phoneNumber"] == "0411123901"
     assert "science" in resp.json["courseOfferings"]
-    assert (
-        resp.json["timesAvailable"][0]["startTime"]
-        == "2023-10-14T15:48:26.297000+00:00"
-    )
-    assert (
-        resp.json["timesAvailable"][0]["endTime"] == "2023-10-14T21:48:26.297000+00:00"
-    )
+    assert resp.json["timesAvailable"] == []
 
 
 def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    d = generate_tutor
+    tutor_id = generate_tutor
+
+    start_time = (datetime.utcnow() + timedelta(days=1)).isoformat()
+    end_time = (datetime.utcnow() + timedelta(days=2)).isoformat()
 
     resp = client.post(
         "/login",
@@ -282,15 +297,15 @@ def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
             "location": "Sydney",
             "phoneNumber": "0411123888",
             "courseOfferings": ["science", "math"],
-            "timesAvailable": [],
+            "timesAvailable": [{"startTime": start_time, "endTime": end_time}],
         },
     )
     assert resp.status_code == 200
 
-    resp = client.get("/tutor/profile/", query_string={"id": d})
+    resp = client.get(f"/tutor/{tutor_id}")
     assert resp.status_code == 200
 
-    assert resp.json["id"] == d
+    assert resp.json["id"] == tutor_id
     assert resp.json["email"] == "valid@mail.com"
     assert resp.json["name"] == "Juan"
     assert resp.json["bio"] == "band 6 at HSC Maths"
@@ -302,8 +317,15 @@ def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
         "science" in resp.json["courseOfferings"]
         and "math" in resp.json["courseOfferings"]
     )
-    assert len(resp.json["timesAvailable"]) == 0
+    assert len(resp.json["timesAvailable"]) == 1
 
+    response = datetime.fromisoformat(resp.json["timesAvailable"][0]["startTime"]).replace(tzinfo=None, minute=0, second=0, microsecond=0)
+    expected = datetime.fromisoformat(start_time).replace(minute=0, second=0, microsecond=0)
+    assert response == expected
+
+    response = datetime.fromisoformat(resp.json["timesAvailable"][0]["endTime"]).replace(tzinfo=None, minute=0, second=0, microsecond=0)
+    expected = datetime.fromisoformat(end_time).replace(minute=0, second=0, microsecond=0)
+    assert response == expected
 
 # Delete Profile Tests
 
@@ -323,8 +345,9 @@ def test_delete_no_user(setup_test: FlaskClient):
 
 
 def test_delete_permission(
-    setup_test: FlaskClient, generate_dummy_tutor: str, generate_tutor: str
-):
+    setup_test: FlaskClient, generate_tutor: str):
+
+    tutor_id = generate_tutor
     client = setup_test
 
     resp = client.post(
@@ -337,16 +360,37 @@ def test_delete_permission(
     )
     assert resp.status_code == 200
 
-    resp = client.delete("/tutor/", json={"id": generate_dummy_tutor})
+    resp = client.delete("/tutor/", json={"id": tutor_id})
 
     assert resp.json == {"error": "id field should not be supplied by a non admin user"}
     assert resp.status_code == 403
+
+def test_delete_nonexisting_profile(
+        setup_test: FlaskClient, generate_admin: str):
+    
+    client = setup_test
+    admin_id = generate_admin
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "23456789",
+            "accountType": "admin",
+        }
+    )
+    assert resp.status_code == 200
+
+    resp = client.delete("/tutor/", json={"id": "1"})
+    assert resp.status_code == 404
+    assert resp.json == {"error": "Profile does not exist"}
+    
 
 
 def test_delete_valid(setup_test: FlaskClient, generate_tutor: str):
     client = setup_test
 
-    d = generate_tutor
+    tutor_id = generate_tutor
 
     resp = client.post(
         "/login",
@@ -361,7 +405,7 @@ def test_delete_valid(setup_test: FlaskClient, generate_tutor: str):
     resp = client.delete("/tutor/", json={})
     assert resp.status_code == 200
 
-    resp = client.get("/tutor/profile/", query_string={"id": d})
+    resp = client.get(f"/tutor/{tutor_id}")
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
@@ -416,6 +460,6 @@ def test_modify_time_available(setup_test: FlaskClient, generate_tutor: str):
     assert resp.status_code == 400
     assert resp.json["error"] == "Time availabilities should not overlap"
 
-    resp = client.get("/tutor/profile/", query_string={"id": tutor_id})
+    resp = client.get(f"/tutor/{tutor_id}")
     assert resp.status_code == 200
     assert len(resp.json["timesAvailable"]) == 2
