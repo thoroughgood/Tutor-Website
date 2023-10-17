@@ -71,14 +71,14 @@ def generate_admin() -> str:
 
 def test_get_missing_id(setup_test: FlaskClient):
     client = setup_test
-    resp = client.get("/tutor/profile/")
+    resp = client.get("/tutor/")
     # assert resp.json == {"error": "id field was missing"}
     assert resp.status_code == 405
 
 
 def test_get_nonexisting_profile(setup_test: FlaskClient):
     client = setup_test
-    resp = client.get("/tutor/profile/1")
+    resp = client.get("/tutor/1")
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
@@ -87,7 +87,7 @@ def test_get_valid(setup_test: FlaskClient, generate_tutor: str):
 
     tutor_id = generate_tutor
 
-    resp = client.get(f"/tutor/profile/{tutor_id}")
+    resp = client.get(f"/tutor/{tutor_id}")
 
     assert resp.status_code == 200
     assert resp.json["id"] == tutor_id
@@ -208,7 +208,7 @@ def test_modify_missing_args(setup_test: FlaskClient, generate_tutor: str):
     resp = client.put("/tutor/profile/", json={})
     assert resp.status_code == 200
 
-    resp = client.get(f"/tutor/profile/{tutor_id}")
+    resp = client.get(f"/tutor/{tutor_id}")
     assert resp.status_code == 200
     assert resp.json["id"] == tutor_id
     assert resp.json["email"] == "validemail@mail.com"
@@ -253,7 +253,7 @@ def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
     )
     assert resp.status_code == 200
 
-    resp = client.get(f"/tutor/profile/{tutor_id}")
+    resp = client.get(f"/tutor/{tutor_id}")
 
     assert resp.status_code == 200
     assert resp.json["id"] == tutor_id
@@ -302,7 +302,7 @@ def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
     )
     assert resp.status_code == 200
 
-    resp = client.get(f"/tutor/profile/{tutor_id}")
+    resp = client.get(f"/tutor/{tutor_id}")
     assert resp.status_code == 200
 
     assert resp.json["id"] == tutor_id
@@ -318,8 +318,6 @@ def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
         and "math" in resp.json["courseOfferings"]
     )
     assert len(resp.json["timesAvailable"]) == 1
-
-    print(resp.json["timesAvailable"][0]["startTime"])
 
     response = datetime.fromisoformat(resp.json["timesAvailable"][0]["startTime"]).replace(tzinfo=None, minute=0, second=0, microsecond=0)
     expected = datetime.fromisoformat(start_time).replace(minute=0, second=0, microsecond=0)
@@ -407,7 +405,7 @@ def test_delete_valid(setup_test: FlaskClient, generate_tutor: str):
     resp = client.delete("/tutor/", json={})
     assert resp.status_code == 200
 
-    resp = client.get(f"/tutor/profile/{tutor_id}")
+    resp = client.get(f"/tutor/{tutor_id}")
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
@@ -462,6 +460,6 @@ def test_modify_time_available(setup_test: FlaskClient, generate_tutor: str):
     assert resp.status_code == 400
     assert resp.json["error"] == "Time availabilities should not overlap"
 
-    resp = client.get(f"/tutor/profile/{tutor_id}")
+    resp = client.get(f"/tutor/{tutor_id}")
     assert resp.status_code == 200
     assert len(resp.json["timesAvailable"]) == 2
