@@ -28,6 +28,7 @@ export async function toastProtectedFnCall(fn: Function) {
     await fn()
     return true
   } catch (error) {
+    console.error(error)
     toast.error(getErrorMessage(error))
   }
   return false

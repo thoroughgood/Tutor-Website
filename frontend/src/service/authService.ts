@@ -64,20 +64,16 @@ export class HTTPAuthService extends HTTPService implements AuthService {
   }
 
   async logout(): Promise<SuccessResponse> {
-    try {
-      const resp = wretch(`http://127.0.0.1:5000/logout`)
-        .headers({
-          "Access-Control-Allow-Credentials": "true",
-        })
-        .options({
-          credentials: "include",
-          mode: "cors",
-        })
-        .post()
-      return await resp.json()
-    } catch (error) {
-      throw new Error(error)
-    }
+    const resp = wretch(`${this.backendURL}/logout`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .post()
+      .notFound(this.errorHandlerCallback)
+      .badRequest(this.errorHandlerCallback)
+      .error(415, this.errorHandlerCallback)
+    return await resp.json()
   }
 
   async checkUser(): Promise<CheckUserResponse> {
