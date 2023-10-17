@@ -25,7 +25,7 @@ export default function SmallProfileCard({
   return (
     <Link
       href={`/tutor/${id}`}
-      className="flex w-screen max-w-md gap-5 rounded-md border p-5 shadow transition hover:scale-[102%]"
+      className="flex w-screen max-w-md gap-5 rounded-md bg-background p-5 shadow transition hover:scale-[102%]"
     >
       <Avatar className="h-32 w-32 text-4xl ">
         {data ? (
