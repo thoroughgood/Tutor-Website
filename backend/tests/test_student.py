@@ -1,81 +1,33 @@
 import pytest
 from pytest_mock import MockerFixture
-from hashlib import sha256
 from uuid import uuid4
 from flask.testing import FlaskClient
 from datetime import datetime, timedelta, timezone
-from prisma.models import User, Appointment
-from prisma.models import Student
-
-
-@pytest.fixture
-def initialise_student() -> str:
-    id = str(uuid4())
-    student = User.prisma().create(
-        data={
-            "id": id,
-            "email": "validemail@mail.com",
-            "hashedPassword": sha256("12345678".encode()).hexdigest(),
-            "name": "Name1",
-            "location": "Australia",
-            "studentInfo": {"create": {"id": id}},
-        },
-    )
-    return student.id
-
-
-@pytest.fixture
-def initialise_tutor() -> str:
-    id = str(uuid4())
-    tutor = User.prisma().create(
-        data={
-            "id": id,
-            "email": "validemail2@mail.com",
-            "hashedPassword": sha256("12345678".encode()).hexdigest(),
-            "name": "Name2",
-            "location": "Australia",
-            "tutorInfo": {"create": {"id": id}},
-        },
-    )
-    return tutor.id
-
-
-@pytest.fixture
-def initialise_admin() -> str:
-    id = str(uuid4())
-    admin = User.prisma().create(
-        data={
-            "id": id,
-            "email": "validemail3@mail.com",
-            "hashedPassword": sha256("12345678".encode()).hexdigest(),
-            "name": "Name3",
-            "adminInfo": {"create": {"id": id}},
-        },
-    )
-    return admin.id
+from prisma.models import Appointment, User
+from pytest_mock.plugin import MockType
 
 
 ############################ GET PROFILE TESTS #################################
 
 
-def test_get_args(setup_test: FlaskClient, mocker: MockerFixture, fake_student):
+def test_get_args(
+    setup_test: FlaskClient, find_unique_users_mock: MockType, fake_student: User
+):
     client = setup_test
-
-    find_unique_mock = mocker.patch("blueprints.student.UserActions.find_unique")
 
     # Missing id
     # resp = client.get("/student/")
     # assert resp.json == {"error": "id field was missing"}
     # assert resp.status_code == 405
 
-    find_unique_mock.return_value = None
+    find_unique_users_mock.return_value = None
 
     # Invalid id
     resp = client.get("/student/1")
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
-    find_unique_mock.return_value = fake_student
+    find_unique_users_mock.return_value = fake_student
     fake_student.location = "Australia"
     fake_student.name = "Name1"
 
@@ -100,7 +52,12 @@ def test_modify_not_json(setup_test: FlaskClient):
 
 
 # Non-admin modifying their profile
-def test_modify_args(setup_test: FlaskClient, mocker: MockerFixture, fake_student):
+def test_modify_args(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    fake_student: User,
+):
     client = setup_test
 
     # No user logged in
@@ -108,8 +65,7 @@ def test_modify_args(setup_test: FlaskClient, mocker: MockerFixture, fake_studen
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
-    find_unique_mock = mocker.patch("blueprints.student.UserActions.find_unique")
-    find_unique_mock.return_value = fake_student
+    find_unique_users_mock.return_value = fake_student
 
     resp = client.post(
         "/login",
@@ -120,7 +76,7 @@ def test_modify_args(setup_test: FlaskClient, mocker: MockerFixture, fake_studen
         },
     )
 
-    find_unique_mock.assert_called_with(
+    find_unique_users_mock.assert_called_with(
         where={"email": fake_student.email}, include=mocker.ANY
     )
 
@@ -144,7 +100,7 @@ def test_modify_args(setup_test: FlaskClient, mocker: MockerFixture, fake_studen
     assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
-    update_mock = mocker.patch("blueprints.student.UserActions.update")
+    update_mock = mocker.patch("tests.conftest.UserActions.update")
 
     # Valid modification
     resp = client.put(
@@ -166,12 +122,15 @@ def test_modify_args(setup_test: FlaskClient, mocker: MockerFixture, fake_studen
 
 # Admin modifying a student profile
 def test_admin_modify_args(
-    setup_test: FlaskClient, mocker: MockerFixture, fake_student, fake_admin
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    fake_student: User,
+    fake_admin: User,
 ):
     client = setup_test
 
-    find_unique_mock = mocker.patch("blueprints.student.UserActions.find_unique")
-    find_unique_mock.return_value = fake_student
+    find_unique_users_mock.return_value = fake_student
 
     resp = client.post(
         "/login",
@@ -181,7 +140,7 @@ def test_admin_modify_args(
             "accountType": "student",
         },
     )
-    find_unique_mock.assert_called_with(
+    find_unique_users_mock.assert_called_with(
         where={"email": fake_student.email}, include=mocker.ANY
     )
 
@@ -198,7 +157,7 @@ def test_admin_modify_args(
 
     resp = client.post("/logout")
 
-    find_unique_mock.return_value = fake_admin
+    find_unique_users_mock.return_value = fake_admin
     resp = client.post(
         "/login",
         json={
@@ -207,14 +166,14 @@ def test_admin_modify_args(
             "accountType": "admin",
         },
     )
-    find_unique_mock.assert_called_with(
+    find_unique_users_mock.assert_called_with(
         where={"email": fake_admin.email}, include=mocker.ANY
     )
 
     # preventing overlap
     admin_view_mock = mocker.patch("helpers.admin_id_check.admin_view")
     admin_view_mock.return_value = fake_admin
-    find_unique_mock.return_value = fake_student
+    find_unique_users_mock.return_value = fake_student
 
     # Missing id
     resp = client.put("/student/profile", json={})
@@ -249,7 +208,7 @@ def test_admin_modify_args(
     assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
-    find_unique_mock.return_value = None
+    find_unique_users_mock.return_value = None
     # Invalid id
     resp = client.put(
         "/student/profile",
@@ -263,13 +222,15 @@ def test_admin_modify_args(
             "phoneNumber": "",
         },
     )
-    find_unique_mock.assert_called_with(where={"id": "invalid"}, include=mocker.ANY)
+    find_unique_users_mock.assert_called_with(
+        where={"id": "invalid"}, include=mocker.ANY
+    )
 
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
-    update_mock = mocker.patch("blueprints.student.UserActions.update")
-    find_unique_mock.return_value = fake_student
+    update_mock = mocker.patch("tests.conftest.UserActions.update")
+    find_unique_users_mock.return_value = fake_student
 
     # Valid modification
     resp = client.put(
@@ -289,14 +250,14 @@ def test_admin_modify_args(
     assert resp.json == {"success": True}
     assert resp.status_code == 200
 
-    find_unique_mock.return_value = fake_student
+    find_unique_users_mock.return_value = fake_student
     fake_student.name = "Name123"
     fake_student.bio = "hi"
     fake_student.location = "Sydney"
     fake_student.phoneNumber = "000"
 
     resp = client.get(f"/student/{fake_student.id}")
-    find_unique_mock.assert_called_with(
+    find_unique_users_mock.assert_called_with(
         where={"id": fake_student.id}, include=mocker.ANY
     )
 
@@ -328,12 +289,14 @@ def test_delete_no_user(setup_test: FlaskClient):
 
 
 def test_delete_student_login(
-    setup_test: FlaskClient, mocker: MockerFixture, fake_student
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    fake_student: User,
 ):
     client = setup_test
 
-    find_unique_mock = mocker.patch("blueprints.student.UserActions.find_unique")
-    find_unique_mock.return_value = fake_student
+    find_unique_users_mock.return_value = fake_student
 
     resp = client.post(
         "/login",
@@ -344,7 +307,7 @@ def test_delete_student_login(
         },
     )
 
-    find_unique_mock.assert_called_with(
+    find_unique_users_mock.assert_called_with(
         where={"email": fake_student.email}, include=mocker.ANY
     )
 
@@ -369,12 +332,15 @@ def test_delete_student_login(
 
 
 def test_delete_admin_login(
-    setup_test: FlaskClient, mocker: MockerFixture, fake_student, fake_admin
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    fake_student: User,
+    fake_admin: User,
 ):
     client = setup_test
 
-    find_unique_mock = mocker.patch("blueprints.student.UserActions.find_unique")
-    find_unique_mock.return_value = fake_admin
+    find_unique_users_mock.return_value = fake_admin
 
     resp = client.post(
         "/login",
@@ -385,28 +351,28 @@ def test_delete_admin_login(
         },
     )
 
-    find_unique_mock.assert_called_with(
+    find_unique_users_mock.assert_called_with(
         where={"email": fake_admin.email}, include=mocker.ANY
     )
     # make sure admin_view return isn't overwritten by previous mock
     admin_view_mock = mocker.patch("helpers.admin_id_check.admin_view")
     admin_view_mock.return_value = fake_admin
-    find_unique_mock.return_value = fake_student
+    find_unique_users_mock.return_value = fake_student
 
     # No id
     resp = client.delete("/student", json={})
     assert resp.json == {"error": "id field was missing"}
     assert resp.status_code == 400
 
-    find_unique_mock.return_value = None
+    find_unique_users_mock.return_value = None
 
     # Invalid id
     resp = client.delete("/student", json={"id": "invalid"})
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
-    delete_mock = mocker.patch("blueprints.student.UserActions.delete")
-    find_unique_mock.return_value = fake_student
+    delete_mock = mocker.patch("tests.conftest.UserActions.delete")
+    find_unique_users_mock.return_value = fake_student
 
     # Valid id
     resp = client.delete("/student", json={"id": fake_student.id})
@@ -458,47 +424,6 @@ def fake_appointments(fake_tutor, fake_student):
     return fake_student, apt1.id, apt2.id, apt3.id
 
 
-@pytest.fixture
-def generate_appointments(generate_dummy_tutor, initialise_student):
-    id1 = str(uuid4())
-    Appointment.prisma().create(
-        data={
-            "id": id1,
-            "student": {"connect": {"id": initialise_student}},
-            "tutor": {"connect": {"id": generate_dummy_tutor}},
-            "startTime": datetime.now() + timedelta(days=1, hours=0),
-            "endTime": datetime.now() + timedelta(days=1, hours=1),
-            "tutorAccepted": False,
-        }
-    )
-
-    id2 = str(uuid4())
-    Appointment.prisma().create(
-        data={
-            "id": id2,
-            "student": {"connect": {"id": initialise_student}},
-            "tutor": {"connect": {"id": generate_dummy_tutor}},
-            "startTime": datetime.now() + timedelta(days=1, hours=0),
-            "endTime": datetime.now() + timedelta(days=1, hours=1),
-            "tutorAccepted": True,
-        }
-    )
-
-    id3 = str(uuid4())
-    Appointment.prisma().create(
-        data={
-            "id": id3,
-            "student": {"connect": {"id": initialise_student}},
-            "tutor": {"connect": {"id": generate_dummy_tutor}},
-            "startTime": datetime.now() - timedelta(days=1, hours=1),
-            "endTime": datetime.now() - timedelta(days=1),
-            "tutorAccepted": True,
-        }
-    )
-
-    return (id1, id2, id3)
-
-
 def test_student_appointment_not_login(setup_test: FlaskClient):
     client = setup_test
     resp = client.get("/student/appointments")
@@ -507,12 +432,14 @@ def test_student_appointment_not_login(setup_test: FlaskClient):
 
 
 def test_student_appointment_not_student_login(
-    setup_test: FlaskClient, mocker: MockerFixture, fake_tutor
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    fake_tutor: User,
 ):
     client = setup_test
 
-    find_unique_mock = mocker.patch("blueprints.student.UserActions.find_unique")
-    find_unique_mock.return_value = fake_tutor
+    find_unique_users_mock.return_value = fake_tutor
 
     resp = client.post(
         "/login",
@@ -522,7 +449,7 @@ def test_student_appointment_not_student_login(
             "accountType": "tutor",
         },
     )
-    find_unique_mock.assert_called_with(
+    find_unique_users_mock.assert_called_with(
         where={"email": fake_tutor.email}, include=mocker.ANY
     )
 
@@ -532,13 +459,15 @@ def test_student_appointment_not_student_login(
 
 
 def test_student_appointments(
-    setup_test: FlaskClient, mocker: MockerFixture, fake_appointments
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    fake_appointments,
 ):
     client = setup_test
 
     data = fake_appointments
-    find_unique_mock = mocker.patch("blueprints.student.UserActions.find_unique")
-    find_unique_mock.return_value = data[0]
+    find_unique_users_mock.return_value = data[0]
 
     resp = client.post(
         "/login",
@@ -548,7 +477,7 @@ def test_student_appointments(
             "accountType": "student",
         },
     )
-    find_unique_mock.assert_called_with(
+    find_unique_users_mock.assert_called_with(
         where={"email": data[0].email}, include=mocker.ANY
     )
 

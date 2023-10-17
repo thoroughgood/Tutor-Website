@@ -37,7 +37,7 @@ def get_profile(tutor_id):
                 tutor.times_available,
             )
         )
-    
+
     if tutor.ratings == None:
         rating = 0
     else:
@@ -134,7 +134,7 @@ def delete_profile():
                 data={"courseOfferings": {"disconnect": {"name": subject}}},
             )
 
-    Tutor.prisma().delete(where={"id": tutor.id})
+    User.prisma().delete(where={"id": tutor.id})
 
     return jsonify({"success": True})
 

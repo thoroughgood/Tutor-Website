@@ -1,30 +1,32 @@
+import pytest
+from pytest_mock import MockerFixture
+from pytest_mock.plugin import MockType
 from hashlib import sha256
 from uuid import uuid4
 from flask.testing import FlaskClient
-import pytest
 from prisma.cli import prisma
 import prisma.models as models
-import sys
 import subprocess
+import sys
+import os
 from pathlib import Path
-from datetime import datetime
 
-from pytest_mock import MockerFixture
+# unused import for mocking purposes during tests
+from prisma.actions import UserActions, TutorActions, SubjectActions
 
-# Little hack to allow easy importing from parent
-# Courtesy of https://stackoverflow.com/questions/714063/importing-modules-from-parent-folder/28712742#28712742
-# ? Probably more idiomatic/less hacky way of doing this
-sys.path.insert(0, "..")
+# hack to import a root level file and be able to run pytest from any dir
+# source: https://www.geeksforgeeks.org/python-import-from-parent-directory/
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
 from app import app
 
-# basic testing utils
+# basic testing utils ##########################################################
 
 
 @pytest.fixture
 def setup_test():
-    # to reset the test_db and update test schema if necessary
-    # prisma.run(["db", "push", "--force-reset"], check=True)
-    yield app.test_client()
+    return app.test_client()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -35,6 +37,7 @@ def cleanup():
         subprocess.run(["rm", "-rf", "flask_session"])
 
 
+# ? Probably no longer necessary due to additional of mocking
 def test_setup_test_db(setup_test):
     try:
         # check that all tables are empty
@@ -56,75 +59,17 @@ def test_setup_test_client(setup_test: FlaskClient):
     assert response.status_code == 200
 
 
-# dummy data generation
+# mocks / fake data ############################################################
 
 
 @pytest.fixture
-def generate_dummy_tutor() -> str:
-    id = str(uuid4())
-    tutor = models.User.prisma().create(
-        data={
-            "id": id,
-            "email": "dummytutor@mail.com",
-            "name": "dummy",
-            "hashedPassword": sha256("dfknsdkjd".encode()).hexdigest(),
-            "bio": "",
-            "location": None,
-            "profilePicture": None,
-            "phoneNumber": None,
-            "tutorInfo": {"create": {"id": id}},
-        }
-    )
-
-    return tutor.id
+def find_unique_users_mock(mocker: MockerFixture) -> MockType:
+    return mocker.patch("tests.conftest.UserActions.find_unique")
 
 
 @pytest.fixture
-def generate_dummy_student() -> str:
-    id = str(uuid4())
-    models.User.prisma().create(
-        data={
-            "id": id,
-            "email": "dummystudent@mail.com",
-            "name": "dummy",
-            "hashedPassword": sha256("dwadwawfgaw".encode()).hexdigest(),
-            "bio": "",
-            "location": None,
-            "profilePicture": None,
-            "phoneNumber": None,
-            "studentInfo": {"create": {"id": id}},
-        }
-    )
-
-    return id
-
-
-# Caution: this factory function has the side effect of generating a new tutor
-# and student once and shares them with every generation of an appointment
-# i.e. all apppointments generated are connected to the same student and tutor
-# For convenience, the value of the ids of these users are returned
-# alongside the factory function in a tuple.
-@pytest.fixture
-def generate_dummy_appointment(generate_dummy_tutor, generate_dummy_student):
-    def __generate_dummy_appointment() -> str:
-        id = str(uuid4())
-        models.Appointment.prisma().create(
-            data={
-                "id": id,
-                "startTime": datetime.now(),
-                "endTime": datetime.now(),
-                "student": {"connect": {"id": generate_dummy_student}},
-                "tutor": {"connect": {"id": generate_dummy_tutor}},
-            }
-        )
-
-        return id
-
-    return (
-        __generate_dummy_appointment,  # factory function
-        generate_dummy_tutor,  # tutor_id
-        generate_dummy_student,  # student_id
-    )
+def find_many_tutors_mock(mocker: MockerFixture) -> MockType:
+    return mocker.patch("tests.conftest.TutorActions.find_many")
 
 
 @pytest.fixture
@@ -138,7 +83,7 @@ def fake_user():
                     name="name",
                     email=email,
                     hashedPassword=sha256(pword.encode()).hexdigest(),
-                    studentInfo=models.Student(id="id", userInfoId="id"),
+                    studentInfo=models.Student(id=id, userInfoId=id),
                 )
                 return user
             case "tutor":
@@ -147,7 +92,7 @@ def fake_user():
                     name="name",
                     email=email,
                     hashedPassword=sha256(pword.encode()).hexdigest(),
-                    tutorInfo=models.Tutor(id="id", userInfoId="id"),
+                    tutorInfo=models.Tutor(id=id, userInfoId=id),
                 )
             case "admin":
                 return models.User(
@@ -155,7 +100,7 @@ def fake_user():
                     name="name",
                     email=email,
                     hashedPassword=sha256(pword.encode()).hexdigest(),
-                    adminInfo=models.Admin(id="id", userInfoId="id"),
+                    adminInfo=models.Admin(id=id, userInfoId=id),
                 )
             case _:
                 return models.User(

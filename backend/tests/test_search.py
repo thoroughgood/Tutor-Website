@@ -1,19 +1,20 @@
+from typing import List
 import pytest
-from pytest_mock import MockerFixture
-from flask.testing import FlaskClient
-from prisma.models import Subject, User, Appointment, Rating, TutorAvailability
-from uuid import uuid4
-from datetime import datetime, timedelta, timezone
 import json
+from flask.testing import FlaskClient
+from prisma.models import Subject, User, Tutor, Appointment, Rating, TutorAvailability
+from datetime import datetime, timedelta, timezone
+from pytest_mock.plugin import MockType
 
 
 @pytest.fixture
-def generate_fake_tutors(fake_user) -> None:
+def generate_fake_tutors(fake_user) -> List[Tutor]:
     math = Subject(name="math")
     science = Subject(name="science")
 
     fake_student: User = fake_user("dummy@student.com", "1234678", "student")
 
+    # first tutor
     tutor1: User = fake_user("mail@gmail.com", "12345678", "tutor")
     tutor1.location = "Australia"
     tutor1.name = "James"
@@ -42,6 +43,7 @@ def generate_fake_tutors(fake_user) -> None:
     tutor1.tutorInfo.ratings = [rating1]
     tutor1.tutorInfo.appointments = [apt1]
 
+    # second tutor
     tutor2: User = fake_user("mail@gmail.com", "12345678", "tutor")
     tutor2.location = "Tasmania"
     tutor2.name = "Jan"
@@ -77,6 +79,7 @@ def generate_fake_tutors(fake_user) -> None:
     tutor2.tutorInfo.ratings = [rating2]
     tutor2.tutorInfo.appointments = [apt2]
 
+    # third tutor
     tutor3: User = fake_user("mail@gmail.com", "12345678", "tutor")
     tutor3.location = "Tasmania"
     tutor3.name = "John"
@@ -116,17 +119,18 @@ def generate_fake_tutors(fake_user) -> None:
 
 
 def test_search_no_args(
-    setup_test: FlaskClient, mocker: MockerFixture, generate_fake_tutors
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[Tutor],
 ):
     client = setup_test
 
     tutor1, tutor2, tutor3 = generate_fake_tutors
-    find_many_mock = mocker.patch("blueprints.search.TutorActions.find_many")
-    find_many_mock.return_value = [tutor1, tutor2, tutor3]
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
 
     resp = client.get("/searchtutor", query_string={})
 
-    find_many_mock.assert_called()
+    find_many_tutors_mock.assert_called()
 
     assert "tutorIds" in resp.json
     assert len(resp.json["tutorIds"]) == 3
@@ -135,17 +139,18 @@ def test_search_no_args(
 
 
 def test_search_only_name(
-    setup_test: FlaskClient, mocker: MockerFixture, generate_fake_tutors
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[User],
 ):
     client = setup_test
 
     tutor1, tutor2, tutor3 = generate_fake_tutors
-    find_many_mock = mocker.patch("blueprints.search.TutorActions.find_many")
-    find_many_mock.return_value = [tutor1, tutor2, tutor3]
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
 
     # only name
     resp = client.get("/searchtutor", query_string={"name": "James"})
-    find_many_mock.assert_called()
+    find_many_tutors_mock.assert_called()
 
     assert resp.status_code == 200
     assert len(resp.json["tutorIds"]) == 1
@@ -153,24 +158,25 @@ def test_search_only_name(
 
 
 def test_search_only_location(
-    setup_test: FlaskClient, mocker: MockerFixture, generate_fake_tutors
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[Tutor],
 ):
     client = setup_test
 
     tutor1, tutor2, tutor3 = generate_fake_tutors
-    find_many_mock = mocker.patch("blueprints.search.TutorActions.find_many")
-    find_many_mock.return_value = [tutor1, tutor2, tutor3]
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
 
     # only location
     resp = client.get("/searchtutor", query_string={"location": "Tasmania"})
-    find_many_mock.assert_called()
+    find_many_tutors_mock.assert_called()
 
     assert len(resp.json["tutorIds"]) == 2
     assert resp.status_code == 200
     assert all(id in [tutor2.id, tutor3.id] for id in resp.json["tutorIds"])
 
     resp = client.get("/searchtutor", query_string={"location": "Australia"})
-    find_many_mock.assert_called()
+    find_many_tutors_mock.assert_called()
 
     assert len(resp.json["tutorIds"]) == 1
     assert resp.status_code == 200
@@ -178,31 +184,32 @@ def test_search_only_location(
 
 
 def test_search_only_ratings(
-    setup_test: FlaskClient, mocker: MockerFixture, generate_fake_tutors
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[Tutor],
 ):
     client = setup_test
 
     tutor1, tutor2, tutor3 = generate_fake_tutors
-    find_many_mock = mocker.patch("blueprints.search.TutorActions.find_many")
-    find_many_mock.return_value = [tutor1, tutor2, tutor3]
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
 
     # only rating
     resp = client.get("/searchtutor", query_string={"rating": 2})
-    find_many_mock.assert_called()
+    find_many_tutors_mock.assert_called()
 
     assert len(resp.json["tutorIds"]) == 3
     assert resp.status_code == 200
     assert all(id in [tutor1.id, tutor2.id, tutor3.id] for id in resp.json["tutorIds"])
 
     resp = client.get("/searchtutor", query_string={"rating": 3})
-    find_many_mock.assert_called()
+    find_many_tutors_mock.assert_called()
 
     assert len(resp.json["tutorIds"]) == 2
     assert resp.status_code == 200
     assert all(id in [tutor2.id, tutor3.id] for id in resp.json["tutorIds"])
 
     resp = client.get("/searchtutor", query_string={"rating": 4})
-    find_many_mock.assert_called()
+    find_many_tutors_mock.assert_called()
 
     assert len(resp.json["tutorIds"]) == 1
     assert resp.status_code == 200
@@ -210,24 +217,25 @@ def test_search_only_ratings(
 
 
 def test_search_only_course_offerings(
-    setup_test: FlaskClient, mocker: MockerFixture, generate_fake_tutors
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[Tutor],
 ):
     client = setup_test
 
     tutor1, tutor2, tutor3 = generate_fake_tutors
-    find_many_mock = mocker.patch("blueprints.search.TutorActions.find_many")
-    find_many_mock.return_value = [tutor1, tutor2, tutor3]
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
 
     # only courseOfferings
     resp = client.get("/searchtutor", query_string={"courseOfferings": ["math"]})
-    find_many_mock.assert_called()
+    find_many_tutors_mock.assert_called()
 
     assert len(resp.json["tutorIds"]) == 2
     assert resp.status_code == 200
     assert all(id in [tutor1.id, tutor3.id] for id in resp.json["tutorIds"])
 
     resp = client.get("/searchtutor", query_string={"courseOfferings": ["science"]})
-    find_many_mock.assert_called()
+    find_many_tutors_mock.assert_called()
 
     assert len(resp.json["tutorIds"]) == 2
     assert resp.status_code == 200
@@ -236,7 +244,7 @@ def test_search_only_course_offerings(
     resp = client.get(
         "/searchtutor", query_string={"courseOfferings": ["math", "science"]}
     )
-    find_many_mock.assert_called()
+    find_many_tutors_mock.assert_called()
 
     assert len(resp.json["tutorIds"]) == 3
     assert resp.status_code == 200
@@ -244,13 +252,14 @@ def test_search_only_course_offerings(
 
 
 def test_search_only_time_range(
-    setup_test: FlaskClient, mocker: MockerFixture, generate_fake_tutors
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[Tutor],
 ):
     client = setup_test
 
     tutor1, tutor2, tutor3 = generate_fake_tutors
-    find_many_mock = mocker.patch("blueprints.search.TutorActions.find_many")
-    find_many_mock.return_value = [tutor1, tutor2, tutor3]
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
 
     # only timeRange
     resp = client.get(
@@ -264,7 +273,7 @@ def test_search_only_time_range(
             )
         },
     )
-    find_many_mock.assert_called()
+    find_many_tutors_mock.assert_called()
 
     assert resp.status_code == 200
     assert len(resp.json["tutorIds"]) == 2
@@ -283,7 +292,7 @@ def test_search_only_time_range(
             )
         },
     )
-    find_many_mock.assert_called()
+    find_many_tutors_mock.assert_called()
 
     assert resp.status_code == 200
     assert len(resp.json["tutorIds"]) == 1
@@ -291,13 +300,14 @@ def test_search_only_time_range(
 
 
 def test_search_args(
-    setup_test: FlaskClient, mocker: MockerFixture, generate_fake_tutors
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[Tutor],
 ):
     client = setup_test
 
     tutor1, tutor2, tutor3 = generate_fake_tutors
-    find_many_mock = mocker.patch("blueprints.search.TutorActions.find_many")
-    find_many_mock.return_value = [tutor1, tutor2, tutor3]
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
 
     # all excluding name
     resp = client.get(
@@ -316,7 +326,7 @@ def test_search_args(
             ),
         },
     )
-    find_many_mock.assert_called()
+    find_many_tutors_mock.assert_called()
 
     assert len(resp.json["tutorIds"]) == 1
     assert resp.status_code == 200
