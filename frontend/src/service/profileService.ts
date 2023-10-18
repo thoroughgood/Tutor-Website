@@ -28,7 +28,8 @@ export interface StudentSelfEditReqBody extends Omit<StudentProfile, "id"> {}
 /**
  * ProfileService provides operations relating to tutor/student profiles
  */
-interface TutorSearchParams {
+export interface TutorSearchParams {
+  name?: string
   location?: string
   rating?: string
   courseOfferings?: string[]
@@ -56,13 +57,21 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     searchParams: TutorSearchParams,
   ): Promise<{ tutorIds: string[] }> {
     const url = new URL(`${this.backendURL}/searchtutor`)
-    const params = new URLSearchParams({
-      ...searchParams,
-      courseOfferings: JSON.stringify(searchParams.courseOfferings),
-      timeRange: JSON.stringify(searchParams.timeRange),
-    })
+    const basicParams = { ...searchParams }
+    delete basicParams.courseOfferings
+    delete basicParams.timeRange
+    const params = new URLSearchParams(basicParams as Record<string, string>)
+    if (searchParams.timeRange) {
+      params.set("timeRange", JSON.stringify(searchParams.timeRange))
+    }
+    if (searchParams.courseOfferings) {
+      params.set(
+        "courseOfferings",
+        JSON.stringify(searchParams.courseOfferings),
+      )
+    }
     url.search = params.toString()
-    const data = wretch(`${this.backendURL}/searchtutor`).get()
+    const data = wretch(url.toString()).get()
     return await data.json()
   }
   async getTutorProfile(tutorId: string): Promise<TutorProfile> {
