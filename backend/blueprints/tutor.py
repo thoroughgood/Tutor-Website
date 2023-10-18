@@ -37,7 +37,7 @@ def get_profile(tutor_id):
                 tutor.times_available,
             )
         )
-
+        
     if tutor.ratings is None:
         rating = 0
     else:
