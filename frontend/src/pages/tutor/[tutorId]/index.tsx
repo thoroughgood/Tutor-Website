@@ -4,12 +4,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import useUser from "@/hooks/useUser"
-import { MockProfileService } from "@/service/profileService"
+import { HTTPProfileService } from "@/service/profileService"
 import { Calendar, MessageCircle, User } from "lucide-react"
 import { useRouter } from "next/router"
 import { useQuery } from "react-query"
 
-const profileService = new MockProfileService()
+const profileService = new HTTPProfileService()
 export default function TutorProfile() {
   const router = useRouter()
   const { user } = useUser()
@@ -37,7 +37,7 @@ export default function TutorProfile() {
           location={data.location}
         />
         <div className="grid grid-cols-2 gap-2">
-          {isOwnProfile || true ? (
+          {isOwnProfile ? (
             <>
               <Button variant="secondary" className="flex gap-2">
                 <User className="w-5" />

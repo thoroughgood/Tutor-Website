@@ -1,27 +1,32 @@
-from flask.testing import FlaskClient
 import pytest
+from pytest_mock import MockerFixture
+from pytest_mock.plugin import MockType
+from hashlib import sha256
+from uuid import uuid4
+from flask.testing import FlaskClient
 from prisma.cli import prisma
-from prisma import Prisma
 import prisma.models as models
-import sys
 import subprocess
+import sys
+import os
 from pathlib import Path
 
-# Little hack to allow easy importing from parent
-# Courtesy of https://stackoverflow.com/questions/714063/importing-modules-from-parent-folder/28712742#28712742
-# ? Probably more idiomatic/less hacky way of doing this
-sys.path.insert(0, "..")
-from main import app
+# unused import for mocking purposes during tests
+from prisma.actions import UserActions, TutorActions, SubjectActions
+
+# hack to import a root level file and be able to run pytest from any dir
+# source: https://www.geeksforgeeks.org/python-import-from-parent-directory/
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
+from app import app
+
+# basic testing utils ##########################################################
 
 
 @pytest.fixture
 def setup_test():
-    # to reset the test_db and update test schema if necessary
-    prisma.run(["db", "push", "--force-reset"], check=True)
-    # * The below is needed if app is not imported
-    # db = Prisma(auto_register=True)
-    # db.connect()
-    yield app.test_client()
+    return app.test_client()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -32,6 +37,7 @@ def cleanup():
         subprocess.run(["rm", "-rf", "flask_session"])
 
 
+# ? Probably no longer necessary due to additional of mocking
 def test_setup_test_db(setup_test):
     try:
         # check that all tables are empty
@@ -51,3 +57,95 @@ def test_setup_test_client(setup_test: FlaskClient):
     response = client.get("/")
     assert response.data == b"Hello world!"
     assert response.status_code == 200
+
+
+# mocks / fake data ############################################################
+
+
+# ! Note: Assumes a db of exactly one fake admin, student, and tutor
+# with the ids and emails of the 'fake' admin, student, user
+# such, if tests rely on removal/addition of these cases this will not work
+@pytest.fixture
+def find_unique_users_mock(
+    mocker: MockerFixture, fake_student, fake_admin, fake_tutor
+) -> MockType:
+    def mocked_find_unique(**kwargs):
+        # where must exist
+        if ("id" in kwargs["where"] and kwargs["where"]["id"] == fake_admin.id) or (
+            "email" in kwargs["where"] and kwargs["where"]["email"] == fake_admin.email
+        ):
+            return fake_admin
+        elif ("id" in kwargs["where"] and kwargs["where"]["id"] == fake_student.id) or (
+            "email" in kwargs["where"]
+            and kwargs["where"]["email"] == fake_student.email
+        ):
+            return fake_student
+        elif ("id" in kwargs["where"] and kwargs["where"]["id"] == fake_tutor.id) or (
+            "email" in kwargs["where"] and kwargs["where"]["email"] == fake_tutor.email
+        ):
+            return fake_tutor
+
+        return None
+
+    return mocker.patch(
+        "tests.conftest.UserActions.find_unique",
+        new=mocker.Mock(side_effect=mocked_find_unique),
+    )
+
+
+@pytest.fixture
+def find_many_tutors_mock(mocker: MockerFixture) -> MockType:
+    return mocker.patch("tests.conftest.TutorActions.find_many")
+
+
+@pytest.fixture
+def fake_user():
+    def __fake_user(email: str, pword: str, type: str) -> models.User:
+        id = str(uuid4())
+        match type.lower():
+            case "student":
+                user = models.User(
+                    id=id,
+                    name="name",
+                    email=email,
+                    hashedPassword=sha256(pword.encode()).hexdigest(),
+                    studentInfo=models.Student(id=id, userInfoId=id),
+                )
+                return user
+            case "tutor":
+                return models.User(
+                    id=id,
+                    name="name",
+                    email=email,
+                    hashedPassword=sha256(pword.encode()).hexdigest(),
+                    tutorInfo=models.Tutor(id=id, userInfoId=id),
+                )
+            case "admin":
+                return models.User(
+                    id=id,
+                    name="name",
+                    email=email,
+                    hashedPassword=sha256(pword.encode()).hexdigest(),
+                    adminInfo=models.Admin(id=id, userInfoId=id),
+                )
+            case _:
+                return models.User(
+                    id=id, name="name", email=email, hashedPassword=pword
+                )
+
+    return __fake_user
+
+
+@pytest.fixture
+def fake_student(fake_user) -> models.User:
+    return fake_user("validemail@mail.com", "12345678", "student")
+
+
+@pytest.fixture
+def fake_tutor(fake_user) -> models.User:
+    return fake_user("validemail2@mail.com", "12345678", "tutor")
+
+
+@pytest.fixture
+def fake_admin(fake_user) -> models.User:
+    return fake_user("validemail3@mail.com", "12345678", "admin")

@@ -1,0 +1,26 @@
+Akul Anand z5361621
+
+Week 1:
+Formed groups in tutorial.
+We chose Terry as scrum master and Daniel Nguyen as Project Leader. 
+We went through the list of projects and selected our preferences. 
+Talked about our preferences in which areas of the project we wanted to work in, and discussed what languages we have experience in.
+
+Week 2:
+Everyone was assigned their roles, I was placed in backend. 
+We got given a first preference P16, began writing user stories. 
+Also met the client later in the week.
+
+Week 3:
+Finished off the student storyboard and worked on editing the user stories to meet the standard that was required.
+Was aimed to get setup done but the proposal and time constraints prevent this. Aiming to get a start next weeek.
+
+Week 4:
+Not as much progress as hoped from my end. Struggled with getting setup done, and therefore was unable to meet the assigned deadlines for my assigned tasks.
+Once I managed to get the setup working, I am working on completeing my assigned task which is tutor profile, 
+will try to see if logout has been done and aim to get that done.
+
+Week 5:
+Wasnt able to complete my assigned tasks before the demo.
+Focus now is to finish the assigned tasks to prevent blocking everyone else. 
+Then can move on to sprint 2 tasks.

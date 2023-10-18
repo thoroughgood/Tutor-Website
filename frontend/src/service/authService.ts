@@ -1,6 +1,6 @@
 import wretch from "wretch"
-import { WretchError } from "wretch/resolver"
 import { SuccessResponse } from "./types"
+import { HTTPService } from "./helpers"
 
 export interface RegisterBody {
   name: string
@@ -19,32 +19,42 @@ interface AuthResponse {
   id: string
 }
 
+interface CheckUserResponse {
+  id: string
+  accountType: "tutor" | "admin" | "student"
+}
+
 interface AuthService {
   login: (loginBody: LoginBody) => Promise<AuthResponse>
   register: (registerBody: RegisterBody) => Promise<AuthResponse>
   logout: () => Promise<SuccessResponse>
+  checkUser: () => Promise<CheckUserResponse>
 }
 
-export class HTTPAuthService implements AuthService {
-  private backendURL: string
-  private errorHandlerCallback = async (resp: WretchError) => {
-    const error = JSON.parse(resp.message)
-    throw new Error(error.error)
-  }
-  constructor() {
-    this.backendURL = process.env.BACKEND_URL || "http://127.0.0.1:5000"
-  }
+export class HTTPAuthService extends HTTPService implements AuthService {
   async login(loginBody: LoginBody): Promise<AuthResponse> {
     const resp = wretch(`${this.backendURL}/login`)
+      // .headers({
+      //   "Access-Control-Allow-Credentials": "true",
+      // }) // i commented this because i tink its supposed to be from a backend response - daniel n
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
       .json(loginBody)
       .post()
       .notFound(this.errorHandlerCallback)
       .badRequest(this.errorHandlerCallback)
       .error(415, this.errorHandlerCallback)
+
     return await resp.json()
   }
   async register(registerBody: RegisterBody): Promise<AuthResponse> {
     const resp = wretch(`${this.backendURL}/register`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
       .json(registerBody)
       .post()
       .notFound(this.errorHandlerCallback)
@@ -54,11 +64,32 @@ export class HTTPAuthService implements AuthService {
   }
 
   async logout(): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/logout`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .post()
+      .notFound(this.errorHandlerCallback)
+      .badRequest(this.errorHandlerCallback)
+      .error(415, this.errorHandlerCallback)
+    return await resp.json()
+  }
+
+  async checkUser(): Promise<CheckUserResponse> {
     try {
-      const resp = wretch(`${this.backendURL}/logout`).post()
+      const resp = wretch(`${this.backendURL}/utils/getuserid`)
+        // .headers({
+        //   "Access-Control-Allow-Credentials": "true",
+        // })
+        .options({
+          credentials: "include",
+          mode: "cors",
+        })
+        .get()
       return await resp.json()
     } catch {
-      throw new Error("Failed to log out")
+      throw new Error("Failed to get user details")
     }
   }
 }
@@ -79,5 +110,8 @@ export class MockAuthService implements AuthService {
   }
   async logout() {
     return { success: true }
+  }
+  async checkUser(): Promise<CheckUserResponse> {
+    return { id: "1337", accountType: "tutor" }
   }
 }
