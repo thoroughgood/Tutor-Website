@@ -1,72 +1,78 @@
-from hashlib import sha256
-from uuid import uuid4
 import pytest
+from pytest_mock import MockerFixture
+from uuid import uuid4
 from flask.testing import FlaskClient
-from prisma.models import Subject, User, Tutor
-from datetime import datetime, timedelta
+from prisma.models import Subject, User, TutorAvailability, Appointment, Rating
+from datetime import datetime, timedelta, timezone
+from pytest_mock.plugin import MockType
 
 
 @pytest.fixture
-def generate_tutor(generate_dummy_appointment) -> str:
-    Subject.prisma().create(data={"name": "science"})
-    appointment_id = generate_dummy_appointment[0]()
-
-    id = str(uuid4())
-    tutor = User.prisma().create(
-        data={
-            "id": id,
-            "email": "validemail@mail.com",
-            "hashedPassword": sha256("12345678".encode()).hexdigest(),
-            "name": "Terry",
-            "bio": "band 1 at HSC Maths",
-            "location": "Australia",
-            "profilePicture": None,
-            "phoneNumber": "0411123901",
-            "tutorInfo": {"create": {"id": id}},
-        }
+def generate_tutor(fake_tutor, fake_student) -> User:
+    science = Subject(name="science")
+    fake_tutor.email = "validemail2@mail.com"
+    fake_tutor.name = "Terry"
+    fake_tutor.bio = "band 1 at HSC Maths"
+    fake_tutor.location = "Australia"
+    fake_tutor.phoneNumber = "0411123901"
+    apt = Appointment(
+        id=str(uuid4()),
+        startTime=datetime.now(timezone.utc),
+        endTime=datetime.now(timezone.utc),
+        tutorAccepted=False,
+        tutor=fake_tutor.tutorInfo,
+        tutorId=fake_tutor.id,
+        student=fake_student.studentInfo,
+        studentId=fake_student.id,
     )
-
-    # separated to keep queries small
-    Tutor.prisma().update(
-        where={
-            "id": id,
-        },
-        data={
-            "appointments": {"connect": {"id": appointment_id}},
-            "courseOfferings": {"connect": {"name": "science"}},
-            "ratings": {
-                "create": {
-                    "id": str(uuid4()),
-                    "score": 2,
-                    "appointment": {
-                        "connect": {
-                            "id": appointment_id,
-                        }
-                    },
-                }
-            },
-        },
+    rating = Rating(
+        id=str(uuid4()),
+        score=2,
+        appointment=apt,
+        appointmentId=apt.id,
+        createdFor=fake_tutor.tutorInfo,
+        tutorId=fake_tutor.id,
     )
+    apt.rating = rating
+    fake_tutor.tutorInfo.appointments = [apt]
+    fake_tutor.tutorInfo.ratings = [rating]
+    fake_tutor.tutorInfo.courseOfferings = [science]
 
-    return tutor.id
+    return fake_tutor
+
 
 @pytest.fixture
-def generate_admin() -> str:
-    id = str(uuid4())
-    admin = User.prisma().create(
-        data={
-            "id": id,
-            "email":"validemail2@mail.com",
-            "hashedPassword": sha256("23456789".encode()).hexdigest(),
-            "name": "Admin",
-            "adminInfo": {"create": {"id": id}},
-        }
+def custom_find_unique(
+    mocker: MockerFixture, generate_tutor, fake_admin, fake_student
+) -> User:
+    def mocked_find_unique(**kwargs):
+        # where must exist
+        if ("id" in kwargs["where"] and kwargs["where"]["id"] == fake_admin.id) or (
+            "email" in kwargs["where"] and kwargs["where"]["email"] == fake_admin.email
+        ):
+            return fake_admin
+        elif ("id" in kwargs["where"] and kwargs["where"]["id"] == fake_student.id) or (
+            "email" in kwargs["where"]
+            and kwargs["where"]["email"] == fake_student.email
+        ):
+            return fake_student
+        elif (
+            "id" in kwargs["where"] and kwargs["where"]["id"] == generate_tutor.id
+        ) or (
+            "email" in kwargs["where"]
+            and kwargs["where"]["email"] == generate_tutor.email
+        ):
+            return generate_tutor
+
+        return None
+
+    return mocker.patch(
+        "tests.conftest.UserActions.find_unique",
+        new=mocker.Mock(side_effect=mocked_find_unique),
     )
-    return admin.id
 
 
 # Get Tutor Profile Tests
-
 
 
 def test_get_missing_id(setup_test: FlaskClient):
@@ -82,16 +88,23 @@ def test_get_nonexisting_profile(setup_test: FlaskClient):
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
-def test_get_valid(setup_test: FlaskClient, generate_tutor: str):
+
+def test_get_valid(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    custom_find_unique: MockType,
+    generate_tutor: User,
+):
     client = setup_test
 
-    tutor_id = generate_tutor
+    tutor = generate_tutor
 
-    resp = client.get(f"/tutor/{tutor_id}")
+    resp = client.get(f"/tutor/{tutor.id}")
+    custom_find_unique.assert_called_with(where={"id": tutor.id}, include=mocker.ANY)
 
     assert resp.status_code == 200
-    assert resp.json["id"] == tutor_id
-    assert resp.json["email"] == "validemail@mail.com"
+    assert resp.json["id"] == tutor.id
+    assert resp.json["email"] == "validemail2@mail.com"
     assert resp.json["name"] == "Terry"
     assert resp.json["bio"] == "band 1 at HSC Maths"
     assert resp.json["rating"] == 2
@@ -99,7 +112,7 @@ def test_get_valid(setup_test: FlaskClient, generate_tutor: str):
     assert resp.json["profilePicture"] == None
     assert resp.json["phoneNumber"] == "0411123901"
     assert "science" in resp.json["courseOfferings"]
-    assert resp.json["timesAvailable"] == []
+    assert len(resp.json["timesAvailable"]) == 0
 
 
 # Modify Tutor Profile Tests
@@ -113,10 +126,14 @@ def test_modify_not_json(setup_test: FlaskClient):
 
 
 def test_modify_invalid_args(
-    setup_test: FlaskClient, generate_tutor: str, generate_admin: str):
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    custom_find_unique: MockType,
+    generate_tutor: User,
+    fake_admin: User,
+):
     client = setup_test
-
-    tutor_Id = generate_tutor
+    tutor = generate_tutor
 
     # No user logged in
     resp = client.put("/tutor/profile/", json={})
@@ -126,16 +143,20 @@ def test_modify_invalid_args(
     resp = client.post(
         "/login",
         json={
-            "email": "validemail@mail.com",
+            "email": "validemail2@mail.com",
             "password": "12345678",
             "accountType": "tutor",
         },
+    )
+    custom_find_unique.assert_called_with(
+        where={"email": tutor.email}, include=mocker.ANY
     )
 
     assert resp.status_code == 200
 
     # Non admin user tries modifying other user
-    resp = client.put("/tutor/profile/", json={"id": tutor_Id})
+    resp = client.put("/tutor/profile/", json={"id": tutor.id})
+    custom_find_unique.assert_called_with(where={"id": tutor.id}, include=mocker.ANY)
     assert resp.json == {"error": "id field should not be supplied by a non admin user"}
     assert resp.status_code == 403
 
@@ -144,15 +165,16 @@ def test_modify_invalid_args(
 
     # admin logs in
 
-    generate_admin
-
     resp = client.post(
         "/login",
         json={
-            "email": "validemail2@mail.com",
-            "password": "23456789",
+            "email": "validemail3@mail.com",
+            "password": "12345678",
             "accountType": "admin",
-        }
+        },
+    )
+    custom_find_unique.assert_called_with(
+        where={"email": fake_admin.email}, include=mocker.ANY
     )
     assert resp.status_code == 200
 
@@ -161,23 +183,34 @@ def test_modify_invalid_args(
     assert resp.json == {"error": "id field was missing"}
     assert resp.status_code == 400
 
+    custom_find_unique = None
     # admin modifies profile that doesnt exist
     resp = client.put("/tutor/profile/", json={"id": "1"})
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
-def test_modify_invalid_email(setup_test: FlaskClient, generate_tutor: str):
+
+def test_modify_invalid_email(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    custom_find_unique: MockType,
+    generate_tutor: User,
+):
     client = setup_test
-    tutor_id = generate_tutor
+    tutor = generate_tutor
 
     resp = client.post(
         "/login",
         json={
-            "email": "validemail@mail.com",
+            "email": "validemail2@mail.com",
             "password": "12345678",
             "accountType": "tutor",
         },
     )
+    custom_find_unique.assert_called_with(
+        where={"email": tutor.email}, include=mocker.ANY
+    )
+    assert resp.status_code == 200
 
     resp = client.put(
         "/tutor/profile/",
@@ -185,33 +218,41 @@ def test_modify_invalid_email(setup_test: FlaskClient, generate_tutor: str):
             "email": "validemailmail.com",
         },
     )
-    
+
     assert resp.status_code == 400
     assert resp.json == {"error": "New email is invalid"}
 
 
-def test_modify_missing_args(setup_test: FlaskClient, generate_tutor: str):
+def test_modify_missing_args(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    custom_find_unique: MockType,
+    generate_tutor: User,
+):
     client = setup_test
-
-    tutor_id = generate_tutor
+    tutor = generate_tutor
 
     resp = client.post(
         "/login",
         json={
-            "email": "validemail@mail.com",
+            "email": "validemail2@mail.com",
             "password": "12345678",
             "accountType": "tutor",
         },
     )
+    custom_find_unique.assert_called_with(
+        where={"email": tutor.email}, include=mocker.ANY
+    )
+    assert resp.status_code == 200
 
     # missing fields
     resp = client.put("/tutor/profile/", json={})
     assert resp.status_code == 200
 
-    resp = client.get(f"/tutor/{tutor_id}")
+    resp = client.get(f"/tutor/{tutor.id}")
     assert resp.status_code == 200
-    assert resp.json["id"] == tutor_id
-    assert resp.json["email"] == "validemail@mail.com"
+    assert resp.json["id"] == tutor.id
+    assert resp.json["email"] == "validemail2@mail.com"
     assert resp.json["name"] == "Terry"
     assert resp.json["bio"] == "band 1 at HSC Maths"
     assert resp.json["rating"] == 2
@@ -219,45 +260,58 @@ def test_modify_missing_args(setup_test: FlaskClient, generate_tutor: str):
     assert resp.json["profilePicture"] == None
     assert resp.json["phoneNumber"] == "0411123901"
     assert "science" in resp.json["courseOfferings"]
-    assert resp.json["timesAvailable"] == []
+    assert len(resp.json["timesAvailable"]) == 0
 
-def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
+
+def test_modify_same_values(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    custom_find_unique: MockType,
+    generate_tutor: User,
+):
     client = setup_test
-
-    tutor_id = generate_tutor
+    tutor = generate_tutor
 
     resp = client.post(
         "/login",
         json={
-            "email": "validemail@mail.com",
+            "email": "validemail2@mail.com",
             "password": "12345678",
             "accountType": "tutor",
         },
     )
-
+    custom_find_unique.assert_called_with(
+        where={"email": tutor.email}, include=mocker.ANY
+    )
     assert resp.status_code == 200
 
+    update_user_mock = mocker.patch("tests.conftest.UserActions.update")
+    update_tutor_mock = mocker.patch("tests.conftest.TutorActions.update")
+    create_subject_mock = mocker.patch("tests.conftest.SubjectActions.create")
     # same values in fields
     resp = client.put(
         "/tutor/profile/",
         json={
             "name": "Terry",
             "bio": "band 1 at HSC Maths",
-            "email": "validemail@mail.com",
+            "email": "validemail2@mail.com",
             "profilePicture": None,
             "location": "Australia",
             "phoneNumber": "0411123901",
             "courseOfferings": ["science"],
-            "timesAvailable": []
+            "timesAvailable": [],
         },
     )
+    create_subject_mock.assert_called()
+    update_tutor_mock.assert_called()
+    update_user_mock.assert_called()
     assert resp.status_code == 200
 
-    resp = client.get(f"/tutor/{tutor_id}")
+    resp = client.get(f"/tutor/{tutor.id}")
 
     assert resp.status_code == 200
-    assert resp.json["id"] == tutor_id
-    assert resp.json["email"] == "validemail@mail.com"
+    assert resp.json["id"] == tutor.id
+    assert resp.json["email"] == "validemail2@mail.com"
     assert resp.json["name"] == "Terry"
     assert resp.json["bio"] == "band 1 at HSC Maths"
     assert resp.json["rating"] == 2
@@ -265,13 +319,17 @@ def test_modify_same_values(setup_test: FlaskClient, generate_tutor: str):
     assert resp.json["profilePicture"] == None
     assert resp.json["phoneNumber"] == "0411123901"
     assert "science" in resp.json["courseOfferings"]
-    assert resp.json["timesAvailable"] == []
+    assert len(resp.json["timesAvailable"]) == 0
 
 
-def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
+def test_modify_different_values(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    custom_find_unique: MockType,
+    generate_tutor: User,
+):
     client = setup_test
-
-    tutor_id = generate_tutor
+    tutor = generate_tutor
 
     start_time = (datetime.utcnow() + timedelta(days=1)).isoformat()
     end_time = (datetime.utcnow() + timedelta(days=2)).isoformat()
@@ -279,14 +337,19 @@ def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
     resp = client.post(
         "/login",
         json={
-            "email": "validemail@mail.com",
+            "email": "validemail2@mail.com",
             "password": "12345678",
             "accountType": "tutor",
         },
     )
-
+    custom_find_unique.assert_called_with(
+        where={"email": tutor.email}, include=mocker.ANY
+    )
     assert resp.status_code == 200
 
+    update_user_mock = mocker.patch("tests.conftest.UserActions.update")
+    update_tutor_mock = mocker.patch("tests.conftest.TutorActions.update")
+    create_subject_mock = mocker.patch("tests.conftest.SubjectActions.create")
     resp = client.put(
         "/tutor/profile/",
         json={
@@ -300,12 +363,35 @@ def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
             "timesAvailable": [{"startTime": start_time, "endTime": end_time}],
         },
     )
+    update_tutor_mock.assert_called()
+    update_user_mock.assert_called()
+    create_subject_mock.assert_called()
     assert resp.status_code == 200
 
-    resp = client.get(f"/tutor/{tutor_id}")
+    mocker.stop(custom_find_unique)
+    find_unique_mock = mocker.patch("tests.conftest.UserActions.find_unique")
+    find_unique_mock.return_value = tutor
+    tutor.name = "Juan"
+    tutor.bio = "band 6 at HSC Maths"
+    tutor.email = "valid@mail.com"
+    tutor.profilePicture = ""
+    tutor.location = "Sydney"
+    tutor.phoneNumber = "0411123888"
+    tutor.tutorInfo.courseOfferings = [Subject(name="science"), Subject(name="math")]
+    tutor.tutorInfo.timesAvailable = [
+        TutorAvailability(
+            id="1",
+            tutor=tutor.tutorInfo,
+            tutorId=tutor.id,
+            startTime=start_time,
+            endTime=end_time,
+        )
+    ]
+
+    resp = client.get(f"/tutor/{tutor.id}")
     assert resp.status_code == 200
 
-    assert resp.json["id"] == tutor_id
+    assert resp.json["id"] == tutor.id
     assert resp.json["email"] == "valid@mail.com"
     assert resp.json["name"] == "Juan"
     assert resp.json["bio"] == "band 6 at HSC Maths"
@@ -319,13 +405,22 @@ def test_modify_different_values(setup_test: FlaskClient, generate_tutor: str):
     )
     assert len(resp.json["timesAvailable"]) == 1
 
-    response = datetime.fromisoformat(resp.json["timesAvailable"][0]["startTime"]).replace(tzinfo=None, minute=0, second=0, microsecond=0)
-    expected = datetime.fromisoformat(start_time).replace(minute=0, second=0, microsecond=0)
+    response = datetime.fromisoformat(
+        resp.json["timesAvailable"][0]["startTime"]
+    ).replace(tzinfo=None, minute=0, second=0, microsecond=0)
+    expected = datetime.fromisoformat(start_time).replace(
+        minute=0, second=0, microsecond=0
+    )
     assert response == expected
 
-    response = datetime.fromisoformat(resp.json["timesAvailable"][0]["endTime"]).replace(tzinfo=None, minute=0, second=0, microsecond=0)
-    expected = datetime.fromisoformat(end_time).replace(minute=0, second=0, microsecond=0)
+    response = datetime.fromisoformat(
+        resp.json["timesAvailable"][0]["endTime"]
+    ).replace(tzinfo=None, minute=0, second=0, microsecond=0)
+    expected = datetime.fromisoformat(end_time).replace(
+        minute=0, second=0, microsecond=0
+    )
     assert response == expected
+
 
 # Delete Profile Tests
 
@@ -345,101 +440,166 @@ def test_delete_no_user(setup_test: FlaskClient):
 
 
 def test_delete_permission(
-    setup_test: FlaskClient, generate_tutor: str):
-
-    tutor_id = generate_tutor
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    custom_find_unique: MockType,
+    generate_tutor: User,
+):
     client = setup_test
-
-    resp = client.post(
-        "/login",
-        json={
-            "email": "validemail@mail.com",
-            "password": "12345678",
-            "accountType": "tutor",
-        },
-    )
-    assert resp.status_code == 200
-
-    resp = client.delete("/tutor/", json={"id": tutor_id})
-
-    assert resp.json == {"error": "id field should not be supplied by a non admin user"}
-    assert resp.status_code == 403
-
-def test_delete_nonexisting_profile(
-        setup_test: FlaskClient, generate_admin: str):
-    
-    client = setup_test
-    admin_id = generate_admin
+    tutor = generate_tutor
 
     resp = client.post(
         "/login",
         json={
             "email": "validemail2@mail.com",
-            "password": "23456789",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+    custom_find_unique.assert_called_with(
+        where={"email": tutor.email}, include=mocker.ANY
+    )
+    assert resp.status_code == 200
+
+    resp = client.delete("/tutor/", json={"id": tutor.id})
+
+    assert resp.json == {"error": "id field should not be supplied by a non admin user"}
+    assert resp.status_code == 403
+
+
+def test_delete_nonexisting_profile(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    custom_find_unique: MockType,
+    fake_admin: User,
+):
+    client = setup_test
+
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
             "accountType": "admin",
-        }
+        },
+    )
+    custom_find_unique.assert_called_with(
+        where={"email": fake_admin.email}, include=mocker.ANY
     )
     assert resp.status_code == 200
 
     resp = client.delete("/tutor/", json={"id": "1"})
+    # admin_view_mock.assert_called_with(id=fake_admin.id)
+    custom_find_unique.assert_called_with(where={"id": "1"}, include=mocker.ANY)
+
     assert resp.status_code == 404
     assert resp.json == {"error": "Profile does not exist"}
-    
 
 
-def test_delete_valid(setup_test: FlaskClient, generate_tutor: str):
+def test_delete_valid(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    custom_find_unique: MockType,
+    generate_tutor: User,
+):
     client = setup_test
-
-    tutor_id = generate_tutor
+    tutor = generate_tutor
 
     resp = client.post(
         "/login",
         json={
-            "email": "validemail@mail.com",
+            "email": "validemail2@mail.com",
             "password": "12345678",
             "accountType": "tutor",
         },
     )
+    custom_find_unique.assert_called_with(
+        where={"email": tutor.email}, include=mocker.ANY
+    )
     assert resp.status_code == 200
 
+    delete_mock = mocker.patch("tests.conftest.UserActions.delete")
     resp = client.delete("/tutor/", json={})
+    delete_mock.assert_called()
+
     assert resp.status_code == 200
 
-    resp = client.get(f"/tutor/{tutor_id}")
+    mocker.stop(custom_find_unique)
+    find_unique_mocker = mocker.patch("tests.conftest.UserActions.find_unique")
+    find_unique_mocker.return_value = None
+
+    resp = client.get(f"/tutor/{tutor.id}")
     assert resp.json == {"error": "Profile does not exist"}
     assert resp.status_code == 404
 
 
-def test_modify_time_available(setup_test: FlaskClient, generate_tutor: str):
+def test_modify_time_available(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    custom_find_unique: MockType,
+    generate_tutor: User,
+):
     client = setup_test
-    tutor_id = generate_tutor
+    tutor = generate_tutor
+
+    start_time1 = datetime.now() + timedelta(days=1)
+    end_time1 = datetime.now() + timedelta(days=2)
+
+    start_time2 = datetime.now() + timedelta(days=3)
+    end_time2 = datetime.now() + timedelta(days=4)
 
     resp = client.post(
         "/login",
         json={
-            "email": "validemail@mail.com",
+            "email": "validemail2@mail.com",
             "password": "12345678",
             "accountType": "tutor",
         },
     )
+    custom_find_unique.assert_called_with(
+        where={"email": tutor.email}, include=mocker.ANY
+    )
     assert resp.status_code == 200
+
+    update_user_mock = mocker.patch("tests.conftest.UserActions.update")
+    update_tutor_mock = mocker.patch("tests.conftest.TutorActions.update")
     # valid modification
     resp = client.put(
         "/tutor/profile/",
         json={
             "timesAvailable": [
                 {
-                    "startTime": (datetime.utcnow() + timedelta(days=1)).isoformat(),
-                    "endTime": (datetime.utcnow() + timedelta(days=2)).isoformat(),
+                    "startTime": start_time1.isoformat(),
+                    "endTime": end_time1.isoformat(),
                 },
                 {
-                    "startTime": (datetime.utcnow() + timedelta(days=3)).isoformat(),
-                    "endTime": (datetime.utcnow() + timedelta(days=4)).isoformat(),
+                    "startTime": start_time2.isoformat(),
+                    "endTime": end_time2.isoformat(),
                 },
             ],
         },
     )
+    custom_find_unique.assert_called_with(where={"id": tutor.id}, include=mocker.ANY)
+    update_user_mock.assert_called()
+    update_tutor_mock.assert_called()
     assert resp.status_code == 200
+
+    tutor.tutorInfo.timesAvailable = [
+        TutorAvailability(
+            id="1",
+            tutor=tutor.tutorInfo,
+            tutorId=tutor.id,
+            startTime=start_time1,
+            endTime=end_time1,
+        ),
+        TutorAvailability(
+            id="2",
+            tutor=tutor.tutorInfo,
+            tutorId=tutor.id,
+            startTime=start_time2,
+            endTime=end_time2,
+        ),
+    ]
 
     # overlapping time availabilities
     resp = client.put(
@@ -457,9 +617,16 @@ def test_modify_time_available(setup_test: FlaskClient, generate_tutor: str):
             ],
         },
     )
+    custom_find_unique.assert_called_with(where={"id": tutor.id}, include=mocker.ANY)
     assert resp.status_code == 400
     assert resp.json["error"] == "Time availabilities should not overlap"
 
-    resp = client.get(f"/tutor/{tutor_id}")
+    resp = client.get(f"/tutor/{tutor.id}")
+    custom_find_unique.assert_called_with(where={"id": tutor.id}, include=mocker.ANY)
+
     assert resp.status_code == 200
     assert len(resp.json["timesAvailable"]) == 2
+    assert resp.json["timesAvailable"][0]["startTime"] == start_time1.isoformat()
+    assert resp.json["timesAvailable"][0]["endTime"] == end_time1.isoformat()
+    assert resp.json["timesAvailable"][1]["startTime"] == start_time2.isoformat()
+    assert resp.json["timesAvailable"][1]["endTime"] == end_time2.isoformat()

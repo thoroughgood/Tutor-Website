@@ -20,12 +20,12 @@ def get_profile(tutor_id):
     if tutor == None:
         raise ExpectedError("Profile does not exist", 404)
 
-    if tutor.course_offerings is None:
+    if tutor.course_offerings == None:
         course_offerings = []
     else:
         course_offerings = list(map(lambda c: c.name, tutor.course_offerings))
 
-    if tutor.times_available is None:
+    if tutor.times_available == None:
         times_available = []
     else:
         times_available = list(
@@ -37,8 +37,8 @@ def get_profile(tutor_id):
                 tutor.times_available,
             )
         )
-        
-    if tutor.ratings is None:
+
+    if tutor.ratings == None:
         rating = 0
     else:
         rating = rating_calc(tutor.ratings)
@@ -134,7 +134,7 @@ def delete_profile():
                 data={"courseOfferings": {"disconnect": {"name": subject}}},
             )
 
-    Tutor.prisma().delete(where={"id": tutor.id})
+    User.prisma().delete(where={"id": tutor.id})
 
     return jsonify({"success": True})
 
