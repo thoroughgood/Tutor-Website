@@ -23,39 +23,25 @@ def test_register_args(
     mocker.patch("tests.conftest.UserActions.create")
 
     resp = client.post("/register", json={})
-    assert resp.json == {"error": "name field was missing"}
+    assert resp.json == {"error": "'name' was missing from field(s)"}
     assert resp.status_code == 400
 
     resp = client.post("/register", json={"name": "name"})
-    assert resp.json == {"error": "email field is invalid"}
-    assert resp.status_code == 400
-
-    resp = client.post("/register", json={"name": "name", "email": "notvalidemail"})
-    assert resp.json == {"error": "email field is invalid"}
+    assert resp.json == {"error": "'email' was missing from field(s)"}
     assert resp.status_code == 400
 
     resp = client.post(
         "/register", json={"name": "name", "email": "validemail@mail.com"}
     )
-    assert resp.json == {"error": "password field must be at least 8 characters long"}
-    assert resp.status_code == 400
-
-    resp = client.post(
-        "/register",
-        json={"name": "name", "email": "validemail@mail.com", "password": "1234567"},
-    )
-    assert resp.json == {"error": "password field must be at least 8 characters long"}
+    assert resp.json == {"error": "'password' was missing from field(s)"}
     assert resp.status_code == 400
 
     resp = client.post(
         "/register",
         json={"name": "name", "email": "validemail@mail.com", "password": "12345678"},
     )
-    assert resp.json == {"error": "accountType field missing"}
+    assert resp.json == {"error": "'accountType' was missing from field(s)"}
     assert resp.status_code == 400
-
-    find_unique_mock = mocker.patch("tests.conftest.UserActions.find_unique")
-    find_unique_mock.return_value = None
 
     resp = client.post(
         "/register",
@@ -66,10 +52,47 @@ def test_register_args(
             "accountType": "notvalid",
         },
     )
-    assert resp.json == {"error": "accountType must be 'student' or 'tutor'"}
+    assert resp.json == {"error": "accountType must match student|tutor"}
     assert resp.status_code == 400
 
-    find_unique_mock.assert_called_with(where={"email": fake_student.email})
+    resp = client.post(
+        "/register",
+        json={
+            "name": "name",
+            "email": "notvalidemail",
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+    assert resp.json == {"error": "email field is invalid"}
+    assert resp.status_code == 400
+
+    resp = client.post(
+        "/register",
+        json={
+            "name": "name",
+            "email": "validemail@mail.com",
+            "password": "1234567",
+            "accountType": "student",
+        },
+    )
+    assert resp.json == {"error": "password field must be at least 8 character(s)"}
+    assert resp.status_code == 400
+
+    resp = client.post(
+        "/register",
+        json={
+            "name": "",
+            "email": "validemail@mail.com",
+            "password": "1234567",
+            "accountType": "student",
+        },
+    )
+    assert resp.json == {"error": "name field must be at least 1 character(s)"}
+    assert resp.status_code == 400
+
+    find_unique_mock = mocker.patch("tests.conftest.UserActions.find_unique")
+    find_unique_mock.return_value = None
 
     # successfully signup (student)
     resp = client.post(
@@ -152,24 +175,12 @@ def test_login_args(
     client = setup_test
     # Missing email
     resp = client.post("/login", json={})
-    assert resp.json == {"error": "email field is invalid"}
-    assert resp.status_code == 400
-
-    # Invalid Email
-    resp = client.post("/login", json={"email": "notvalidemail"})
-    assert resp.json == {"error": "email field is invalid"}
+    assert resp.json == {"error": "'email' was missing from field(s)"}
     assert resp.status_code == 400
 
     # Missing password
     resp = client.post("/login", json={"email": "validemail@mail.com"})
-    assert resp.json == {"error": "password field must be at least 8 characters long"}
-    assert resp.status_code == 400
-
-    # Invalid password
-    resp = client.post(
-        "/login", json={"email": "validemail@mail.com", "password": "ab12"}
-    )
-    assert resp.json == {"error": "password field must be at least 8 characters long"}
+    assert resp.json == {"error": "'password' was missing from field(s)"}
     assert resp.status_code == 400
 
     # Missing accountType
@@ -177,7 +188,7 @@ def test_login_args(
         "/login",
         json={"email": "validemail@mail.com", "password": "12345678"},
     )
-    assert resp.json == {"error": "accountType must be 'student' or 'tutor' or 'admin'"}
+    assert resp.json == {"error": "'accountType' was missing from field(s)"}
     assert resp.status_code == 400
 
     # Invalid accountType
@@ -189,7 +200,31 @@ def test_login_args(
             "accountType": "notvalid",
         },
     )
-    assert resp.json == {"error": "accountType must be 'student' or 'tutor' or 'admin'"}
+    assert resp.json == {"error": "accountType must match student|tutor|admin"}
+    assert resp.status_code == 400
+
+    # Invalid password
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "ab12",
+            "accountType": "student",
+        },
+    )
+    assert resp.json == {"error": "password field must be at least 8 character(s)"}
+    assert resp.status_code == 400
+
+    # Invalid Email
+    resp = client.post(
+        "/login",
+        json={
+            "email": "notvalidemail",
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+    assert resp.json == {"error": "email field is invalid"}
     assert resp.status_code == 400
 
     # Invalid login attempt (wrong password)
@@ -566,27 +601,27 @@ def test_resetpassword_student(
 
     # Missing id
     resp = client.put("/resetpassword", json={})
-    assert resp.json == {"error": "id field is missing"}
+    assert resp.json == {"error": "'id' was missing from field(s)"}
     assert resp.status_code == 400
-
-    # Invalid id
-    resp = client.put("/resetpassword", json={"id": "notvalid"})
-    assert resp.json == {"error": "Profile does not exist"}
-    assert resp.status_code == 404
 
     # Missing newPassword
     resp = client.put("/resetpassword", json={"id": fake_student.id})
-    assert resp.json == {"error": "password field must be at least 8 characters long"}
+    assert resp.json == {"error": "'newPassword' was missing from field(s)"}
     assert resp.status_code == 400
-    find_unique_users_mock.assert_called_with(where={"id": fake_student.id})
 
     # Invalid newPassword
     resp = client.put(
         "/resetpassword", json={"id": fake_student.id, "newPassword": "1234567"}
     )
-    assert resp.json == {"error": "password field must be at least 8 characters long"}
+    assert resp.json == {"error": "newPassword field must be at least 8 character(s)"}
     assert resp.status_code == 400
-    find_unique_users_mock.assert_called_with(where={"id": fake_student.id})
+
+    # Invalid id
+    resp = client.put(
+        "/resetpassword", json={"id": "notvalid", "newPassword": "123456789"}
+    )
+    assert resp.json == {"error": "Profile does not exist"}
+    assert resp.status_code == 404
 
     # New password cannot be the same as the old password
     resp = client.put(
@@ -677,16 +712,15 @@ def test_resetpassword_tutor(
 
     # Missing newPassword
     resp = client.put("/resetpassword", json={"id": fake_tutor.id})
-    assert resp.json == {"error": "password field must be at least 8 characters long"}
+    assert resp.json == {"error": "'newPassword' was missing from field(s)"}
     assert resp.status_code == 400
 
     # Invalid newPassword
     resp = client.put(
         "/resetpassword", json={"id": fake_tutor.id, "newPassword": "1234567"}
     )
-    assert resp.json == {"error": "password field must be at least 8 characters long"}
+    assert resp.json == {"error": "newPassword field must be at least 8 character(s)"}
     assert resp.status_code == 400
-    find_unique_users_mock.assert_called_with(where={"id": fake_tutor.id})
 
     # New password cannot be the same as the old password
     resp = client.put(
