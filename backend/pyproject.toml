@@ -43,6 +43,7 @@ tomlkit = "0.12.1"
 typing-extensions = "4.8.0"
 werkzeug = "2.3.7"
 pytest = "^7.4.2"
+pytest-mock = "^3.11.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -53,20 +54,17 @@ poethepoet = "^0.24.1"
 help = "run backend in dev environment"
 run = "./runBackend.sh"
 
-# run in this format: poetry poe tests
-[tool.poe.tasks.tests]
-help = "pytest all test files"
-shell = "cd tests && ./updateTestSchema.sh && pytest && cd .. && prisma db push"
-
-# run in this format: poetry poe test_one -f `filename`
-[tool.poe.tasks.test_one]
-help = "pytest one test file"
-shell = "cd tests && ./updateTestSchema.sh && pytest $testname && cd .. && prisma db push"
-    [[tool.poe.tasks.test_one.args]]
-    name = "testname"
-    help = "filename of test to run"
-    options = ["-f", "--filename"]
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+# Specify options/flags to be added to pytests
+# https://docs.pytest.org/en/7.1.x/reference/reference.html#confval-addopts
+addopts = '--color=yes --code-highlight=yes'
+xfail_strict = true
+log_cli = true
+python_files = "test_*.py"
+testpaths = [
+    "tests",
+]

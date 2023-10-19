@@ -8,6 +8,11 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return prettySentence(error.message)
+  if (typeof error === "string") {
+    try {
+      error = JSON.parse(error)
+    } catch {}
+  }
   if (
     typeof error === "object" &&
     error &&
@@ -28,6 +33,7 @@ export async function toastProtectedFnCall(fn: Function) {
     await fn()
     return true
   } catch (error) {
+    console.error(error)
     toast.error(getErrorMessage(error))
   }
   return false

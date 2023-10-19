@@ -1,5 +1,6 @@
 from re import fullmatch
 from flask import Blueprint, request, jsonify, session
+from datetime import datetime, timezone
 from prisma.models import User
 from helpers.views import student_view
 from helpers.admin_id_check import admin_id_check
@@ -11,10 +12,10 @@ from helpers.error_handlers import (
 student = Blueprint("student", __name__)
 
 
-@student.route("/<studentId>", methods=["GET"])
+@student.route("/<student_id>", methods=["GET"])
 @error_decorator
-def get_profile(studentId):
-    student = student_view(id=studentId)
+def get_profile(student_id):
+    student = student_view(id=student_id)
 
     if not student:
         raise ExpectedError("Profile does not exist", 404)
@@ -107,3 +108,43 @@ def delete_profile():
     User.prisma().delete(where={"id": mod_id})
 
     return jsonify({"success": True}), 200
+
+
+@student.route("/appointments", methods=["GET"])
+@error_decorator
+def get_appointment_lists():
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 401)
+
+    student = student_view(id=session["user_id"])
+    if not student:
+        raise ExpectedError("Current user is not a student", 400)
+
+    requested = []
+    accepted = []
+    completed = []
+    for appointment in student.appointments:
+        # Note: All datetimes retrieved from db are UTC by default
+        # Also note: as utcnow() is offset naive, this approach is preferred
+        if (
+            datetime.now(timezone.utc) > appointment.endTime
+            and appointment.tutorAccepted
+        ):
+            completed.append(appointment.id)
+        elif appointment.tutorAccepted:
+            accepted.append(appointment.id)
+        # * We shouldn't get an requested appointment with no tutor
+        # As long as erroneous data isn't directly added to db
+        else:
+            requested.append(appointment.id)
+
+    return (
+        jsonify(
+            {
+                "requested": requested,
+                "accepted": accepted,
+                "completed": completed,
+            }
+        ),
+        200,
+    )

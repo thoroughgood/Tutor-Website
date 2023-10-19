@@ -41,35 +41,33 @@ export default function ProfileHeader({
             .join("")}
         </AvatarFallback>
       </Avatar>
-      <div>
-        <div className="flex flex-col items-center gap-1 md:items-start">
-          <h1 className="text-center text-3xl md:text-left">{name}</h1>
-          <Badge
-            variant="outline"
-            className="mt-1 border-muted-foreground px-3 py-1 text-xs text-muted-foreground"
-          >
-            {accountType.toUpperCase()}
-          </Badge>
-          <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 md:justify-start">
-            {location && (
-              <FaintIconText>
-                <MapPin />
-                {location}
-              </FaintIconText>
-            )}
-            {phoneNumber && (
-              <FaintIconText>
-                <Phone />
-                {phoneNumber}
-              </FaintIconText>
-            )}
-            {email && (
-              <FaintIconText>
-                <Mail />
-                {email}
-              </FaintIconText>
-            )}
-          </div>
+      <div className="flex flex-col items-center gap-1 md:items-start">
+        <h1 className="text-center text-3xl md:text-left">{name}</h1>
+        <Badge
+          variant="outline"
+          className="mt-1 border-muted-foreground px-3 py-1 text-xs text-muted-foreground"
+        >
+          {accountType.toUpperCase()}
+        </Badge>
+        <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 md:justify-start">
+          {location && (
+            <FaintIconText>
+              <MapPin />
+              {location}
+            </FaintIconText>
+          )}
+          {phoneNumber && (
+            <FaintIconText>
+              <Phone />
+              {phoneNumber}
+            </FaintIconText>
+          )}
+          {email && (
+            <FaintIconText>
+              <Mail />
+              {email}
+            </FaintIconText>
+          )}
         </div>
       </div>
     </div>

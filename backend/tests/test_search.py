@@ -1,208 +1,265 @@
+from typing import List
 import pytest
-from flask.testing import FlaskClient
-from prisma.models import Subject, User, Tutor
-from uuid import uuid4
-import datetime
 import json
+from flask.testing import FlaskClient
+from prisma.models import Subject, User, Tutor, Appointment, Rating, TutorAvailability
+from datetime import datetime, timedelta, timezone
+from pytest_mock.plugin import MockType
 
 
 @pytest.fixture
-def generate_tutors(generate_dummy_appointment) -> None:
-    Subject.prisma().create(data={"name": "math"})
-    Subject.prisma().create(data={"name": "science"})
+def generate_fake_tutors(fake_user) -> List[Tutor]:
+    math = Subject(name="math")
+    science = Subject(name="science")
 
-    # * irrelevant information are left empty
-    apt_id1 = generate_dummy_appointment[0]()
-    User.prisma().create(
-        data={
-            "id": "tutorId1",
-            "email": "mail@gmail.com",
-            "hashedPassword": "12345678",
-            "name": "James",
-            "location": "Australia",
-            "tutorInfo": {
-                "create": {"id": "tutorId1"},
-            },
-        },
-    )
-    Tutor.prisma().update(
-        where={
-            "id": "tutorId1",
-        },
-        data={
-            "appointments": {"connect": {"id": apt_id1}},
-            "courseOfferings": {"connect": {"name": "math"}},
-            "ratings": {
-                "create": {
-                    "id": str(uuid4()),
-                    "score": 2,
-                    "appointment": {"connect": {"id": apt_id1}},
-                }
-            },
-        },
-    )
+    fake_student: User = fake_user("dummy@student.com", "1234678", "student")
 
-    apt_id2 = generate_dummy_appointment[0]()
-    User.prisma().create(
-        data={
-            "id": "tutorId2",
-            "email": "mail2@gmail.com",
-            "hashedPassword": "12345678",
-            "name": "Jan",
-            "location": "Tasmania",
-            "tutorInfo": {"create": {"id": "tutorId2"}},
-        },
+    # first tutor
+    tutor1: User = fake_user("mail@gmail.com", "12345678", "tutor")
+    tutor1.location = "Australia"
+    tutor1.name = "James"
+    tutor1.tutorInfo.courseOfferings = [math]
+    tutor1.tutorInfo.userInfo = tutor1
+    apt1 = Appointment(
+        id="1",
+        startTime=datetime.now(timezone.utc),
+        endTime=datetime.now(timezone.utc),
+        tutor=tutor1.tutorInfo,
+        tutorId=tutor1.id,
+        student=fake_student.studentInfo,
+        studentId=fake_student.id,
+        tutorAccepted=False,
     )
-    Tutor.prisma().update(
-        where={
-            "id": "tutorId2",
-        },
-        data={
-            "appointments": {"connect": {"id": apt_id2}},
-            "courseOfferings": {"connect": {"name": "science"}},
-            "timesAvailable": {
-                "create": {
-                    "id": "1",
-                    "startTime": datetime.datetime.utcnow()
-                    + datetime.timedelta(days=4, hours=0),
-                    "endTime": datetime.datetime.utcnow()
-                    + datetime.timedelta(days=4, hours=6),
-                }
-            },
-            "ratings": {
-                "create": {
-                    "id": str(uuid4()),
-                    "score": 4,
-                    "appointment": {"connect": {"id": apt_id2}},
-                }
-            },
-        },
+    rating1 = Rating(
+        id="1",
+        score=2,
+        appointment=apt1,
+        appointmentId=apt1.id,
+        createdFor=tutor1.tutorInfo,
+        tutorId=tutor1.id,
     )
+    tutor1.tutorInfo.timesAvailable = []
+    apt1.rating = rating1
+    tutor1.tutorInfo.ratings = [rating1]
+    tutor1.tutorInfo.appointments = [apt1]
 
-    f, dummy_tutor_id, _ = generate_dummy_appointment
-    apt_id3 = f()
-    User.prisma().create(
-        data={
-            "id": "tutorId3",
-            "email": "mail3@gmail.com",
-            "hashedPassword": "12345678",
-            "name": "John",
-            "location": "Tasmania",
-            "tutorInfo": {"create": {"id": "tutorId3"}},
-        },
+    # second tutor
+    tutor2: User = fake_user("mail@gmail.com", "12345678", "tutor")
+    tutor2.location = "Tasmania"
+    tutor2.name = "Jan"
+    tutor2.tutorInfo.courseOfferings = [science]
+    tutor2.tutorInfo.userInfo = tutor2
+    apt2 = Appointment(
+        id="2",
+        startTime=datetime.now(timezone.utc),
+        endTime=datetime.now(timezone.utc),
+        tutor=tutor2.tutorInfo,
+        tutorId=tutor2.id,
+        student=fake_student.studentInfo,
+        studentId=fake_student.id,
+        tutorAccepted=False,
     )
-    Tutor.prisma().update(
-        where={
-            "id": "tutorId3",
-        },
-        data={
-            "appointments": {"connect": {"id": apt_id3}},
-            "courseOfferings": {"connect": [{"name": "science"}, {"name": "math"}]},
-            "timesAvailable": {
-                "create": {
-                    "id": "2",
-                    "startTime": datetime.datetime.utcnow()
-                    + datetime.timedelta(days=3, hours=0),
-                    "endTime": datetime.datetime.utcnow()
-                    + datetime.timedelta(days=3, hours=6),
-                }
-            },
-            "ratings": {
-                "create": {
-                    "id": str(uuid4()),
-                    "score": 3,
-                    "appointment": {"connect": {"id": apt_id3}},
-                }
-            },
-        },
+    rating2 = Rating(
+        id="2",
+        score=4,
+        appointment=apt2,
+        appointmentId=apt2.id,
+        createdFor=tutor2.tutorInfo,
+        tutorId=tutor2.id,
     )
-    # removing the dummy tutor from the db so it doesn't impact
-    # test results
-    User.prisma().delete(where={"id": dummy_tutor_id})
-    assert Tutor.prisma().count() == 3
+    timesAvailable1 = TutorAvailability(
+        id="1",
+        tutor=tutor2.tutorInfo,
+        tutorId=tutor2.id,
+        startTime=datetime.now(timezone.utc) + timedelta(days=4, hours=0),
+        endTime=datetime.now(timezone.utc) + timedelta(days=4, hours=6),
+    )
+    tutor2.tutorInfo.timesAvailable = [timesAvailable1]
+    apt2.rating = rating2
+    tutor2.tutorInfo.ratings = [rating2]
+    tutor2.tutorInfo.appointments = [apt2]
 
-    return None
+    # third tutor
+    tutor3: User = fake_user("mail@gmail.com", "12345678", "tutor")
+    tutor3.location = "Tasmania"
+    tutor3.name = "John"
+    tutor3.tutorInfo.courseOfferings = [math, science]
+    tutor3.tutorInfo.userInfo = tutor3
+    apt3 = Appointment(
+        id="3",
+        startTime=datetime.now(timezone.utc),
+        endTime=datetime.now(timezone.utc),
+        tutor=tutor3.tutorInfo,
+        tutorId=tutor3.id,
+        student=fake_student.studentInfo,
+        studentId=fake_student.id,
+        tutorAccepted=False,
+    )
+    rating3 = Rating(
+        id="3",
+        score=3,
+        appointment=apt3,
+        appointmentId=apt3.id,
+        createdFor=tutor3.tutorInfo,
+        tutorId=tutor3.id,
+    )
+    timesAvailable2 = TutorAvailability(
+        id="2",
+        tutor=tutor3.tutorInfo,
+        tutorId=tutor3.id,
+        startTime=datetime.now(timezone.utc) + timedelta(days=3, hours=0),
+        endTime=datetime.now(timezone.utc) + timedelta(days=3, hours=6),
+    )
+    tutor3.tutorInfo.timesAvailable = [timesAvailable2]
+    apt3.rating = rating3
+    tutor3.tutorInfo.appointments = [apt3]
+    tutor3.tutorInfo.ratings = [rating3]
+
+    return tutor1.tutorInfo, tutor2.tutorInfo, tutor3.tutorInfo
 
 
-def test_search_no_args(setup_test: FlaskClient, generate_tutors):
+def test_search_no_args(
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[Tutor],
+):
     client = setup_test
+
+    tutor1, tutor2, tutor3 = generate_fake_tutors
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
+
     resp = client.get("/searchtutor", query_string={})
+
+    find_many_tutors_mock.assert_called()
+
     assert "tutorIds" in resp.json
     assert len(resp.json["tutorIds"]) == 3
     assert resp.status_code == 200
-
-    assert all(
-        id in ["tutorId1", "tutorId2", "tutorId3"] for id in resp.json["tutorIds"]
-    )
+    assert all(id in [tutor1.id, tutor2.id, tutor3.id] for id in resp.json["tutorIds"])
 
 
-def test_search_only_name(setup_test: FlaskClient, generate_tutors):
+def test_search_only_name(
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[User],
+):
     client = setup_test
+
+    tutor1, tutor2, tutor3 = generate_fake_tutors
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
+
     # only name
     resp = client.get("/searchtutor", query_string={"name": "James"})
-    assert len(resp.json["tutorIds"]) == 1
+    find_many_tutors_mock.assert_called()
+
     assert resp.status_code == 200
-    assert resp.json["tutorIds"][0] == "tutorId1"
+    assert len(resp.json["tutorIds"]) == 1
+    assert resp.json["tutorIds"][0] == tutor1.id
 
 
-def test_search_only_location(setup_test: FlaskClient, generate_tutors):
+def test_search_only_location(
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[Tutor],
+):
     client = setup_test
+
+    tutor1, tutor2, tutor3 = generate_fake_tutors
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
 
     # only location
     resp = client.get("/searchtutor", query_string={"location": "Tasmania"})
+    find_many_tutors_mock.assert_called()
+
     assert len(resp.json["tutorIds"]) == 2
     assert resp.status_code == 200
-    assert all(id in ["tutorId2", "tutorId3"] for id in resp.json["tutorIds"])
+    assert all(id in [tutor2.id, tutor3.id] for id in resp.json["tutorIds"])
+
     resp = client.get("/searchtutor", query_string={"location": "Australia"})
+    find_many_tutors_mock.assert_called()
+
     assert len(resp.json["tutorIds"]) == 1
     assert resp.status_code == 200
-    assert resp.json["tutorIds"][0] == "tutorId1"
+    assert resp.json["tutorIds"][0] == tutor1.id
 
 
-def test_search_only_ratings(setup_test: FlaskClient, generate_tutors):
+def test_search_only_ratings(
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[Tutor],
+):
     client = setup_test
+
+    tutor1, tutor2, tutor3 = generate_fake_tutors
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
 
     # only rating
     resp = client.get("/searchtutor", query_string={"rating": 2})
+    find_many_tutors_mock.assert_called()
+
     assert len(resp.json["tutorIds"]) == 3
     assert resp.status_code == 200
-    assert all(
-        id in ["tutorId1", "tutorId2", "tutorId3"] for id in resp.json["tutorIds"]
-    )
+    assert all(id in [tutor1.id, tutor2.id, tutor3.id] for id in resp.json["tutorIds"])
 
     resp = client.get("/searchtutor", query_string={"rating": 3})
+    find_many_tutors_mock.assert_called()
+
     assert len(resp.json["tutorIds"]) == 2
     assert resp.status_code == 200
+    assert all(id in [tutor2.id, tutor3.id] for id in resp.json["tutorIds"])
+
     resp = client.get("/searchtutor", query_string={"rating": 4})
+    find_many_tutors_mock.assert_called()
+
     assert len(resp.json["tutorIds"]) == 1
     assert resp.status_code == 200
-    assert resp.json["tutorIds"][0] == "tutorId2"
+    assert resp.json["tutorIds"][0] == tutor2.id
 
 
-def test_search_only_course_offerings(setup_test: FlaskClient, generate_tutors):
+def test_search_only_course_offerings(
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[Tutor],
+):
     client = setup_test
+
+    tutor1, tutor2, tutor3 = generate_fake_tutors
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
 
     # only courseOfferings
     resp = client.get("/searchtutor", query_string={"courseOfferings": ["math"]})
+    find_many_tutors_mock.assert_called()
+
     assert len(resp.json["tutorIds"]) == 2
     assert resp.status_code == 200
-    assert all(id in ["tutorId1", "tutorId3"] for id in resp.json["tutorIds"])
+    assert all(id in [tutor1.id, tutor3.id] for id in resp.json["tutorIds"])
+
     resp = client.get("/searchtutor", query_string={"courseOfferings": ["science"]})
+    find_many_tutors_mock.assert_called()
+
     assert len(resp.json["tutorIds"]) == 2
     assert resp.status_code == 200
-    assert all(id in ["tutorId2", "tutorId3"] for id in resp.json["tutorIds"])
+    assert all(id in [tutor2.id, tutor3.id] for id in resp.json["tutorIds"])
+
     resp = client.get(
         "/searchtutor", query_string={"courseOfferings": ["math", "science"]}
     )
+    find_many_tutors_mock.assert_called()
+
     assert len(resp.json["tutorIds"]) == 3
     assert resp.status_code == 200
-    assert all(
-        id in ["tutorId1", "tutorId2", "tutorId3"] for id in resp.json["tutorIds"]
-    )
+    assert all(id in [tutor1.id, tutor2.id, tutor3.id] for id in resp.json["tutorIds"])
 
 
-def test_search_only_time_range(setup_test: FlaskClient, generate_tutors):
+def test_search_only_time_range(
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[Tutor],
+):
     client = setup_test
+
+    tutor1, tutor2, tutor3 = generate_fake_tutors
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
 
     # only timeRange
     resp = client.get(
@@ -210,42 +267,47 @@ def test_search_only_time_range(setup_test: FlaskClient, generate_tutors):
         query_string={
             "timeRange": json.dumps(
                 {
-                    "startTime": (
-                        datetime.datetime.now() + datetime.timedelta(hours=1)
-                    ).isoformat(),
-                    "endTime": (
-                        datetime.datetime.now() + datetime.timedelta(days=10)
-                    ).isoformat(),
+                    "startTime": (datetime.now() + timedelta(hours=1)).isoformat(),
+                    "endTime": (datetime.now() + timedelta(days=10)).isoformat(),
                 }
             )
         },
     )
-    assert len(resp.json["tutorIds"]) == 2
+    find_many_tutors_mock.assert_called()
+
     assert resp.status_code == 200
-    assert all(id in ["tutorId2", "tutorId3"] for id in resp.json["tutorIds"])
+    assert len(resp.json["tutorIds"]) == 2
+    assert all(id in [tutor2.id, tutor3.id] for id in resp.json["tutorIds"])
 
     resp = client.get(
         "/searchtutor",
         query_string={
             "timeRange": json.dumps(
                 {
-                    "startTime": (
-                        datetime.datetime.now() + datetime.timedelta(hours=1)
-                    ).isoformat(),
+                    "startTime": (datetime.now() + timedelta(hours=1)).isoformat(),
                     "endTime": (
-                        datetime.datetime.now() + datetime.timedelta(days=3, hours=10)
+                        datetime.now() + timedelta(days=3, hours=10)
                     ).isoformat(),
                 }
             )
         },
     )
-    assert len(resp.json["tutorIds"]) == 1
+    find_many_tutors_mock.assert_called()
+
     assert resp.status_code == 200
-    assert resp.json["tutorIds"][0] == "tutorId3"
+    assert len(resp.json["tutorIds"]) == 1
+    assert resp.json["tutorIds"][0] == tutor3.id
 
 
-def test_search_args(setup_test: FlaskClient, generate_tutors):
+def test_search_args(
+    setup_test: FlaskClient,
+    find_many_tutors_mock: MockType,
+    generate_fake_tutors: List[Tutor],
+):
     client = setup_test
+
+    tutor1, tutor2, tutor3 = generate_fake_tutors
+    find_many_tutors_mock.return_value = [tutor1, tutor2, tutor3]
 
     # all excluding name
     resp = client.get(
@@ -256,16 +318,16 @@ def test_search_args(setup_test: FlaskClient, generate_tutors):
             "courseOfferings": ["science", "math"],
             "timeRange": json.dumps(
                 {
-                    "startTime": (
-                        datetime.datetime.now() + datetime.timedelta(hours=1)
-                    ).isoformat(),
+                    "startTime": (datetime.now() + timedelta(hours=1)).isoformat(),
                     "endTime": (
-                        datetime.datetime.now() + datetime.timedelta(days=3, hours=10)
+                        datetime.now() + timedelta(days=3, hours=10)
                     ).isoformat(),
                 }
             ),
         },
     )
+    find_many_tutors_mock.assert_called()
+
     assert len(resp.json["tutorIds"]) == 1
     assert resp.status_code == 200
-    assert resp.json["tutorIds"][0] == "tutorId3"
+    assert resp.json["tutorIds"][0] == tutor3.id
