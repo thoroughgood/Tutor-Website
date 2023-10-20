@@ -58,7 +58,7 @@ export default function WeeklyCalendar({
   }, [])
 
   return (
-    <div className="flex h-full w-full flex-col gap-3">
+    <div className="flex h-full w-full flex-col gap-3 overflow-hidden">
       <div className="ml-[50px] flex items-center gap-2">
         {/* Calendar Controls */}
         <Button variant="outline" onClick={() => setViewWeek(viewWeek - 1)}>
