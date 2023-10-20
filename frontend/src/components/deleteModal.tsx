@@ -1,4 +1,3 @@
-import { Button } from "./ui/button"
 import {
   Dialog,
   DialogContent,
@@ -13,15 +12,24 @@ import { useState } from "react"
 import { MockProfileService } from "@/service/profileService"
 import toast from "react-hot-toast"
 import { getErrorMessage } from "@/lib/utils"
+import useUser from "@/hooks/useUser"
+import { Button } from "./ui/button"
 const profileService = new MockProfileService()
-export default function DeleteModal() {
+
+export interface deleteModalInterface {
+  profileId: string
+}
+
+export default function DeleteModal({ profileId }: deleteModalInterface) {
   const [open, setOpen] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
+  const { user } = useUser()
+  //deleteOwnUserProfile needs to grab the id of the profile we are on
 
   const deleteProfile = async () => {
     setSubmitLoading(true)
     try {
-      const deletion = await profileService.deleteOwnUserProfile("1337")
+      const deletion = await profileService.deleteOwnUserProfile(profileId)
     } catch {
       toast.error(getErrorMessage)
     }

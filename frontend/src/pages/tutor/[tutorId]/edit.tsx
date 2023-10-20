@@ -227,7 +227,7 @@ export default function Edit() {
         <Button asChild className="m-3 p-6" variant="secondary">
           <Link href={`../${user?.userId}`}> Back </Link>
         </Button>
-        <DeleteModal />
+        <DeleteModal profileId={tutorId} />
       </div>
     </div>
   )
