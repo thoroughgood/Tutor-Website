@@ -1,8 +1,13 @@
 # References
 See these [prisma python documentation](https://prisma-client-py.readthedocs.io/en/stable/) for all your ORM needs.
 I encourage you to read up on this, and the [original/typescript prisma documentation](https://www.prisma.io/docs) to get a feel on
-how to mess around with the schema and write the python code to interface with a database.
-Referring to pre-existing code (e.g. `/register` route) will also be a great reference point!
+how to mess around with the schema and write the python code to interface with a database. 
+
+For argument validation, see the original [javascript documentation](https://json-schema.org/learn/getting-started-step-by-step) and
+the [python implementation documentation](https://python-jsonschema.readthedocs.io/en/stable/). Generally the original documentation is greatly
+preferred, and there are only some minor items you may need to refer to for the python side of things. 
+Especially, given that the original documentation's glossery also has notes on the python implementation
+differences.
 
 # Setup
 ## Python Side
