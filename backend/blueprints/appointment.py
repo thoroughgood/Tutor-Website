@@ -1,9 +1,8 @@
 from flask import Blueprint, request, jsonify, session
-from prisma.models import User, Appointment, Rating
+from prisma.models import User, Student, Tutor, Appointment, Rating
 from uuid import uuid4
 from datetime import datetime
 from helpers.views import student_view, tutor_view
-from helpers.admin_id_check import admin_id_check
 from helpers.error_handlers import (
     ExpectedError,
     error_decorator,
@@ -14,7 +13,7 @@ appointment = Blueprint("appointment", __name__)
 
 @appointment.route("request", methods=["POST"])
 @error_decorator
-def request():
+def a_request():
     args = request.get_json()
 
     if "user_id" not in session:
@@ -35,12 +34,12 @@ def request():
     except ValueError:
         raise ExpectedError("timeRange field(s) were malformed", 400)
 
-    if st > et:
+    if not st < et:
         raise ExpectedError("endTime cannot be less than startTime", 400)
     elif st.replace(tzinfo=None) < datetime.now():
         raise ExpectedError("startTime must be in the future", 400)
 
-    tutor = tutor_view(id=args["id"])
+    tutor = tutor_view(id=args["tutorId"])
     if not tutor:
         raise ExpectedError("Tutor profile does not exist", 400)
 
@@ -48,20 +47,36 @@ def request():
     if not student:
         raise ExpectedError("Profile is not a student", 400)
 
+    if student.appointments != None:
+        for appointment in student.appointments:
+            if (
+                appointment.startTime <= st < appointment.endTime
+                or appointment.startTime < et <= appointment.endTime
+            ):
+                raise ExpectedError(
+                    "Appointment overlaps with another appointment", 400
+                )
+
     appointment = Appointment.prisma().create(
         data={
             "id": str(uuid4()),
             "startTime": args["startTime"],
             "endTime": args["endTime"],
-            "studentId": session["user_id"],
-            "tutorId": args["tutorId"],
             "tutorAccepted": False,
+            "tutor": {"connect": {"id": args["tutorId"]}},
+            "student": {"connect": {"id": session["user_id"]}},
         }
     )
 
-    User.prisma().update(
+    apt = (
+        [appointment]
+        if student.appointments == None
+        else student.appointments + [appointment]
+    )
+
+    Student.prisma().update(
         where={"id": session["user_id"]},
-        data={"appointments": student.appointments + [appointment]},
+        data={"appointments": {"connect": {"id": appointment.id}}},
     )
 
     return (
