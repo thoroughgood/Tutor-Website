@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify, session
-from jsonschema import validate, Draft202012Validator
+from jsonschema import validate
 from prisma.models import User
-from re import fullmatch
 from uuid import uuid4
 from hashlib import sha256
 from jsonschemas.register_schema import register_schema
@@ -20,7 +19,7 @@ auth = Blueprint("auth", __name__)
 @error_decorator
 def register():
     args = request.get_json()
-    validate(args, register_schema, format_checker=Draft202012Validator.FORMAT_CHECKER)
+    validate(args, register_schema)
 
     user = user_view(email=args["email"])
     if user:
@@ -53,7 +52,7 @@ def register():
 @error_decorator
 def login():
     args = request.get_json()
-    validate(args, login_schema, format_checker=Draft202012Validator.FORMAT_CHECKER)
+    validate(args, login_schema)
 
     if "user_id" in session:
         raise ExpectedError("A user is already logged in", 400)
@@ -95,9 +94,7 @@ def resetpassword():
     if not admin:
         raise ExpectedError("Insufficient permission to modify this profile", 403)
 
-    validate(
-        args, reset_password_schema, format_checker=Draft202012Validator.FORMAT_CHECKER
-    )
+    validate(args, reset_password_schema)
 
     user = user_view(id=args["id"])
     # ? we'll tentatively say an admin may reset their own password

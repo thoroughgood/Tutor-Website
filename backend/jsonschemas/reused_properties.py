@@ -1,7 +1,27 @@
+from typing import Dict
+
+
+# Makes a prop be able to accept their original type + null/None
+# example usage:
+# make_or_null(**email_prop, **password_prop) ->
+# {'email': {'type': ['string', 'null'], 'format': 'email'}, 'password': {'type': ['string', 'null'], 'minLength': 8}}
+def make_or_null(**kwargs) -> Dict[str, Dict]:
+    # works with multiple properties of 'depth' 1
+    for property in kwargs.values():
+        if (
+            "type" in property
+            and isinstance(property["type"], str)
+            and property["type"] != "null"
+        ):
+            property["type"] = [property["type"], "null"]
+
+    return kwargs
+
+
 email_prop = {
     "email": {
         "type": "string",
-        "format": "email",
+        "pattern": r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
     },
 }
 
@@ -19,7 +39,7 @@ id_prop = {
 }
 
 bio_prop = {
-    "id": {
+    "bio": {
         "type": "string",
     }
 }
@@ -42,5 +62,44 @@ rating_prop = {
         "type": "integer",
         "minimum": 1,
         "maximum": 5,
+    }
+}
+
+profile_picture_prop = {
+    "profilePicture": {
+        "type": "string",
+    }
+}
+
+phone_number_prop = {
+    "phoneNumber": {
+        "type": "string",
+    }
+}
+
+course_offerings_prop = {
+    "courseOfferings": {
+        "type": "array",
+        "items": {
+            "type": "string",
+        },
+    }
+}
+
+times_available_prop = {
+    "timesAvailable": {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "startTime": {
+                    "type": "string",
+                },
+                "endTime": {
+                    "type": "string",
+                },
+            },
+            "required": ["startTime", "endTime"],
+        },
     }
 }

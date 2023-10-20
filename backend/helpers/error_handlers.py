@@ -15,22 +15,23 @@ def error_generator(error_msg: str, status_code: int) -> Tuple[Response, int]:
 
 
 def validation_pattern_match(error: ValidationError) -> Response:
-    print(error.message)
-    print(error.validator_value)
-    print(error.absolute_schema_path)
     match error.absolute_schema_path:
         # The `*_` syntax just means 'ignore everything before if there is something'
         # omitted field when specified required
-        case [*_, "required"]:
+        case [*validators, "required"]:
             field = search(r"'(.*?)'", error.message).group(0)
-            return error_generator(f"{field} was missing from field(s)", 400)
+            if len(validators) > 1:
+                # we'll just return the 'parent' validator as information
+                return error_generator(f"{field} was missing from {validators[1]}", 400)
+            else:
+                return error_generator(f"{field} was missing from field(s)", 400)
         # field is of wrong type
         case [*_, "properties", field, "type"]:
             return error_generator(
                 f"field '{field}' must be of type {error.validator_value}", 400
             )
         # field specific validation
-        case [*_, "properties", "email", "format"]:
+        case [*_, "properties", "email", "pattern"]:
             return error_generator("email field is invalid", 400)
         case [*_, "properties", field, "minLength"]:
             return error_generator(

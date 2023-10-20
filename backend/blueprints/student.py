@@ -2,6 +2,8 @@ from re import fullmatch
 from flask import Blueprint, request, jsonify, session
 from datetime import datetime, timezone
 from prisma.models import User
+from jsonschemas.student_modify_schema import student_modify_schema
+from jsonschema import validate
 from helpers.views import student_view
 from helpers.admin_id_check import admin_id_check
 from helpers.error_handlers import (
@@ -44,27 +46,13 @@ def modify_profile():
         raise ExpectedError("No user is logged in", 401)
     mod_id = admin_id_check(args)
 
-    if "name" in args and len(str(args["name"]).lower().strip()) == 0:
-        raise ExpectedError("name field is invalid", 400)
-    if "email" in args and not fullmatch(
-        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
-        str(args["email"]).lower().strip(),
-    ):
-        raise ExpectedError("email field is invalid", 400)
+    validate(args, student_modify_schema)
 
     student = student_view(id=mod_id)
     if not student:
         raise ExpectedError("Profile does not exist", 404)
 
-    name = (
-        args["name"]
-        if (
-            "name" in args
-            and len(str(args["name"]).lower().strip()) != 0
-            and args["name"] is not None
-        )
-        else student.name
-    )
+    name = args["name"] if "name" in args else student.name
     bio = args["bio"] if "bio" in args else student.bio
     email = args["email"] if "email" in args else student.email
     profile_picture = (

@@ -109,7 +109,7 @@ def test_get_valid(
     assert resp.json["bio"] == "band 1 at HSC Maths"
     assert resp.json["rating"] == 2
     assert resp.json["location"] == "Australia"
-    assert resp.json["profilePicture"] == None
+    assert resp.json["profilePicture"] is None
     assert resp.json["phoneNumber"] == "0411123901"
     assert "science" in resp.json["courseOfferings"]
     assert len(resp.json["timesAvailable"]) == 0
@@ -220,7 +220,7 @@ def test_modify_invalid_email(
     )
 
     assert resp.status_code == 400
-    assert resp.json == {"error": "New email is invalid"}
+    assert resp.json == {"error": "email field is invalid"}
 
 
 def test_modify_missing_args(
@@ -257,7 +257,7 @@ def test_modify_missing_args(
     assert resp.json["bio"] == "band 1 at HSC Maths"
     assert resp.json["rating"] == 2
     assert resp.json["location"] == "Australia"
-    assert resp.json["profilePicture"] == None
+    assert resp.json["profilePicture"] is None
     assert resp.json["phoneNumber"] == "0411123901"
     assert "science" in resp.json["courseOfferings"]
     assert len(resp.json["timesAvailable"]) == 0
@@ -316,7 +316,7 @@ def test_modify_same_values(
     assert resp.json["bio"] == "band 1 at HSC Maths"
     assert resp.json["rating"] == 2
     assert resp.json["location"] == "Australia"
-    assert resp.json["profilePicture"] == None
+    assert resp.json["profilePicture"] is None
     assert resp.json["phoneNumber"] == "0411123901"
     assert "science" in resp.json["courseOfferings"]
     assert len(resp.json["timesAvailable"]) == 0
@@ -560,6 +560,23 @@ def test_modify_time_available(
         where={"email": tutor.email}, include=mocker.ANY
     )
     assert resp.status_code == 200
+
+    # malformed timesAvailable
+    resp = client.put(
+        "/tutor/profile/",
+        json={
+            "timesAvailable": [
+                {
+                    "endTime": end_time1.isoformat(),
+                },
+                {
+                    "startTime": start_time2.isoformat(),
+                },
+            ],
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json["error"] == "'startTime' was missing from timesAvailable"
 
     update_user_mock = mocker.patch("tests.conftest.UserActions.update")
     update_tutor_mock = mocker.patch("tests.conftest.TutorActions.update")

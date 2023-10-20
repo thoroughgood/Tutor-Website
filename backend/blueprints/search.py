@@ -2,7 +2,7 @@ import json
 import re
 from flask import Blueprint, request, jsonify
 from prisma.models import Tutor
-from jsonschema import validate, Draft202012Validator
+from jsonschema import validate
 from jsonschemas.tutor_search_schema import tutor_search_schema
 from helpers.process_time_block import process_time_block
 from helpers.rating_calc import rating_calc
@@ -18,9 +18,7 @@ search_tutor = Blueprint("search_tutor", __name__)
 @error_decorator
 def tutor_search():
     args = request.args
-    validate(
-        args, tutor_search_schema, format_checker=Draft202012Validator.FORMAT_CHECKER
-    )
+    validate(args, tutor_search_schema)
 
     # * Note: timesAvailable should never overlap and is assumed not to
     tutors = Tutor.prisma().find_many(
@@ -42,7 +40,7 @@ def tutor_search():
         if "name" in args:
             valid &= (
                 re.search(args["name"].lower().strip(), tutor.userInfo.name.lower())
-                != None
+                is not None
             )
 
         # ? May need to change datetimes here to utc
