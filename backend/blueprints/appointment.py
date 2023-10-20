@@ -109,7 +109,7 @@ def rating():
     if session["user_id"] != appointment.studentId:
         raise ExpectedError("User is not the student of the appointment", 403)
 
-    if appointment.endTime > datetime.now():
+    if appointment.endTime.replace(tzinfo=None) > datetime.now():
         raise ExpectedError("Appointment isn't complete yet", 400)
 
     if not 1 <= args["rating"] <= 5:
@@ -120,9 +120,7 @@ def rating():
             "id": str(uuid4()),
             "score": args["rating"],
             "appointment": {"connect": {"id": args["id"]}},
-            "appointmentId": args["id"],
             "createdFor": {"connect": {"id": appointment.tutorId}},
-            "tutorId": appointment.tutorId,
         }
     )
 
