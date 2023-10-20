@@ -15,6 +15,8 @@ def error_generator(error_msg: str, status_code: int) -> Tuple[Response, int]:
 
 
 def validation_pattern_match(error: ValidationError) -> Tuple[Response, int]:
+    # You may want to read up on 'structural pattern matching' to understand
+    # the syntax here.
     match error.absolute_schema_path:
         # The `*_` syntax just means 'ignore everything before if there is something'
         # omitted field when specified required
@@ -48,7 +50,7 @@ def validation_pattern_match(error: ValidationError) -> Tuple[Response, int]:
             "rating",
             "maximum",
         ] | [*_, "properties", "rating", "pattern"]:
-            # Error may need to be changed if the boundaries of rating ever change
+            # Error will need to be changed if the boundaries of rating ever change
             return error_generator("rating must be between 1 to 5, inclusive.", 400)
 
 
