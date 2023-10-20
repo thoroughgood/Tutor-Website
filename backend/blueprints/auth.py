@@ -1,5 +1,4 @@
-from flask import Blueprint, request, jsonify, session
-from jsonschema import validate
+from flask import Blueprint, jsonify, session
 from prisma.models import User
 from uuid import uuid4
 from hashlib import sha256
@@ -8,6 +7,7 @@ from jsonschemas.login_schema import login_schema
 from jsonschemas.reset_password_schema import reset_password_schema
 from helpers.views import user_view, admin_view, tutor_view, student_view
 from helpers.error_handlers import (
+    validate_decorator,
     ExpectedError,
     error_decorator,
 )
@@ -17,10 +17,8 @@ auth = Blueprint("auth", __name__)
 
 @auth.route("/register", methods=["POST"])
 @error_decorator
-def register():
-    args = request.get_json()
-    validate(args, register_schema)
-
+@validate_decorator("json", register_schema)
+def register(args):
     user = user_view(email=args["email"])
     if user:
         raise ExpectedError("user already exists with this email", 400)
@@ -50,10 +48,8 @@ def register():
 
 @auth.route("/login", methods=["POST"])
 @error_decorator
-def login():
-    args = request.get_json()
-    validate(args, login_schema)
-
+@validate_decorator("json", login_schema)
+def login(args):
     if "user_id" in session:
         raise ExpectedError("A user is already logged in", 400)
 
@@ -84,17 +80,14 @@ def logout():
 
 @auth.route("/resetpassword", methods=["PUT"])
 @error_decorator
-def resetpassword():
-    args = request.get_json()
-
+@validate_decorator("json", reset_password_schema)
+def resetpassword(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
     admin = admin_view(id=session["user_id"])
     if not admin:
         raise ExpectedError("Insufficient permission to modify this profile", 403)
-
-    validate(args, reset_password_schema)
 
     user = user_view(id=args["id"])
     # ? we'll tentatively say an admin may reset their own password

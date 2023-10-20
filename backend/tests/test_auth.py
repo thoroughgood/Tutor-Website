@@ -512,11 +512,13 @@ def test_resetpassword_not_json(setup_test: FlaskClient):
 
 
 # No user logged in
-def test_resetpassword_no_user(setup_test: FlaskClient):
+def test_resetpassword_no_user(setup_test: FlaskClient, fake_student):
     client = setup_test
     with client.session_transaction() as session:
         assert ("user_id" not in session) == True
-    resp = client.put("/resetpassword", json={})
+    resp = client.put(
+        "/resetpassword", json={"id": fake_student.id, "newPassword": "123456789"}
+    )
     assert resp.status_code == 401
     assert resp.json == {"error": "No user is logged in"}
 
@@ -543,7 +545,9 @@ def test_resetpassword_student_login(
         where={"email": fake_student.email}, include=mocker.ANY
     )
 
-    resp = client.put("/resetpassword", json={})
+    resp = client.put(
+        "/resetpassword", json={"id": fake_student.id, "newPassword": "123456789"}
+    )
     assert resp.json == {"error": "Insufficient permission to modify this profile"}
     assert resp.status_code == 403
 
@@ -570,7 +574,9 @@ def test_resetpassword_tutor_login(
         where={"email": fake_tutor.email}, include=mocker.ANY
     )
 
-    resp = client.put("/resetpassword", json={})
+    resp = client.put(
+        "/resetpassword", json={"id": fake_tutor.id, "newPassword": "123456789"}
+    )
     assert resp.json == {"error": "Insufficient permission to modify this profile"}
     assert resp.status_code == 403
 

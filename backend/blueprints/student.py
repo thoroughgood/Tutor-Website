@@ -1,12 +1,11 @@
-from re import fullmatch
 from flask import Blueprint, request, jsonify, session
 from datetime import datetime, timezone
 from prisma.models import User
 from jsonschemas.student_modify_schema import student_modify_schema
-from jsonschema import validate
 from helpers.views import student_view
 from helpers.admin_id_check import admin_id_check
 from helpers.error_handlers import (
+    validate_decorator,
     ExpectedError,
     error_decorator,
 )
@@ -39,14 +38,11 @@ def get_profile(student_id):
 
 @student.route("profile", methods=["PUT"])
 @error_decorator
-def modify_profile():
-    args = request.get_json()
-
+@validate_decorator("json", student_modify_schema)
+def modify_profile(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
     mod_id = admin_id_check(args)
-
-    validate(args, student_modify_schema)
 
     student = student_view(id=mod_id)
     if not student:

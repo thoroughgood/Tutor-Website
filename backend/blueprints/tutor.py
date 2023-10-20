@@ -1,12 +1,12 @@
 from flask import Blueprint, request, jsonify, session
 from prisma.models import Tutor, Subject, User
 from jsonschemas.tutor_modify_schema import tutor_modify_schema
-from jsonschema import validate
 from helpers.process_time_block import process_time_block
 from helpers.views import tutor_view
 from helpers.admin_id_check import admin_id_check
 from helpers.rating_calc import rating_calc
 from helpers.error_handlers import (
+    validate_decorator,
     ExpectedError,
     error_decorator,
 )
@@ -62,9 +62,8 @@ def get_profile(tutor_id):
 
 @tutor.route("profile/", methods=["PUT"])
 @error_decorator
-def modify_profile():
-    args = request.get_json()
-
+@validate_decorator("json", tutor_modify_schema)
+def modify_profile(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
 
@@ -73,8 +72,6 @@ def modify_profile():
     tutor = tutor_view(id=modify_tutor_id)
     if tutor is None:
         raise ExpectedError("Profile does not exist", 404)
-
-    validate(args, tutor_modify_schema)
 
     name = tutor.name if "name" not in args else args["name"]
     bio = tutor.bio if "bio" not in args else args["bio"]

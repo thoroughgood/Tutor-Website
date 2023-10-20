@@ -1,7 +1,9 @@
 from typing import Tuple
-from flask import Response, jsonify, current_app
+from jsonschema import validate
+from flask import Response, jsonify, current_app, request
 from re import search
 from jsonschema import ValidationError
+from functools import wraps
 import traceback
 
 
@@ -55,6 +57,7 @@ def validation_pattern_match(error: ValidationError) -> Tuple[Response, int]:
 
 
 def error_decorator(f):
+    @wraps(f)
     def wrapper(*args, **kwargs):
         try:
             return f(*args, **kwargs)
@@ -67,5 +70,27 @@ def error_decorator(f):
             current_app.logger.error("\n" + traceback.format_exc() + "\n")
             return error_generator("Internal Server Error", 500)
 
-    wrapper.__name__ = f.__name__
     return wrapper
+
+
+def validate_decorator(request_type: str, schema, format_checker=None):
+    def _validate_decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            match request_type:
+                case "json":
+                    instance = request.get_json()
+                case "query_string":
+                    instance = request.args
+                case _:
+                    raise ValueError("request_type must be either json or query_string")
+            if format_checker:
+                validate(instance, schema, format_checker=format_checker)
+            else:
+                validate(instance, schema)
+            kwargs["args"] = instance
+            return f(*args, **kwargs)
+
+        return wrapper
+
+    return _validate_decorator
