@@ -5,13 +5,13 @@ import { Skeleton } from "./ui/skeleton"
 interface FallbackAvatarProps {
   profilePicture: string | null | undefined
   name: string | null | undefined
-  loading: boolean
+  loading?: boolean
   className?: string
 }
 export default function SmartAvatar({
   profilePicture,
   name,
-  loading,
+  loading = false,
   className,
 }: FallbackAvatarProps) {
   return (

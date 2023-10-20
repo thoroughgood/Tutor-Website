@@ -16,7 +16,7 @@ export default function SmallProfileCard({
   id,
   accountType,
 }: SmallProfileCard) {
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: [`${accountType}s`, id],
     queryFn: async () => {
       return await profileService.getTutorProfile(id)

@@ -15,8 +15,8 @@ export default function Schedule() {
   const { data: scheduleData } = useQuery({
     queryKey: ["tutors", tutorId, "schedule"],
     queryFn: async () => {
-      const { timeAvailable } = await profileService.getTutorProfile(tutorId)
-      return timeAvailable.map((ta) => ({
+      const { timesAvailable } = await profileService.getTutorProfile(tutorId)
+      return timesAvailable.map((ta) => ({
         start: new Date(ta.startTime),
         end: new Date(ta.endTime),
       }))
