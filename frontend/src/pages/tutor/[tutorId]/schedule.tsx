@@ -2,8 +2,10 @@ import SmartAvatar from "@/components/smartAvatar"
 import WeeklyCalendar from "@/components/weeklyCalendar"
 import useUser from "@/hooks/useUser"
 import { HTTPProfileService } from "@/service/profileService"
+import { addMinutes } from "date-fns"
 import Link from "next/link"
 import { useRouter } from "next/router"
+import { useState } from "react"
 import { useQuery } from "react-query"
 
 const profileService = new HTTPProfileService()
@@ -21,7 +23,15 @@ export default function Schedule() {
         end: new Date(ta.endTime),
       }))
     },
+    onSuccess: (scheduleData) => setTestScheduleData(scheduleData),
   })
+  const [testScheduleData, setTestScheduleData] = useState<
+    {
+      start: Date
+      end: Date
+    }[]
+  >([])
+
   const { data: profileData } = useQuery({
     queryKey: ["tutors", tutorId],
     queryFn: async () => {
@@ -48,7 +58,15 @@ export default function Schedule() {
           &apos;s&nbsp;Schedule
         </h1>
       </div>
-      <WeeklyCalendar highlightedIntervals={scheduleData || []} />
+      <WeeklyCalendar
+        onCalendarClick={(clickedDate) => {
+          setTestScheduleData([
+            ...testScheduleData,
+            { start: clickedDate, end: addMinutes(clickedDate, 60) },
+          ])
+        }}
+        highlightedIntervals={testScheduleData}
+      />
     </div>
   )
 }

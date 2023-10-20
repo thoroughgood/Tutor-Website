@@ -11,6 +11,8 @@ import {
   endOfDay,
   differenceInMinutes,
   startOfWeek,
+  setMinutes,
+  roundToNearestMinutes,
 } from "date-fns"
 import { Button } from "./ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -18,10 +20,12 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 interface WeeklyCalendarProps {
   className?: string
   highlightedIntervals: Interval[]
+  onCalendarClick?: (dateClicked: Date) => void
 }
 export default function WeeklyCalendar({
   className,
   highlightedIntervals,
+  onCalendarClick = () => {},
 }: WeeklyCalendarProps) {
   // Below required for scrolling the axis labels
   const [calHeight, setCalHeight] = useState(0)
@@ -30,12 +34,14 @@ export default function WeeklyCalendar({
   const topRef = useRef<HTMLDivElement>(null)
   const sideRef = useRef<HTMLDivElement>(null)
 
-  const [viewWeek, setViewWeek] = useState(getWeek(new Date()))
+  // Week offset refers to the number of weeks from the current week that the user is viewing
+  const [weekOffset, setViewWeek] = useState(getWeek(new Date()))
+  // Week date is the start Date obj of the week the user is viewing
   const [weekDate, setWeekDate] = useState(new Date())
 
   useEffect(() => {
-    setWeekDate(startOfWeek(setWeek(new Date(), viewWeek)))
-  }, [viewWeek])
+    setWeekDate(startOfWeek(setWeek(new Date(), weekOffset)))
+  }, [weekOffset])
 
   useEffect(() => {
     // This useEffect runs on component mount
@@ -57,14 +63,29 @@ export default function WeeklyCalendar({
     return () => window.removeEventListener("resize", onResize)
   }, [])
 
+  const handleCalendarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const divElement = e.currentTarget
+    const rect = divElement.getBoundingClientRect()
+    const x = e.clientX - rect.left + divElement.scrollLeft
+    const y = e.clientY - rect.top + divElement.scrollTop
+    const day = (x / divElement.scrollWidth) * 7
+    const hourOfDay = (y / divElement.scrollHeight) * 24
+    const clickedDate = roundToNearestMinutes(
+      setMinutes(setDay(weekDate, day), hourOfDay * 60),
+      { nearestTo: 15 },
+    )
+    console.log("inside")
+    onCalendarClick(clickedDate)
+  }
+
   return (
     <div className="flex h-full w-full flex-col gap-3 overflow-hidden">
       <div className="ml-[50px] flex items-center gap-2">
         {/* Calendar Controls */}
-        <Button variant="outline" onClick={() => setViewWeek(viewWeek - 1)}>
+        <Button variant="outline" onClick={() => setViewWeek(weekOffset - 1)}>
           <ChevronLeft />
         </Button>
-        <Button variant="outline" onClick={() => setViewWeek(viewWeek + 1)}>
+        <Button variant="outline" onClick={() => setViewWeek(weekOffset + 1)}>
           <ChevronRight />
         </Button>
         <h2 className="px-4 text-3xl text-foreground">
@@ -123,6 +144,7 @@ export default function WeeklyCalendar({
 
         {/* Actual Calendar */}
         <div
+          onClick={handleCalendarClick}
           onScroll={(e) => {
             // Scrolling the x and y axis (necessary since we want them to be sticky as well)
             sideRef.current?.scrollTo(0, e.currentTarget.scrollTop)
