@@ -111,8 +111,8 @@ export class MockProfileService implements ProfileService {
     console.log(tutorProfile)
     return { success: true }
   }
-      
-  async searchTutors(_searchParams: TutorSearchParams) {
+
+  async searchTutors(searchParams: TutorSearchParams) {
     return { tutorIds: ["1337"] }
   }
 
@@ -135,5 +135,4 @@ export class MockProfileService implements ProfileService {
       return { success: false }
     }
   }
-
 }

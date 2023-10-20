@@ -150,7 +150,6 @@ export default function Edit() {
 
       const id = await profileService.setOwnTutorProfile(tutorObj)
       const test = await profileService.getTutorProfile(tutorId)
-      console.log(id)
     } catch (error) {
       toast.error(getErrorMessage(error))
     }

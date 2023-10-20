@@ -53,7 +53,6 @@ export default function DeleteModal({ profileId }: deleteModalInterface) {
         <DialogFooter>
           <Button
             variant="secondary"
-            type="submit"
             onClick={() => {
               setOpen(false)
             }}
@@ -62,7 +61,6 @@ export default function DeleteModal({ profileId }: deleteModalInterface) {
           </Button>
           <LoadingButton
             variant="destructive"
-            type="submit"
             isLoading={submitLoading}
             onClick={async () => {
               await deleteProfile()
