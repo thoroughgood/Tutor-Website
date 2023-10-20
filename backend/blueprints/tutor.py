@@ -134,7 +134,7 @@ def delete_profile():
                 data={"courseOfferings": {"disconnect": {"name": subject}}},
             )
 
-    Tutor.prisma().delete(where={"id": tutor.id})
+    User.prisma().delete(where={"id": tutor.id})
 
     return jsonify({"success": True})
 

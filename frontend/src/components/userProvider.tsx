@@ -9,6 +9,7 @@ export type User = {
 }
 export interface UserContextType {
   user: User | null
+  checkingUser: boolean
   setUser: React.Dispatch<React.SetStateAction<User | null>>
 }
 export const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -28,6 +29,7 @@ export default function UserProvider({
   children: React.ReactNode
 }) {
   const [user, setUser] = useState<User | null>(null)
+  const [checkingUser, setCheckingUser] = useState(true)
   useEffect(() => {
     ;(async () => {
       try {
@@ -37,12 +39,13 @@ export default function UserProvider({
           userType: accountType,
         })
       } catch {
-        console.log("User is not logged in")
+        console.error("User is not logged in")
       }
+      setCheckingUser(false)
     })()
   }, [])
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <UserContext.Provider value={{ user, setUser, checkingUser }}>
       {children}
     </UserContext.Provider>
   )

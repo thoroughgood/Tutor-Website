@@ -16,8 +16,8 @@ import Link from "next/link"
 import { HTTPAuthService } from "@/service/authService"
 import { useRouter } from "next/router"
 
-const authService = new HTTPAuthService()
 export default function Sidebar() {
+  const authService = new HTTPAuthService()
   const router = useRouter()
   const { user, setUser } = useUser()
   const [isExpanded, setIsExpanded] = useState(false)
@@ -50,7 +50,9 @@ export default function Sidebar() {
           variant="ghost"
           className="flex justify-start gap-2 text-muted-foreground"
           onClick={async () => {
-            if (await toastProtectedFnCall(authService.logout)) {
+            // idk why you have to put authService.logout as an
+            // anonymous function but you do otherwise undefined error
+            if (await toastProtectedFnCall(() => authService.logout())) {
               setUser(null)
               router.push("/login")
             }

@@ -1,6 +1,7 @@
 import Sidebar from "@/components/sidebar"
 import { ThemeToggle } from "@/components/themeToggle"
 import useUser from "@/hooks/useUser"
+import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/router"
 import { useEffect } from "react"
@@ -11,16 +12,26 @@ interface LayoutProps {
 }
 export default function Layout({ children }: LayoutProps) {
   const router = useRouter()
-  const { signedIn } = useUser()
+  const { signedIn, checkingUser } = useUser()
   useEffect(() => {
+    if (checkingUser) {
+      return
+    }
     if (!signedIn && !router.pathname.match(/register|login/i)) {
       router.push("/login")
     }
     if (router.pathname.match(/register|login/i) && signedIn) {
       router.push("/dashboard")
     }
+  }, [signedIn, router, checkingUser])
 
-  }, [signedIn, router])
+  if (checkingUser) {
+    return (
+      <div className="grid h-screen w-screen place-content-center">
+        <Loader2 className="h-10 w-10 animate-spin" />
+      </div>
+    )
+  }
   if (router.pathname.match(/register|login/i)) {
     return (
       <div className="flex h-screen w-screen">

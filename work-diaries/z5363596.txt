@@ -29,3 +29,12 @@ much of me working as support for the other group members in the aforementioned 
 and, code related issues. Late in the week I took over coding the `/searchtutor` route and finished an initial
 implementation of it. After, I setup unit testing for backend using pytest and wrote tests for both the routes
 I worked on and spent the rest of the week helping the backend team.
+
+Week 5
+After tutor demo, planned sprint 2 in a pre-sprint meeting with the entire team, this included reorganising
+all user stories that were in the backlog, or leftover from the first sprint, with acceptance criterias and
+reducing all stories to be more granular/more atomic, instead of broad sweeping stories we had in the first sprint. 
+Then, reorganised api specs with Daniel Nguyen adding new routes as required and discussing the requirements 
+for all of them. Thereafter, work was appropriately assigned to all team members appropriately. I started refining
+our backend infrastructure more before 'properly' starting the 2nd sprint by replacing the basic `requirements.txt`
+package manager with a proper dependency manager in python poetry.

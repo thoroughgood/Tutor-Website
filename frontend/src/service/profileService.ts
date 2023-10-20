@@ -1,5 +1,7 @@
 import TutorProfile from "@/pages/tutor/[tutorId]"
+import wretch from "wretch"
 import { SuccessResponse } from "./types"
+import { HTTPService } from "./helpers"
 
 interface UserProfile {
   id: string
@@ -26,7 +28,8 @@ export interface StudentSelfEditReqBody extends Omit<StudentProfile, "id"> {}
 /**
  * ProfileService provides operations relating to tutor/student profiles
  */
-interface TutorSearchParams {
+export interface TutorSearchParams {
+  name?: string
   location?: string
   rating?: string
   courseOfferings?: string[]
@@ -47,21 +50,58 @@ export interface ProfileService {
   setOwnStudentProfile: (
     studentProfile: StudentSelfEditReqBody,
   ) => Promise<SuccessResponse>
-  searchTutors: (
-    searchParams: TutorSearchParams,
-  ) => Promise<{ tutorIds: string[] }>
 }
 
-// export class HTTPProfileService extends HTTPService implements ProfileService {
-//   async searchTutors(searchParams): Promise<{ tutorIds: string[] }> {
-//     const url = new URL(`${this.backendURL}/searchtutor`)
-//     const params = new URLSearchParams(searchParams)
-//     url.search = params.toString()
-//     console.log(url)
-//     const data = wretch(`${this.backendURL}/searchtutor`).get()
-//     return await data.json()
-//   }
-// }
+export class HTTPProfileService extends HTTPService implements ProfileService {
+  async searchTutors(
+    searchParams: TutorSearchParams,
+  ): Promise<{ tutorIds: string[] }> {
+    const url = new URL(`${this.backendURL}/searchtutor`)
+    const basicParams = { ...searchParams }
+    delete basicParams.courseOfferings
+    delete basicParams.timeRange
+    const params = new URLSearchParams(basicParams as Record<string, string>)
+    if (searchParams.timeRange) {
+      params.set("timeRange", JSON.stringify(searchParams.timeRange))
+    }
+    if (searchParams.courseOfferings) {
+      params.set(
+        "courseOfferings",
+        JSON.stringify(searchParams.courseOfferings),
+      )
+    }
+    url.search = params.toString()
+    const data = wretch(url.toString()).get()
+    return await data.json()
+  }
+  async getTutorProfile(tutorId: string): Promise<TutorProfile> {
+    const resp = wretch(`${this.backendURL}/tutor/${tutorId}`).get()
+    return await resp.json()
+  }
+
+  async setOwnTutorProfile(
+    tutorProfile: TutorSelfEditReqBody,
+  ): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/tutor/profile`)
+      .json(tutorProfile)
+      .put()
+    return resp.json()
+  }
+
+  async getStudentProfile(studentId: string): Promise<StudentProfile> {
+    const resp = wretch(`${this.backendURL}/student/${studentId}`).get()
+    return await resp.json()
+  }
+
+  async setOwnStudentProfile(
+    studentProfile: StudentSelfEditReqBody,
+  ): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/student/profile`)
+      .json(studentProfile)
+      .put()
+    return resp.json()
+  }
+}
 
 export class MockProfileService implements ProfileService {
   private mockTutorProfile: TutorProfile = {
@@ -107,12 +147,11 @@ export class MockProfileService implements ProfileService {
   }
 
   async setOwnTutorProfile(tutorProfile: TutorSelfEditReqBody) {
-    this.mockTutorProfile = { ...tutorProfile, id: this.mockTutorProfile.id }
-    console.log(tutorProfile)
+    this.mockTutorProfile = { ...tutorProfile, id: "1337" }
     return { success: true }
   }
 
-  async searchTutors(searchParams: TutorSearchParams) {
+  async searchTutors(_searchParams: TutorSearchParams) {
     return { tutorIds: ["1337"] }
   }
 
@@ -126,13 +165,5 @@ export class MockProfileService implements ProfileService {
       id: this.mockStudentProfile.id,
     }
     return { success: true }
-  }
-
-  async deleteOwnUserProfile(userId: string) {
-    if (userId === "64" || userId === "1337") {
-      return { success: true }
-    } else {
-      return { success: false }
-    }
   }
 }
