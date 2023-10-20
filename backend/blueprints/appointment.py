@@ -68,12 +68,6 @@ def a_request():
         }
     )
 
-    apt = (
-        [appointment]
-        if student.appointments == None
-        else student.appointments + [appointment]
-    )
-
     Student.prisma().update(
         where={"id": session["user_id"]},
         data={"appointments": {"connect": {"id": appointment.id}}},
