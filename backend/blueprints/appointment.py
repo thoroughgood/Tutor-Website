@@ -106,14 +106,14 @@ def rating():
     if not appointment:
         raise ExpectedError("Appointment does not exist", 400)
 
-    if not 1 <= args["rating"] <= 5:
-        raise ExpectedError("Rating must be between 1 and 5", 400)
+    if session["user_id"] != appointment.studentId:
+        raise ExpectedError("User is not the student of the appointment", 403)
 
     if appointment.endTime > datetime.now():
         raise ExpectedError("Appointment isn't complete yet", 400)
 
-    if session["user_id"] != appointment.studentId:
-        raise ExpectedError("User is not the student of the appointment", 403)
+    if not 1 <= args["rating"] <= 5:
+        raise ExpectedError("Rating must be between 1 and 5", 400)
 
     rating = Rating.prisma().create(
         data={
@@ -126,9 +126,9 @@ def rating():
         }
     )
 
-    User.prisma().update(
-        where={"id": rating["tutorId"]},
-        data={"appointments": tutor_view(id=rating["tutorId"]).ratings + [rating]},
+    Tutor.prisma().update(
+        where={"id": session["user_id"]},
+        data={"ratings": {"connect": {"id": rating.id}}},
     )
 
     return jsonify({"success": True})
