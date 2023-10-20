@@ -14,7 +14,7 @@ def error_generator(error_msg: str, status_code: int) -> Tuple[Response, int]:
     return jsonify({"error": error_msg}), status_code
 
 
-def validation_pattern_match(error: ValidationError) -> Response:
+def validation_pattern_match(error: ValidationError) -> Tuple[Response, int]:
     match error.absolute_schema_path:
         # The `*_` syntax just means 'ignore everything before if there is something'
         # omitted field when specified required
