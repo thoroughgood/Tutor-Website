@@ -82,4 +82,4 @@ def admin_create():
         }
     )
 
-    return jsonify({"userIds": new_admin_id}), 200
+    return jsonify({"id": new_admin_id}), 200
