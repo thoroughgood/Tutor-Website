@@ -8,6 +8,7 @@ from blueprints.auth import auth
 from blueprints.tutor import tutor
 from blueprints.student import student
 from blueprints.search import search_tutor
+from blueprints.admin import admin
 from blueprints.utils import utils
 from helpers.my_request import MyRequest
 
@@ -32,6 +33,7 @@ app.register_blueprint(tutor, url_prefix="/tutor")
 app.register_blueprint(student, url_prefix="/student")
 app.register_blueprint(search_tutor, url_prefix="/")
 app.register_blueprint(utils, url_prefix="/utils")
+app.register_blueprint(admin, url_prefix="/admin")
 
 
 # default route
