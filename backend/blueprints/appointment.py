@@ -116,6 +116,54 @@ def delete():
     return jsonify({"success": True}), 200
 
 
+@appointment.route("", methods=["PUT"])
+@error_decorator
+def modify():
+    args = request.get_json()
+
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 401)
+
+    if "startTime" not in args or len(str(args["startTime"]).lower().strip()) == 0:
+        raise ExpectedError("startTime field was missing", 400)
+
+    if "endTime" not in args or len(str(args["endTime"]).lower().strip()) == 0:
+        raise ExpectedError("endTime field was missing", 400)
+
+    try:
+        st = datetime.fromisoformat(args["startTime"])
+        et = datetime.fromisoformat(args["endTime"])
+    except ValueError:
+        raise ExpectedError("timeRange field(s) were malformed", 400)
+
+    if not st < et:
+        raise ExpectedError("endTime cannot be less than startTime", 400)
+    elif st.replace(tzinfo=None) < datetime.now():
+        raise ExpectedError("startTime must be in the future", 400)
+
+    tutor = tutor_view(id=session["user_id"])
+    if not tutor:
+        raise ExpectedError("Logged in user is not a tutor", 404)
+
+    appointment = Appointment.prisma().find_unique(where={"id": args["id"]})
+    if not appointment:
+        raise ExpectedError("Appointment does not exist", 404)
+
+    if appointment not in tutor.appointments:
+        raise ExpectedError("Logged in user is not the tutor of the appointment", 403)
+
+    for apt in tutor.appointments:
+        if apt.startTime <= st < apt.endTime or apt.startTime < et <= apt.endTime:
+            raise ExpectedError("Appointment overlaps with another appointment", 400)
+
+    Appointment.prisma().update(
+        where={"id": args["id"]},
+        data={"startTime": args["startTime"], "endTime": args["endTime"]},
+    )
+
+    return jsonify({"success": True}), 200
+
+
 @appointment.route("rating", methods=["POST"])
 @error_decorator
 def rating():
