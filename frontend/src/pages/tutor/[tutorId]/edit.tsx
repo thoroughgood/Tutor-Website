@@ -26,7 +26,7 @@ import { HTTPAuthService } from "@/service/authService"
 import { getErrorMessage } from "@/lib/utils"
 import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
-import { MockProfileService } from "@/service/profileService"
+import { HTTPProfileService } from "@/service/profileService"
 import { useQuery, useQueryClient } from "react-query"
 import { Textarea } from "@/components/ui/textarea"
 import toast from "react-hot-toast"
@@ -69,7 +69,7 @@ const formSchema = z.object({
     }),
   ),
 })
-const profileService = new MockProfileService()
+const profileService = new HTTPProfileService()
 export default function Edit() {
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -170,10 +170,11 @@ export default function Edit() {
       if (values.profilePicture.length === 0) {
         tutorObj.profilePicture = null
       }
+      console.log("almost)")
       const id = await profileService.setOwnTutorProfile(tutorObj)
-      const test = await profileService.getTutorProfile(tutorId)
     } catch (error) {
       toast.error(getErrorMessage(error))
+      console.log(values)
     }
     queryClient.invalidateQueries({ queryKey: ["tutors", tutorId] })
     setSubmitLoading(false)
@@ -214,6 +215,7 @@ export default function Edit() {
                     <FormControl>
                       <Input
                         type="file"
+                        value=""
                         onChange={(e) => {
                           e.preventDefault()
                           if (e.target.files) {
