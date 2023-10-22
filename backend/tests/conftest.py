@@ -99,6 +99,11 @@ def find_many_tutors_mock(mocker: MockerFixture) -> MockType:
 
 
 @pytest.fixture
+def find_many_users_mock(mocker: MockerFixture) -> MockType:
+    return mocker.patch("tests.conftest.UserActions.findMany")
+
+
+@pytest.fixture
 def fake_user():
     def __fake_user(email: str, pword: str, type: str) -> models.User:
         id = str(uuid4())

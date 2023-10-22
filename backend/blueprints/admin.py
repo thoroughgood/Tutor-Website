@@ -55,6 +55,9 @@ def user_search(args):
         elif "phoneNumber" in args:
             continue
 
+        if "email" in args:
+            valid &= args["email"] == user.email
+
         if valid:
             valid_users.append(user.id)
 

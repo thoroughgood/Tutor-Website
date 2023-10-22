@@ -1,4 +1,9 @@
-from jsonschemas.reused_properties import name_prop, id_prop, phone_number_prop
+from jsonschemas.reused_properties import (
+    name_prop,
+    id_prop,
+    phone_number_prop,
+    email_prop,
+)
 
 user_search_schema = {
     "$id": "/jsonschemas/user_search",
@@ -9,6 +14,7 @@ user_search_schema = {
         **id_prop,
         **name_prop,
         **phone_number_prop,
+        **email_prop,
         "accountType": {"type": "string", "pattern": "student|tutor|admin"},
     },
 }
