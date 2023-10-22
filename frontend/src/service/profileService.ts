@@ -151,6 +151,10 @@ export class MockProfileService implements ProfileService {
     return { success: true }
   }
 
+  async deleteOwnTutorProfile(tutorId: string) {
+    return { success: true }
+  }
+
   async searchTutors(_searchParams: TutorSearchParams) {
     return { tutorIds: ["1337"] }
   }

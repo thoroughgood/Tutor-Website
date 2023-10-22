@@ -25,7 +25,7 @@ const formSchema = z.object({
     })
     .max(50),
   bio: z.string(),
-  profilePicture: z.string(),
+  profilePicture: z.any(),
   location: z.string(),
   phoneNumber: z.string(),
   courseOfferings: z.array(

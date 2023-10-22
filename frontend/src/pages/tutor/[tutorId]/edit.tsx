@@ -35,8 +35,16 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
 import DeleteModal from "@/components/deleteModal"
 import EditOfferings from "@/components/editOfferings"
+import { fileToDataUrl } from "@/service/helpers"
 
 const authService = new HTTPAuthService()
+
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+]
 
 //null if the string value is empty
 const formSchema = z.object({
@@ -47,7 +55,12 @@ const formSchema = z.object({
     })
     .max(50),
   bio: z.string(),
-  profilePicture: z.string(),
+  profilePicture: z
+    .any()
+    .refine(
+      (files) => ACCEPTED_IMAGE_TYPES.includes(files.type) || files == "",
+      "Not accepted image type",
+    ),
   location: z.string(),
   phoneNumber: z.string(),
   courseOfferings: z.array(
@@ -68,6 +81,10 @@ export default function Edit() {
   const { data } = useQuery({
     queryKey: ["tutors", tutorId],
     queryFn: () => profileService.getTutorProfile(tutorId),
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    staleTime: 1000 * 60 * 5,
   })
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -88,7 +105,7 @@ export default function Edit() {
       form.setValue("location", data.location || "")
       form.setValue("phoneNumber", data.phoneNumber || "")
       form.setValue("courseOfferings", courseObj)
-      form.setValue("profilePicture", data.profilePicture || "")
+      form.setValue("profilePicture", "")
     }
   }, [data, form])
 
@@ -119,33 +136,34 @@ export default function Edit() {
   }
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    //need to modify to convert from image to base64URI values.profilePicture
     setSubmitLoading(true)
+    if (values.profilePicture.length === 0) {
+      values.profilePicture = null
+    }
+
     try {
       values.courseOfferings.forEach((course) => {
         courses.push(course.name)
       })
-
+      //need to manipulate profile value
+      const file = (await fileToDataUrl(values.profilePicture)) as string
       const tutorObj: tutor = {
         id: tutorId,
         name: values.name,
         bio: values.bio,
         email: data?.email,
-        profilePicture: values.profilePicture,
+        profilePicture: file,
         location: values.location,
         phoneNumber: values.phoneNumber,
         courseOfferings: courses,
         timeAvailable: data?.timeAvailable,
       }
 
-      if (values.phoneNumber === "") {
+      if (values.phoneNumber.length === 0) {
         tutorObj.phoneNumber = null
       }
-      if (values.location === "") {
+      if (values.location.length === 0) {
         tutorObj.location = null
-      }
-      if (values.profilePicture === "") {
-        tutorObj.profilePicture = null
       }
 
       const id = await profileService.setOwnTutorProfile(tutorObj)
@@ -183,11 +201,26 @@ export default function Edit() {
                   </FormItem>
                 )}
               />
-              <CustomFormField
+              <FormField
+                control={form.control}
                 name="profilePicture"
-                form={form}
-                label="Profile Picture"
-                inputType="file"
+                render={({ field }) => (
+                  <FormItem>
+                    <Label>Profile Picture</Label>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        onChange={(e) => {
+                          e.preventDefault()
+                          if (e.target.files) {
+                            field.onChange(e.target.files[0])
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
               <div className="grid grid-cols-2 gap-3">
                 <CustomFormField
