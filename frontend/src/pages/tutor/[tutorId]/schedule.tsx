@@ -1,12 +1,28 @@
 import SmartAvatar from "@/components/smartAvatar"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+} from "@/components/ui/dialog"
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
 import WeeklyCalendar from "@/components/weeklyCalendar"
 import useUser from "@/hooks/useUser"
 import { HTTPProfileService } from "@/service/profileService"
-import { addMinutes } from "date-fns"
+import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useState } from "react"
+import { useForm } from "react-hook-form"
 import { useQuery } from "react-query"
+import { z } from "zod"
+
+const formSchema = z.object({
+  day: z.string(),
+  startTime: z.string(),
+  endTime: z.string(),
+})
 
 const profileService = new HTTPProfileService()
 export default function Schedule() {
@@ -14,6 +30,8 @@ export default function Schedule() {
   const router = useRouter()
   const tutorId = router.query.tutorId as string
   const isOwnSchedule = user?.userId == tutorId
+  const [creatingAppointment, setCreatingAppointment] = useState(false)
+
   const { data: scheduleData } = useQuery({
     queryKey: ["tutors", tutorId, "schedule"],
     queryFn: async () => {
@@ -23,14 +41,7 @@ export default function Schedule() {
         end: new Date(ta.endTime),
       }))
     },
-    onSuccess: (scheduleData) => setTestScheduleData(scheduleData),
   })
-  const [testScheduleData, setTestScheduleData] = useState<
-    {
-      start: Date
-      end: Date
-    }[]
-  >([])
 
   const { data: profileData } = useQuery({
     queryKey: ["tutors", tutorId],
@@ -39,6 +50,13 @@ export default function Schedule() {
       return tutorProfile
     },
   })
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+  })
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    console.log(values)
+  }
   return (
     <div className="relative flex h-full w-full flex-col gap-10 overflow-hidden p-10">
       <div className="flex gap-4">
@@ -60,13 +78,36 @@ export default function Schedule() {
       </div>
       <WeeklyCalendar
         onCalendarClick={(clickedDate) => {
-          setTestScheduleData([
-            ...testScheduleData,
-            { start: clickedDate, end: addMinutes(clickedDate, 60) },
-          ])
+          console.log(clickedDate)
+          setCreatingAppointment(true)
         }}
-        highlightedIntervals={testScheduleData}
+        highlightedIntervals={scheduleData || []}
       />
+      <Dialog
+        open={creatingAppointment}
+        onOpenChange={(open) => setCreatingAppointment(open)}
+      >
+        <DialogContent>
+          <DialogHeader>test</DialogHeader>
+          <DialogDescription>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
+                <FormField
+                  name="day"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </form>
+            </Form>
+          </DialogDescription>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
