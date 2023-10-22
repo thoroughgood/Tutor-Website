@@ -1,24 +1,7 @@
-from typing import List
-import pytest
 from flask.testing import FlaskClient
 from prisma.models import User
 from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockType
-
-
-@pytest.fixture
-def generate_users(fake_user) -> List[User]:
-    admin = fake_user("mail3@gmail.com", "12345678", "admin")
-    admin.name = "admin"
-    admin.phoneNumber = "04111222333"
-    tutor = fake_user("mail2@gmail.com", "12345678", "tutor")
-    tutor.name = "tutor"
-    tutor.phoneNumber = "+6123456789"
-    student = fake_user("mail@gmail.com", "12345678", "student")
-    student.name = "student"
-    student.phoneNumber = "+0202020202"
-
-    return [admin, tutor, student]
 
 
 def test_admin_search_not_login(setup_test: FlaskClient):
