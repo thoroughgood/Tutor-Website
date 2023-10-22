@@ -3,6 +3,7 @@ from jsonschemas.reused_properties import (
     id_prop,
     phone_number_prop,
     email_prop,
+    account_type_prop,
 )
 
 user_search_schema = {
@@ -15,6 +16,6 @@ user_search_schema = {
         **name_prop,
         **phone_number_prop,
         **email_prop,
-        "accountType": {"type": "string", "pattern": "student|tutor|admin"},
+        **account_type_prop,
     },
 }

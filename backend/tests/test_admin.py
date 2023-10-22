@@ -54,8 +54,8 @@ def test_admin_search_student_login(
     )
 
     resp = client.get("/admin/search")
-    resp.status_code == 403
-    resp.json["error"] == "Insufficient permission to search for users"
+    assert resp.status_code == 403
+    assert resp.json["error"] == "Insufficient permission to search for users"
 
 
 def test_admin_search_tutor_login(
@@ -81,8 +81,8 @@ def test_admin_search_tutor_login(
     )
 
     resp = client.get("/admin/search")
-    resp.status_code == 403
-    resp.json["error"] == "Insufficient permission to search for users"
+    assert resp.status_code == 403
+    assert resp.json["error"] == "Insufficient permission to search for users"
 
 
 def test_admin_search_no_args(
@@ -110,6 +110,398 @@ def test_admin_search_no_args(
         where={"email": fake_admin.email}, include=mocker.ANY
     )
 
+    find_many_users_mock.return_value = [fake_student, fake_tutor, fake_admin]
+
     resp = client.get("/admin/search")
-    resp.status_code == 200
-    resp.json["userIds"] == []
+    find_many_users_mock.assert_called()
+
+    assert resp.status_code == 200
+    assert all(
+        id in [fake_student.id, fake_tutor.id, fake_admin.id]
+        for id in resp.json["userIds"]
+    )
+
+
+def test_admin_search_id(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    find_many_users_mock: MockType,
+    fake_student,
+    fake_tutor,
+    fake_admin,
+):
+    client = setup_test
+
+    # login as admin
+    client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_admin.email}, include=mocker.ANY
+    )
+
+    # id belongs to no one
+    find_many_users_mock.return_value = []
+
+    resp = client.get("/admin/search", query_string={"id": "nonexist"})
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert len(resp.json["userIds"]) == 0
+
+    # student
+    find_many_users_mock.return_value = [fake_student]
+
+    resp = client.get("/admin/search", query_string={"id": fake_student.id})
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_student.id]
+
+    # tutor
+    find_many_users_mock.return_value = [fake_tutor]
+
+    resp = client.get("/admin/search", query_string={"id": fake_tutor.id})
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_tutor.id]
+
+    # admin
+    find_many_users_mock.return_value = [fake_admin]
+
+    resp = client.get("/admin/search", query_string={"id": fake_admin.id})
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_admin.id]
+
+
+def test_admin_search_name(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    find_many_users_mock: MockType,
+    fake_student,
+    fake_tutor,
+    fake_admin,
+):
+    client = setup_test
+
+    # login as admin
+    client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_admin.email}, include=mocker.ANY
+    )
+
+    # invalid name
+    resp = client.get("/admin/search", query_string={"name": ""})
+
+    assert resp.status_code == 400
+    assert resp.json["error"] == "name field must be at least 1 character(s)"
+
+    # name belongs to no one
+    find_many_users_mock.return_value = []
+
+    resp = client.get("/admin/search", query_string={"name": "nonexist"})
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert len(resp.json["userIds"]) == 0
+
+    # student
+    find_many_users_mock.return_value = [fake_student]
+
+    resp = client.get("/admin/search", query_string={"name": fake_student.name})
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_student.id]
+
+    # tutor
+    find_many_users_mock.return_value = [fake_tutor]
+
+    resp = client.get("/admin/search", query_string={"name": fake_tutor.name})
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_tutor.id]
+
+    # admin
+    find_many_users_mock.return_value = [fake_admin]
+
+    resp = client.get("/admin/search", query_string={"name": fake_admin.name})
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_admin.id]
+
+
+def test_admin_search_email(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    find_many_users_mock: MockType,
+    fake_student,
+    fake_tutor,
+    fake_admin,
+):
+    client = setup_test
+
+    # login as admin
+    client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_admin.email}, include=mocker.ANY
+    )
+
+    # invalid email
+    resp = client.get("/admin/search", query_string={"email": "invalidmail"})
+
+    assert resp.status_code == 400
+    assert resp.json["error"] == "email field is invalid"
+
+    # email belongs to no one
+    find_many_users_mock.return_value = []
+
+    resp = client.get("/admin/search", query_string={"email": "nonexist@mail.com"})
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert len(resp.json["userIds"]) == 0
+
+    # student
+    find_many_users_mock.return_value = [fake_student]
+
+    resp = client.get("/admin/search", query_string={"email": fake_student.email})
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_student.id]
+
+    # tutor
+    find_many_users_mock.return_value = [fake_tutor]
+
+    resp = client.get("/admin/search", query_string={"email": fake_tutor.email})
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_tutor.id]
+
+    # admin
+    find_many_users_mock.return_value = [fake_admin]
+
+    resp = client.get("/admin/search", query_string={"email": fake_admin.email})
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_admin.id]
+
+
+def test_admin_search_phone_number(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    find_many_users_mock: MockType,
+    fake_student,
+    fake_tutor,
+    fake_admin,
+):
+    client = setup_test
+
+    # login as admin
+    client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_admin.email}, include=mocker.ANY
+    )
+
+    # phone number belongs to no one
+    find_many_users_mock.return_value = []
+
+    resp = client.get("/admin/search", query_string={"phoneNumber": "0400000000"})
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert len(resp.json["userIds"]) == 0
+
+    # student
+    find_many_users_mock.return_value = [fake_student]
+
+    resp = client.get(
+        "/admin/search", query_string={"phoneNumber": fake_student.phoneNumber}
+    )
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_student.id]
+
+    # tutor
+    find_many_users_mock.return_value = [fake_tutor]
+
+    resp = client.get(
+        "/admin/search", query_string={"phoneNumber": fake_tutor.phoneNumber}
+    )
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_tutor.id]
+
+    # admin
+    find_many_users_mock.return_value = [fake_admin]
+
+    resp = client.get(
+        "/admin/search", query_string={"phoneNumber": fake_admin.phoneNumber}
+    )
+    find_many_users_mock.assert_called_once()
+    find_many_users_mock.reset_mock()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_admin.id]
+
+
+def test_admin_search_account_type(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    find_many_tutors_mock: MockType,
+    find_many_students_mock: MockType,
+    find_many_admins_mock: MockType,
+    fake_student,
+    fake_tutor,
+    fake_admin,
+):
+    client = setup_test
+
+    # login as admin
+    client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_admin.email}, include=mocker.ANY
+    )
+
+    # invalid account type
+    resp = client.get("/admin/search", query_string={"accountType": "invalid"})
+
+    assert resp.status_code == 400
+    assert resp.json["error"] == "accountType must match student|tutor|admin"
+
+    # student
+    find_many_students_mock.return_value = [fake_student.studentInfo]
+
+    resp = client.get("/admin/search", query_string={"accountType": "student"})
+    find_many_students_mock.assert_called_once()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_student.id]
+
+    # tutor
+    find_many_tutors_mock.return_value = [fake_tutor.tutorInfo]
+
+    resp = client.get("/admin/search", query_string={"accountType": "tutor"})
+    find_many_tutors_mock.assert_called_once()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_tutor.id]
+
+    # admin
+    find_many_admins_mock.return_value = [fake_admin.adminInfo]
+
+    resp = client.get("/admin/search", query_string={"accountType": "admin"})
+    find_many_admins_mock.assert_called_once()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_admin.id]
+
+
+def test_admin_search_args(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    find_many_students_mock: MockType,
+    fake_student,
+    fake_admin,
+):
+    client = setup_test
+
+    # login as admin
+    client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_admin.email}, include=mocker.ANY
+    )
+
+    # excluding id given it's a unique attribute
+    find_many_students_mock.return_value = [fake_student.studentInfo]
+
+    resp = client.get(
+        "/admin/search",
+        query_string={
+            "name": fake_student.name,
+            "email": fake_student.email,
+            "phoneNumber": fake_student.phoneNumber,
+            "accountType": "student",
+        },
+    )
+    find_many_students_mock.assert_called_once()
+
+    assert resp.status_code == 200
+    assert resp.json["userIds"] == [fake_student.id]

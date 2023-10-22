@@ -29,11 +29,13 @@ def user_search(args):
     if "accountType" in args:
         match args["accountType"]:
             case "student":
-                users = Student.prisma().find_many(include={"userInfo": True})
+                res = Student.prisma().find_many(include={"userInfo": True})
             case "tutor":
-                users = Tutor.prisma().find_many(include={"userInfo": True})
+                res = Tutor.prisma().find_many(include={"userInfo": True})
             case "admin":
-                users = Admin.prisma().find_many(include={"userInfo": True})
+                res = Admin.prisma().find_many(include={"userInfo": True})
+
+        users = map(lambda user: user.userInfo, res)
     else:
         users = User.prisma().find_many()
 
