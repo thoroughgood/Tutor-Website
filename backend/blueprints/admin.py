@@ -1,10 +1,13 @@
-from hashlib import sha256
 import re
+from hashlib import sha256
 from uuid import uuid4
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, jsonify, session
 from prisma.models import User, Tutor, Admin, Student
-from helpers.views import user_view, admin_view, tutor_view, student_view
+from jsonschemas.user_search_schema import user_search_schema
+from jsonschemas.admin_create_schema import admin_create_schema
+from helpers.views import user_view, admin_view
 from helpers.error_handlers import (
+    validate_decorator,
     ExpectedError,
     error_decorator,
 )
@@ -14,8 +17,8 @@ admin = Blueprint("admin", __name__)
 
 @admin.route("/search", methods=["GET"])
 @error_decorator
-def user_search():
-    args = request.args
+@validate_decorator("query_string", user_search_schema)
+def user_search(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -60,8 +63,8 @@ def user_search():
 
 @admin.route("/create", methods=["POST"])
 @error_decorator
-def admin_create():
-    args = request.get_json()
+@validate_decorator("json", admin_create_schema)
+def admin_create(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
