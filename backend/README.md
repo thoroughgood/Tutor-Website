@@ -1,32 +1,28 @@
 # References
 See these [prisma python documentation](https://prisma-client-py.readthedocs.io/en/stable/) for all your ORM needs.
 I encourage you to read up on this, and the [original/typescript prisma documentation](https://www.prisma.io/docs) to get a feel on
-how to mess around with the schema and write the python code to interface with a database.
-Referring to pre-existing code (e.g. `/register` route) will also be a great reference point!
+how to mess around with the schema and write the python code to interface with a database. 
+
+For argument validation, see the original [javascript documentation](https://json-schema.org/learn/getting-started-step-by-step) and
+the [python implementation documentation](https://python-jsonschema.readthedocs.io/en/stable/). Generally the original documentation is greatly
+preferred, and there are only some minor items you may need to refer to for the python side of things. 
+Especially, given that the original documentation's glossery also has notes on the python implementation
+differences.
 
 # Setup
 ## Python Side
-**Requirement:** Your running python version must be at least version 3.10!
-For local development, create a virtual environment (venv) by following this handy [documentation](https://docs.python.org/3/library/venv.html)
-replacing `/path/to/new/virtual/environment` with `.venv`, making sure you're in
-the `backend` directory as you do this.
+**Requirement:** You must have some version of python3 on your system.
 
-When you've loaded up the venv, run `pip3 install -r requirements.txt` to
-load up all pre-existing modules to your venv.
-For future reference, if you install any additional modules in the future
-in the venv, you can run `pip3 freeze > requirements.txt` whilst you're
-in the `backend` directory to add new modules for others to install in the future.
-Run `deactivate` to exit the venv and leave your installed modules behind~
-Whenever you work on the backend in the future, you should be loaded up in this
-venv. There won't really be much in the way of reprecussions if you don't, other
-than nothing working and random python files bloating your file system.
-
-You'll also need to generate a secret key to put inside a `.env` file (that you can create yourself) 
+Then, you'll need to generate a secret key to put inside a `.env` file (that you can create yourself) 
 in the `backend` directory. Just generate via the repl or google a solution 
 and assign it to the `SECRET_KEY` variable in `.env`.
 
-Now you're essentially ready to go... except for all the prisma/database
-setup you need to do.
+Then, simply run the `runBackend.sh` script in your terminal whilst you're in the backend directory,
+Once you're actually setup, this will also run the server, however, for now it'll
+crash at the end, however, most of the setup will be done automagically
+for you before it does!
+
+For the server to actually run, you'll need to some prisma/database setup first...
 
 ## Prisma/Database setup
 Given the obvious fact that every query you run to the database affects it, 
