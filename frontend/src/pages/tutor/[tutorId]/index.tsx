@@ -42,8 +42,11 @@ export default function TutorProfile() {
             <>
               <Button variant="secondary" className="flex gap-2">
                 <User className="w-5" />
-                <Link href={`${user?.userId}/edit`}>Edit Profile</Link>
+                <Link className="" href={`${user?.userId}/edit`}>
+                  Edit Profile
+                </Link>
               </Button>
+
               <Button variant="default" className="flex gap-2">
                 <Calendar className="w-5" />
                 Edit Schedule

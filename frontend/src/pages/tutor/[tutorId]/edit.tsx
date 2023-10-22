@@ -137,16 +137,18 @@ export default function Edit() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitLoading(true)
-    if (values.profilePicture.length === 0) {
-      values.profilePicture = null
-    }
 
     try {
       values.courseOfferings.forEach((course) => {
         courses.push(course.name)
       })
+
       //need to manipulate profile value
-      const file = (await fileToDataUrl(values.profilePicture)) as string
+      let file = ""
+      if (values.profilePicture.length != 0) {
+        file = (await fileToDataUrl(values.profilePicture)) as string
+      }
+
       const tutorObj: tutor = {
         id: tutorId,
         name: values.name,
@@ -165,7 +167,9 @@ export default function Edit() {
       if (values.location.length === 0) {
         tutorObj.location = null
       }
-
+      if (values.profilePicture.length === 0) {
+        tutorObj.profilePicture = null
+      }
       const id = await profileService.setOwnTutorProfile(tutorObj)
       const test = await profileService.getTutorProfile(tutorId)
     } catch (error) {

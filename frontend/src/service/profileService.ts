@@ -88,6 +88,11 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     return resp.json()
   }
 
+  async deleteOwnTutorProfile(tutorId: string): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/tutor/`).delete()
+    return await resp.json()
+  }
+
   async getStudentProfile(studentId: string): Promise<StudentProfile> {
     const resp = wretch(`${this.backendURL}/student/${studentId}`).get()
     return await resp.json()
@@ -100,6 +105,12 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
       .json(studentProfile)
       .put()
     return resp.json()
+  }
+  async deleteOwnStudentProfile(studentId: string): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/student/`)
+      .json({ id: studentId })
+      .delete()
+    return await resp.json()
   }
 }
 
