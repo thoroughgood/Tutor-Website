@@ -505,3 +505,230 @@ def test_admin_search_args(
 
     assert resp.status_code == 200
     assert resp.json["userIds"] == [fake_student.id]
+
+
+def test_admin_create_not_login(setup_test: FlaskClient):
+    client = setup_test
+
+    resp = client.post(
+        "admin/create",
+        json={
+            "name": "newAdmin",
+            "email": "email@email.com",
+            "password": "12345678",
+        },
+    )
+    assert resp.status_code == 401
+    assert resp.json["error"] == "No user is logged in"
+
+
+def test_admin_create_student_login(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    fake_student,
+):
+    client = setup_test
+
+    # login as student
+    client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_student.email}, include=mocker.ANY
+    )
+
+    resp = client.post(
+        "admin/create",
+        json={
+            "name": "newAdmin",
+            "email": "email@email.com",
+            "password": "12345678",
+        },
+    )
+    assert resp.status_code == 403
+    assert resp.json["error"] == "Insufficient permission to create a new admin account"
+
+
+def test_admin_create_tutor_login(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    fake_tutor,
+):
+    client = setup_test
+
+    # login as tutor
+    client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_tutor.email}, include=mocker.ANY
+    )
+
+    resp = client.post(
+        "admin/create",
+        json={
+            "name": "newAdmin",
+            "email": "email@email.com",
+            "password": "12345678",
+        },
+    )
+    assert resp.status_code == 403
+    assert resp.json["error"] == "Insufficient permission to create a new admin account"
+
+
+def test_admin_create_invalid_args(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    fake_admin,
+):
+    client = setup_test
+
+    # login as admin
+    client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_admin.email}, include=mocker.ANY
+    )
+    # omitted name
+    resp = client.post(
+        "admin/create",
+        json={
+            "email": "email@email.com",
+            "password": "12345678",
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json["error"] == "'name' was missing from field(s)"
+
+    # omitted email
+    resp = client.post(
+        "admin/create",
+        json={
+            "name": "newAdmin",
+            "password": "12345678",
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json["error"] == "'email' was missing from field(s)"
+
+    # omitted password
+    resp = client.post(
+        "admin/create",
+        json={
+            "name": "newAdmin",
+            "email": "email@email.com",
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json["error"] == "'password' was missing from field(s)"
+
+    # invalid email
+    resp = client.post(
+        "admin/create",
+        json={
+            "name": "newAdmin",
+            "email": "notvalid",
+            "password": "12345678",
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json["error"] == "email field is invalid"
+
+    # invalid name
+    resp = client.post(
+        "admin/create",
+        json={
+            "name": "",
+            "email": "mail@gmail.com",
+            "password": "12345678",
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json["error"] == "name field must be at least 1 character(s)"
+
+    # invalid password
+    resp = client.post(
+        "admin/create",
+        json={
+            "name": "newAdmin",
+            "email": "mail@gmail.com",
+            "password": "1234567",
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json["error"] == "password field must be at least 8 character(s)"
+
+
+def test_create_admin_valid(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    find_many_admins_mock: MockType,
+    fake_admin,
+    fake_user,
+):
+    client = setup_test
+
+    # login as admin
+    client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_admin.email}, include=mocker.ANY
+    )
+
+    user_create_mock = mocker.patch("tests.conftest.UserActions.create")
+    resp = client.post(
+        "admin/create",
+        json={
+            "name": "newAdmin",
+            "email": "email@email.com",
+            "password": "12345678",
+        },
+    )
+    user_create_mock.assert_called()
+    assert resp.status_code == 200
+
+    # go 'find' new admin
+    new_fake_admin: User = fake_user("email@email.com", "12345678", "admin")
+    new_fake_admin.name = "newAdmin"
+    new_fake_admin.id = resp.json["id"]
+
+    find_many_admins_mock.return_value = [
+        fake_admin.adminInfo,
+        new_fake_admin.adminInfo,
+    ]
+
+    resp = client.get("/admin/search", query_string={"accountType": "admin"})
+    find_many_admins_mock.assert_called_once()
+
+    assert resp.status_code == 200
+    assert all(id in [new_fake_admin.id, fake_admin.id] for id in resp.json["userIds"])
