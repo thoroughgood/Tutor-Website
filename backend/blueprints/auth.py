@@ -1,10 +1,13 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, jsonify, session
 from prisma.models import User
-from re import fullmatch
 from uuid import uuid4
 from hashlib import sha256
+from jsonschemas.register_schema import register_schema
+from jsonschemas.login_schema import login_schema
+from jsonschemas.reset_password_schema import reset_password_schema
 from helpers.views import user_view, admin_view, tutor_view, student_view
 from helpers.error_handlers import (
+    validate_decorator,
     ExpectedError,
     error_decorator,
 )
@@ -14,48 +17,29 @@ auth = Blueprint("auth", __name__)
 
 @auth.route("/register", methods=["POST"])
 @error_decorator
-def register():
-    args = request.get_json()
+@validate_decorator("json", register_schema)
+def register(args):
+    user = user_view(email=args["email"])
+    if user:
+        raise ExpectedError("user already exists with this email", 400)
 
-    if "name" not in args or len(str(args["name"]).lower().strip()) == 0:
-        raise ExpectedError("name field was missing", 400)
+    new_user_id = str(uuid4())
+    data = {
+        "id": new_user_id,
+        "name": args["name"],
+        "email": args["email"],
+        "hashedPassword": sha256(args["password"].encode()).hexdigest(),
+    }
 
-    if "email" not in args or not fullmatch(
-        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
-        str(args["email"]).lower().strip(),
-    ):
-        raise ExpectedError("email field is invalid", 400)
-
-    if "password" not in args or len(str(args["password"]).lower().strip()) < 8:
-        raise ExpectedError("password field must be at least 8 characters long", 400)
-
-    new_user_id = None
-    if "accountType" in args:
-        user = user_view(email=args["email"])
-        if user:
-            raise ExpectedError("user already exists with this email", 400)
-
-        new_user_id = str(uuid4())
-        data = {
-            "id": new_user_id,
-            "name": args["name"],
-            "email": args["email"],
-            "hashedPassword": sha256(str(args["password"]).encode()).hexdigest(),
-        }
-
-        match str(args["accountType"]).lower().strip():
-            # id the of 'typed' tables are the same such it's possible
-            # to still query on those tables with id
-            case "student":
-                data["studentInfo"] = {"create": {"id": new_user_id}}
-                User.prisma().create(data=data)
-            case "tutor":
-                data["tutorInfo"] = {"create": {"id": new_user_id}}
-                User.prisma().create(data=data)
-            case _:
-                raise ExpectedError("accountType must be 'student' or 'tutor'", 400)
-    else:
-        raise ExpectedError("accountType field missing", 400)
+    match args["accountType"]:
+        # id the of 'typed' tables are the same such it's possible
+        # to still query on those tables with id
+        case "student":
+            data["studentInfo"] = {"create": {"id": new_user_id}}
+            User.prisma().create(data=data)
+        case "tutor":
+            data["tutorInfo"] = {"create": {"id": new_user_id}}
+            User.prisma().create(data=data)
 
     session["user_id"] = new_user_id
 
@@ -64,44 +48,26 @@ def register():
 
 @auth.route("/login", methods=["POST"])
 @error_decorator
-def login():
-    args = request.get_json()
-
+@validate_decorator("json", login_schema)
+def login(args):
     if "user_id" in session:
         raise ExpectedError("A user is already logged in", 400)
 
-    if "email" not in args or not fullmatch(
-        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
-        str(args["email"]).lower().strip(),
+    match args["accountType"]:
+        case "student":
+            user = student_view(email=args["email"])
+        case "tutor":
+            user = tutor_view(email=args["email"])
+        case "admin":
+            user = admin_view(email=args["email"])
+    if (
+        user
+        and user.hashed_password == sha256(str(args["password"]).encode()).hexdigest()
     ):
-        raise ExpectedError("email field is invalid", 400)
-
-    if "password" not in args or len(str(args["password"]).lower().strip()) < 8:
-        raise ExpectedError("password field must be at least 8 characters long", 400)
-
-    if "accountType" in args and (
-        args["accountType"] == "student"
-        or args["accountType"] == "tutor"
-        or args["accountType"] == "admin"
-    ):
-        match args["accountType"]:
-            case "student":
-                user = student_view(email=args["email"])
-            case "tutor":
-                user = tutor_view(email=args["email"])
-            case "admin":
-                user = admin_view(email=args["email"])
-        if (
-            user
-            and user.hashed_password
-            == sha256(str(args["password"]).encode()).hexdigest()
-        ):
-            session["user_id"] = user.id
-            return jsonify({"id": user.id}), 200
-        else:
-            raise ExpectedError("Invalid login attempt", 401)
+        session["user_id"] = user.id
+        return jsonify({"id": user.id}), 200
     else:
-        raise ExpectedError("accountType must be 'student' or 'tutor' or 'admin'", 400)
+        raise ExpectedError("Invalid login attempt", 401)
 
 
 @auth.route("/logout", methods=["POST"])
@@ -114,9 +80,8 @@ def logout():
 
 @auth.route("/resetpassword", methods=["PUT"])
 @error_decorator
-def resetpassword():
-    args = request.get_json()
-
+@validate_decorator("json", reset_password_schema)
+def resetpassword(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -124,16 +89,10 @@ def resetpassword():
     if not admin:
         raise ExpectedError("Insufficient permission to modify this profile", 403)
 
-    if "id" not in args:
-        raise ExpectedError("id field is missing", 400)
-
     user = user_view(id=args["id"])
     # ? we'll tentatively say an admin may reset their own password
     if not user:
         raise ExpectedError("Profile does not exist", 404)
-
-    if "newPassword" not in args or len(str(args["newPassword"]).lower().strip()) < 8:
-        raise ExpectedError("password field must be at least 8 characters long", 400)
 
     new_password = sha256(str(args["newPassword"]).encode()).hexdigest()
     if new_password == user.hashed_password:

@@ -133,7 +133,7 @@ class AdminView(UserView):
 
 
 def user_view(id: str = None, email: str = None) -> UserView | None:
-    if id == None and email == None:
+    if id is None and email is None:
         return None
     elif id and email:
         raise ValueError("You cannot filter on both id and email")
@@ -152,13 +152,13 @@ def user_view(id: str = None, email: str = None) -> UserView | None:
             user.location,
             user.phoneNumber,
         )
-        if user != None
+        if user is not None
         else None
     )
 
 
 def student_view(id: str = None, email: str = None) -> StudentView | None:
-    if id == None and email == None:
+    if id is None and email is None:
         return None
     elif id and email:
         raise ValueError("You cannot filter on both id and email")
@@ -181,13 +181,13 @@ def student_view(id: str = None, email: str = None) -> StudentView | None:
             user.phoneNumber,
             user.studentInfo.appointments,
         )
-        if user != None and user.studentInfo != None
+        if user is not None and user.studentInfo is not None
         else None
     )
 
 
 def tutor_view(id: str = None, email: str = None) -> TutorView | None:
-    if id == None and email == None:
+    if id is None and email is None:
         return None
     elif id and email:
         raise ValueError("You cannot filter on both id and email")
@@ -223,13 +223,13 @@ def tutor_view(id: str = None, email: str = None) -> TutorView | None:
             user.tutorInfo.timesAvailable,
             user.tutorInfo.documents,
         )
-        if user != None and user.tutorInfo != None
+        if user is not None and user.tutorInfo is not None
         else None
     )
 
 
 def admin_view(id: str = None, email: str = None) -> AdminView | None:
-    if id == None and email == None:
+    if id is None and email is None:
         return None
     elif id and email:
         raise ValueError("You cannot filter on both id and email")
@@ -250,6 +250,6 @@ def admin_view(id: str = None, email: str = None) -> AdminView | None:
             user.location,
             user.phoneNumber,
         )
-        if user != None and user.adminInfo != None
+        if user is not None and user.adminInfo is not None
         else None
     )

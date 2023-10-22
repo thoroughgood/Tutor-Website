@@ -1,11 +1,12 @@
 from flask import Blueprint, request, jsonify, session
 from prisma.models import Tutor, Subject, User
-from re import fullmatch
+from jsonschemas.tutor_modify_schema import tutor_modify_schema
 from helpers.process_time_block import process_time_block
 from helpers.views import tutor_view
 from helpers.admin_id_check import admin_id_check
 from helpers.rating_calc import rating_calc
 from helpers.error_handlers import (
+    validate_decorator,
     ExpectedError,
     error_decorator,
 )
@@ -17,15 +18,15 @@ tutor = Blueprint("tutor", __name__)
 @error_decorator
 def get_profile(tutor_id):
     tutor = tutor_view(id=tutor_id)
-    if tutor == None:
+    if tutor is None:
         raise ExpectedError("Profile does not exist", 404)
 
-    if tutor.course_offerings == None:
+    if tutor.course_offerings is None:
         course_offerings = []
     else:
         course_offerings = list(map(lambda c: c.name, tutor.course_offerings))
 
-    if tutor.times_available == None:
+    if tutor.times_available is None:
         times_available = []
     else:
         times_available = list(
@@ -38,7 +39,7 @@ def get_profile(tutor_id):
             )
         )
 
-    if tutor.ratings == None:
+    if tutor.ratings is None:
         rating = 0
     else:
         rating = rating_calc(tutor.ratings)
@@ -61,26 +62,20 @@ def get_profile(tutor_id):
 
 @tutor.route("profile/", methods=["PUT"])
 @error_decorator
-def modify_profile():
-    args = request.get_json()
-
+@validate_decorator("json", tutor_modify_schema)
+def modify_profile(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
 
     modify_tutor_id = admin_id_check(args)
 
     tutor = tutor_view(id=modify_tutor_id)
-    if tutor == None:
+    if tutor is None:
         raise ExpectedError("Profile does not exist", 404)
 
     name = tutor.name if "name" not in args else args["name"]
     bio = tutor.bio if "bio" not in args else args["bio"]
     email = tutor.email if "email" not in args else args["email"]
-    if "email" in args and not fullmatch(
-        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
-        str(args["email"]).lower().strip(),
-    ):
-        raise ExpectedError("New email is invalid", 400)
 
     profile_picture = (
         tutor.profile_picture
@@ -123,11 +118,11 @@ def delete_profile():
     delete_tutor_id = admin_id_check(args)
 
     tutor = tutor_view(id=delete_tutor_id)
-    if tutor == None:
+    if tutor is None:
         raise ExpectedError("Profile does not exist", 404)
 
     # All fields other than course_offerings will cascade delete in the db
-    if tutor.course_offerings != None:
+    if tutor.course_offerings is not None:
         for subject in map(lambda c: c.name, tutor.course_offerings):
             Tutor.prisma().update(
                 where={"id": tutor.id},
@@ -143,7 +138,7 @@ def addingSubjects(course_offerings, tutor_id):
     tutor = tutor_view(id=tutor_id)
     # tutor is adding/deleting subjects
     # wipe previous stuff, if there is any
-    if tutor.course_offerings != None:
+    if tutor.course_offerings is not None:
         for subject in tutor.course_offerings:
             Tutor.prisma().update(
                 where={"id": tutor_id},
@@ -151,7 +146,7 @@ def addingSubjects(course_offerings, tutor_id):
             )
 
     # tutor is changing their subjects offered to zero
-    if course_offerings == None or len(course_offerings) == 0:
+    if course_offerings is None or len(course_offerings) == 0:
         return
 
     # connect all subjects in the courseofferings list back to the tutor record
@@ -159,7 +154,7 @@ def addingSubjects(course_offerings, tutor_id):
     for subject_name in course_offerings:
         subject = Subject.prisma().find_first(where={"name": subject_name})
 
-        if subject == None:
+        if subject is None:
             Subject.prisma().create(data={"name": subject_name})
 
         Tutor.prisma().update(
@@ -169,7 +164,7 @@ def addingSubjects(course_offerings, tutor_id):
 
 
 def addingTimes(times_available, tutor_id):
-    if times_available == None or len(times_available) == 0:
+    if times_available is None or len(times_available) == 0:
         Tutor.prisma().update(
             where={"id": tutor_id}, data={"timesAvailable": {"deleteMany": {}}}
         )

@@ -1,10 +1,11 @@
-from re import fullmatch
 from flask import Blueprint, request, jsonify, session
 from datetime import datetime, timezone
 from prisma.models import User
+from jsonschemas.student_modify_schema import student_modify_schema
 from helpers.views import student_view
 from helpers.admin_id_check import admin_id_check
 from helpers.error_handlers import (
+    validate_decorator,
     ExpectedError,
     error_decorator,
 )
@@ -37,34 +38,17 @@ def get_profile(student_id):
 
 @student.route("profile", methods=["PUT"])
 @error_decorator
-def modify_profile():
-    args = request.get_json()
-
+@validate_decorator("json", student_modify_schema)
+def modify_profile(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
     mod_id = admin_id_check(args)
-
-    if "name" in args and len(str(args["name"]).lower().strip()) == 0:
-        raise ExpectedError("name field is invalid", 400)
-    if "email" in args and not fullmatch(
-        r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)",
-        str(args["email"]).lower().strip(),
-    ):
-        raise ExpectedError("email field is invalid", 400)
 
     student = student_view(id=mod_id)
     if not student:
         raise ExpectedError("Profile does not exist", 404)
 
-    name = (
-        args["name"]
-        if (
-            "name" in args
-            and len(str(args["name"]).lower().strip()) != 0
-            and args["name"] is not None
-        )
-        else student.name
-    )
+    name = args["name"] if "name" in args else student.name
     bio = args["bio"] if "bio" in args else student.bio
     email = args["email"] if "email" in args else student.email
     profile_picture = (
