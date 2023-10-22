@@ -1,9 +1,7 @@
 from typing import List
 import pytest
-import json
 from flask.testing import FlaskClient
-from prisma.models import Subject, User, Tutor, Appointment, Rating, TutorAvailability
-from datetime import datetime, timedelta, timezone
+from prisma.models import User
 from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockType
 
