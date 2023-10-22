@@ -88,6 +88,34 @@ def a_request():
     )
 
 
+@appointment.route("", methods=["DELETE"])
+@error_decorator
+def delete():
+    args = request.get_json()
+
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 401)
+
+    if "id" not in args or len(str(args["id"]).lower().strip()) == 0:
+        raise ExpectedError("id field was missing", 400)
+
+    tutor = tutor_view(id=session["user_id"])
+    if not tutor:
+        raise ExpectedError("Logged in user is not a tutor", 404)
+
+    appointment = Appointment.prisma().find_unique(where={"id": args["id"]})
+    if not appointment:
+        raise ExpectedError("Appointment does not exist", 404)
+
+    if appointment not in tutor.appointments:
+        raise ExpectedError("Logged in user is not the tutor of the appointment", 403)
+
+    tutor.appointments.disconnect({"id": args["id"]})
+    Appointment.prisma().delete(where={"id": args["id"]})
+
+    return jsonify({"success": True}), 200
+
+
 @appointment.route("rating", methods=["POST"])
 @error_decorator
 def rating():
