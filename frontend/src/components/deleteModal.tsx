@@ -9,12 +9,12 @@ import {
 } from "./ui/dialog"
 import LoadingButton from "./loadingButton"
 import { useState } from "react"
-import { MockProfileService } from "@/service/profileService"
 import toast from "react-hot-toast"
 import { getErrorMessage } from "@/lib/utils"
 import useUser from "@/hooks/useUser"
 import { Button } from "./ui/button"
-const profileService = new MockProfileService()
+import { HTTPProfileService } from "@/service/profileService"
+const profileService = new HTTPProfileService()
 
 export interface deleteModalInterface {
   profileId: string
@@ -29,6 +29,7 @@ export default function DeleteModal({ profileId }: deleteModalInterface) {
   const deleteProfile = async () => {
     setSubmitLoading(true)
     try {
+      console.log(profileId)
       const deletion = await profileService.deleteOwnTutorProfile(profileId)
     } catch {
       toast.error(getErrorMessage(Error))

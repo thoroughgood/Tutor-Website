@@ -89,7 +89,7 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
   }
 
   async deleteOwnTutorProfile(tutorId: string): Promise<SuccessResponse> {
-    const resp = wretch(`${this.backendURL}/tutor/`).delete()
+    const resp = wretch(`${this.backendURL}/tutor/`).json({}).delete()
     return await resp.json()
   }
 
