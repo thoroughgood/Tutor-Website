@@ -50,9 +50,6 @@ def register(args):
 @error_decorator
 @validate_decorator("json", login_schema)
 def login(args):
-    if "user_id" in session:
-        raise ExpectedError("A user is already logged in", 400)
-
     match args["accountType"]:
         case "student":
             user = student_view(email=args["email"])
