@@ -11,7 +11,7 @@ from helpers.error_handlers import (
 appointment = Blueprint("appointment", __name__)
 
 
-@appointment.route("request", methods=["POST"])
+@appointment.route("/request", methods=["POST"])
 @error_decorator
 def a_request():
     args = request.get_json()
@@ -164,7 +164,7 @@ def modify():
     return jsonify({"success": True}), 200
 
 
-@appointment.route("rating", methods=["POST"])
+@appointment.route("/rating", methods=["POST"])
 @error_decorator
 def rating():
     args = request.get_json()
