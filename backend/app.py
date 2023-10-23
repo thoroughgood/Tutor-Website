@@ -1,3 +1,5 @@
+from hashlib import sha256
+from uuid import uuid4
 from flask import Flask
 from flask_session import Session
 from flask_cors import CORS
@@ -26,6 +28,26 @@ app.config["SESSION_COOKIE_SECURE"] = True
 server_session = Session(app)
 # todo: figure cors
 cors = CORS(app, supports_credentials=True)
+
+# add a 'super admin' if one isn't already added
+# ? Maybe remove this later for prod
+if (
+    prisma.admin.count() == 0
+    and prisma.admin.find_first(where={"userInfo": {"is": {"name": "SuperAdmin"}}})
+    is None
+):
+    id = str(uuid4())
+    prisma.user.create(
+        data={
+            "id": id,
+            "name": "SuperAdmin",
+            # ? Maybe have this correspond to an actual email later
+            "email": "admin@email.com",
+            # ? Some way to generate a new password each run?
+            "hashedPassword": sha256("password".encode()).hexdigest(),
+            "adminInfo": {"create": {"id": id}},
+        }
+    )
 
 # blueprints
 app.register_blueprint(auth, url_prefix="/")
