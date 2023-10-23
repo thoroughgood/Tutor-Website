@@ -1,3 +1,4 @@
+import EditAppointmentForm from "@/components/editAppointmentForm"
 import SmartAvatar from "@/components/smartAvatar"
 import {
   Dialog,
@@ -5,8 +6,6 @@ import {
   DialogDescription,
   DialogHeader,
 } from "@/components/ui/dialog"
-import { Form, FormControl, FormField, FormItem } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import WeeklyCalendar from "@/components/weeklyCalendar"
 import useUser from "@/hooks/useUser"
 import { HTTPProfileService } from "@/service/profileService"
@@ -41,6 +40,9 @@ export default function Schedule() {
         end: new Date(ta.endTime),
       }))
     },
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
   })
 
   const { data: profileData } = useQuery({
@@ -49,6 +51,9 @@ export default function Schedule() {
       const tutorProfile = await profileService.getTutorProfile(tutorId)
       return tutorProfile
     },
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
   })
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -57,6 +62,7 @@ export default function Schedule() {
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     console.log(values)
   }
+  console.log("what")
   return (
     <div className="relative flex h-full w-full flex-col gap-10 overflow-hidden p-10">
       <div className="flex gap-4">
@@ -87,24 +93,10 @@ export default function Schedule() {
         open={creatingAppointment}
         onOpenChange={(open) => setCreatingAppointment(open)}
       >
-        <DialogContent>
+        <DialogContent className="fade-in-0">
           <DialogHeader>test</DialogHeader>
           <DialogDescription>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)}>
-                <FormField
-                  name="day"
-                  control={form.control}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </form>
-            </Form>
+            <EditAppointmentForm />
           </DialogDescription>
         </DialogContent>
       </Dialog>
