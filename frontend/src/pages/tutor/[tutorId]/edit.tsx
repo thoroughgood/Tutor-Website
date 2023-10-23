@@ -121,7 +121,6 @@ export default function Edit() {
   const courses: string[] = []
 
   type tutor = {
-    id: string
     name: string
     bio: string
     email: string
@@ -150,7 +149,6 @@ export default function Edit() {
       }
 
       const tutorObj: tutor = {
-        id: tutorId,
         name: values.name,
         bio: values.bio,
         email: data?.email,
@@ -170,7 +168,6 @@ export default function Edit() {
       if (values.profilePicture.length === 0) {
         tutorObj.profilePicture = null
       }
-      console.log("almost)")
       const id = await profileService.setOwnTutorProfile(tutorObj)
     } catch (error) {
       toast.error(getErrorMessage(error))
@@ -215,7 +212,6 @@ export default function Edit() {
                     <FormControl>
                       <Input
                         type="file"
-                        value=""
                         onChange={(e) => {
                           e.preventDefault()
                           if (e.target.files) {

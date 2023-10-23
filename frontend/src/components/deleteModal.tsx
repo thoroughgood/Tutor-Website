@@ -10,11 +10,14 @@ import {
 import LoadingButton from "./loadingButton"
 import { useState } from "react"
 import toast from "react-hot-toast"
-import { getErrorMessage } from "@/lib/utils"
+import { getErrorMessage, toastProtectedFnCall } from "@/lib/utils"
 import useUser from "@/hooks/useUser"
 import { Button } from "./ui/button"
 import { HTTPProfileService } from "@/service/profileService"
+import { HTTPAuthService } from "@/service/authService"
+import { useRouter } from "next/router"
 const profileService = new HTTPProfileService()
+const authService = new HTTPAuthService()
 
 export interface deleteModalInterface {
   profileId: string
@@ -22,8 +25,10 @@ export interface deleteModalInterface {
 
 export default function DeleteModal({ profileId }: deleteModalInterface) {
   const [open, setOpen] = useState(false)
+  const router = useRouter()
   const [submitLoading, setSubmitLoading] = useState(false)
-  const { user } = useUser()
+  const { user, setUser } = useUser()
+
   //deleteOwnUserProfile needs to grab the id of the profile we are on
 
   const deleteProfile = async () => {
@@ -67,6 +72,10 @@ export default function DeleteModal({ profileId }: deleteModalInterface) {
               await deleteProfile()
               setOpen(false)
               setSubmitLoading(false)
+              if (await toastProtectedFnCall(() => authService.logout())) {
+                setUser(null)
+                router.push("/register")
+              }
             }}
           >
             Delete
