@@ -26,7 +26,10 @@ import { HTTPAuthService } from "@/service/authService"
 import { getErrorMessage } from "@/lib/utils"
 import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
-import { HTTPProfileService } from "@/service/profileService"
+import {
+  HTTPProfileService,
+  TutorSelfEditReqBody,
+} from "@/service/profileService"
 import { useQuery, useQueryClient } from "react-query"
 import { Textarea } from "@/components/ui/textarea"
 import toast from "react-hot-toast"
@@ -120,20 +123,6 @@ export default function Edit() {
 
   const courses: string[] = []
 
-  type tutor = {
-    name: string
-    bio: string
-    email: string
-    profilePicture: string | null
-    location: string | null
-    phoneNumber: string | null
-    courseOfferings: string[]
-    timeAvailable: {
-      startTime: string
-      endTime: string
-    }[]
-  }
-
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitLoading(true)
 
@@ -148,7 +137,7 @@ export default function Edit() {
         file = (await fileToDataUrl(values.profilePicture)) as string
       }
 
-      const tutorObj: tutor = {
+      const tutorObj: TutorSelfEditReqBody = {
         name: values.name,
         bio: values.bio,
         email: data?.email,

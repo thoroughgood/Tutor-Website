@@ -10,7 +10,9 @@ export class HTTPService {
     this.backendURL = "http://127.0.0.1:8000"
   }
 }
-
+/*
+ *FileToDataURL referenced from COMP6080 22T2 lecture slides courtesy of Hayden Smith
+ */
 export function fileToDataUrl(file: File) {
   const validFileTypes = ["image/jpeg", "image/png", "image/jpg"]
   const valid = validFileTypes.find((type) => type === file.type)
