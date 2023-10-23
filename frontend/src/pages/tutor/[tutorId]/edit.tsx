@@ -158,6 +158,9 @@ export default function Edit() {
         tutorObj.profilePicture = null
       }
       const id = await profileService.setOwnTutorProfile(tutorObj)
+      if (id.success) {
+        router.push(`/tutor/${tutorId}/`)
+      }
     } catch (error) {
       toast.error(getErrorMessage(error))
       console.log(values)
