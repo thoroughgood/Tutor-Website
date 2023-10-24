@@ -76,6 +76,20 @@ export class HTTPAuthService extends HTTPService implements AuthService {
     return await resp.json()
   }
 
+  async adminCreate(registerBody: RegisterBody): Promise<AuthResponse> {
+    const resp = wretch(`${this.backendURL}/admin/create`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json(registerBody)
+      .post()
+      .notFound(this.errorHandlerCallback)
+      .badRequest(this.errorHandlerCallback)
+      .error(415, this.errorHandlerCallback)
+    return await resp.json()
+  }
+
   async checkUser(): Promise<CheckUserResponse> {
     try {
       const resp = wretch(`${this.backendURL}/utils/getuserid`)
