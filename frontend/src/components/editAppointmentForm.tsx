@@ -1,4 +1,4 @@
-import { Controller, useForm } from "react-hook-form"
+import { Control, Controller, useForm } from "react-hook-form"
 import { PopoverContent, Popover, PopoverTrigger } from "./ui/popover"
 import {
   Select,
@@ -18,11 +18,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 
 const zodSchema = z
   .object({
+    globalErrors: z.string().optional(), // ts bandaid fix for global errors with zod resolver/refine
     date: z.date(),
     startTime: z.string().regex(/^[0-9]{2}:[0-9]{2} [A|P]M$/),
     endTime: z.string().regex(/^[0-9]{2}:[0-9]{2} [A|P]M$/),
   })
-  .partial()
   .refine(
     ({ startTime, endTime }) => {
       if (startTime && endTime) {
@@ -33,7 +33,10 @@ const zodSchema = z
       }
       return true
     },
-    { message: "Start time should be before End time", path: ["date"] },
+    {
+      message: "Start time should be before end time",
+      path: ["globalErrors"],
+    },
   )
 
 const processTimeInputToDate = (date: Date, time: string) => {
@@ -55,6 +58,7 @@ export default function EditAppointmentForm() {
     formState: { errors },
   } = useForm<z.infer<typeof zodSchema>>({
     resolver: zodResolver(zodSchema),
+    mode: "onChange",
     reValidateMode: "onChange",
   })
   const onSubmit = ({
@@ -73,66 +77,97 @@ export default function EditAppointmentForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Controller
-        control={control}
-        name="date"
-        render={({ field }) => (
-          <Popover>
-            <pre>{JSON.stringify(errors, null, 2)}</pre>
-            <PopoverTrigger asChild>
-              <Button variant={"outline"} className={cn()}>
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {field.value ? (
-                  format(field.value, "PPP")
-                ) : (
-                  <span>Pick a date</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={field.value}
-                onSelect={(date) => field.onChange(date)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        )}
-      />
-      {["startTime", "endTime"].map((inputName) => (
-        <Controller
-          key={inputName}
-          control={control}
-          name={inputName as "startTime" | "endTime"}
-          render={({ field }) => (
-            <Select onValueChange={field.onChange}>
-              <SelectTrigger className="w-fit">
-                <SelectValue placeholder="Time" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[300px]">
-                {flatten(
-                  range(24).map((hour) =>
-                    range(0, 60, 15).map((minute) => {
-                      let date = startOfDay(new Date())
-                      date = setMinutes(date, hour * 60 + minute)
-                      const formattedTime = format(date, "hh:mm aa")
-                      return (
-                        <SelectItem value={formattedTime} key={formattedTime}>
-                          {formattedTime}
-                        </SelectItem>
-                      )
-                    }),
-                  ),
-                )}
-              </SelectContent>
-            </Select>
-          )}
-        />
-      ))}
-
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2">
+      <div className="flex gap-2">
+        <div className="flex flex-col">
+          <Controller
+            control={control}
+            name="date"
+            render={({ field }) => (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant={"outline"} className={cn()}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {field.value ? (
+                      format(field.value, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={(date) => field.onChange(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
+          />
+          {errors.date && <div>{errors.date.message}</div>}
+        </div>
+        <div className="flex flex-col">
+          <TimeControlledInput
+            control={control}
+            name="startTime"
+            placeholder="Start Time"
+          />
+          {errors.startTime && <div>{errors.startTime.message}</div>}
+        </div>
+        <div className="flex flex-col">
+          <TimeControlledInput
+            control={control}
+            name="endTime"
+            placeholder="End Time"
+          />
+          {errors.endTime && <div>{errors.endTime.message}</div>}
+        </div>
+      </div>
+      {errors.globalErrors && <div>{errors.globalErrors.message}</div>}
       <Button type="submit">submit</Button>
     </form>
+  )
+}
+
+interface TimeControlledInputProps {
+  control: Control<z.infer<typeof zodSchema>>
+  name: "startTime" | "endTime"
+  placeholder: string
+}
+function TimeControlledInput({
+  control,
+  name,
+  placeholder,
+}: TimeControlledInputProps) {
+  return (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <Select onValueChange={field.onChange}>
+          <SelectTrigger className="w-fit">
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent className="max-h-[300px]">
+            {flatten(
+              range(24).map((hour) =>
+                range(0, 60, 15).map((minute) => {
+                  let date = startOfDay(new Date())
+                  date = setMinutes(date, hour * 60 + minute)
+                  const formattedTime = format(date, "hh:mm aa")
+                  return (
+                    <SelectItem value={formattedTime} key={formattedTime}>
+                      {formattedTime}
+                    </SelectItem>
+                  )
+                }),
+              ),
+            )}
+          </SelectContent>
+        </Select>
+      )}
+    />
   )
 }
