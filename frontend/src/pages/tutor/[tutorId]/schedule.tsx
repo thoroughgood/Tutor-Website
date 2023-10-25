@@ -14,6 +14,7 @@ import Link from "next/link"
 import { useRouter } from "next/router"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import toast from "react-hot-toast"
 import { useQuery } from "react-query"
 import { z } from "zod"
 
@@ -30,6 +31,7 @@ export default function Schedule() {
   const tutorId = router.query.tutorId as string
   const isOwnSchedule = user?.userId == tutorId
   const [creatingAppointment, setCreatingAppointment] = useState(false)
+  const [clickedStartTime, setClickedStartTime] = useState<undefined | Date>()
 
   const { data: scheduleData } = useQuery({
     queryKey: ["tutors", tutorId, "schedule"],
@@ -84,8 +86,8 @@ export default function Schedule() {
       </div>
       <WeeklyCalendar
         onCalendarClick={(clickedDate) => {
-          console.log(clickedDate)
           setCreatingAppointment(true)
+          setClickedStartTime(clickedDate)
         }}
         highlightedIntervals={scheduleData || []}
       />
@@ -94,9 +96,19 @@ export default function Schedule() {
         onOpenChange={(open) => setCreatingAppointment(open)}
       >
         <DialogContent className="fade-in-0">
-          <DialogHeader>test</DialogHeader>
+          <DialogHeader>
+            Requesting appointment with {profileData?.name}
+          </DialogHeader>
           <DialogDescription>
-            <EditAppointmentForm />
+            <EditAppointmentForm
+              startTime={clickedStartTime}
+              submitFn={async (start, end) => {
+                await new Promise((resolve) => setTimeout(resolve, 1000))
+                toast(start.toString() + end.toString())
+                return true
+              }}
+              cancelFn={() => {}}
+            />
           </DialogDescription>
         </DialogContent>
       </Dialog>

@@ -10,11 +10,20 @@ import {
 import { Calendar } from "./ui/calendar"
 import { Button } from "./ui/button"
 import { cn } from "@/lib/utils"
-import { CalendarIcon } from "lucide-react"
-import { format, setMinutes, startOfDay } from "date-fns"
-import { flatten, parseInt, range } from "lodash"
+import { ArrowRight, CalendarIcon } from "lucide-react"
+import {
+  addMinutes,
+  format,
+  parse,
+  setMinutes,
+  startOfDay,
+  startOfWeek,
+} from "date-fns"
+import { flatten, range } from "lodash"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
+import LoadingButton from "./loadingButton"
+import { useState } from "react"
 
 const zodSchema = z
   .object({
@@ -26,6 +35,7 @@ const zodSchema = z
   .refine(
     ({ startTime, endTime }) => {
       if (startTime && endTime) {
+        console.log("thwat")
         return (
           processTimeInputToDate(new Date(), startTime) <
           processTimeInputToDate(new Date(), endTime)
@@ -40,45 +50,55 @@ const zodSchema = z
   )
 
 const processTimeInputToDate = (date: Date, time: string) => {
-  const [_, hour, minute, meridiem] = time.match(
-    /^([0-9]{2}):([0-9]{2}) ([A|P]M)/,
-  ) as RegExpMatchArray
-  return setMinutes(
-    startOfDay(date),
-    (parseInt(hour) + meridiem === "PM" ? 12 : 0) + parseInt(minute),
-  )
+  return parse(time, "hh:mm aa", date)
 }
 
-export default function EditAppointmentForm() {
+interface EditAppointmentFormProps {
+  cancelFn: () => void
+  submitFn: (start: Date, end: Date) => Promise<boolean>
+  startTime?: Date
+  endTime?: Date
+}
+export default function EditAppointmentForm({
+  cancelFn,
+  submitFn,
+  startTime,
+  endTime = startTime && addMinutes(startTime, 60),
+}: EditAppointmentFormProps) {
   const {
     control,
     handleSubmit,
     getValues,
     setError,
+    setValue,
     formState: { errors },
   } = useForm<z.infer<typeof zodSchema>>({
     resolver: zodResolver(zodSchema),
     mode: "onChange",
     reValidateMode: "onChange",
+    defaultValues: {
+      date: startTime && startOfDay(startTime),
+      startTime: startTime && format(startTime, "hh:mm aa"),
+      endTime: endTime && format(endTime, "hh:mm aa"),
+    },
   })
-  const onSubmit = ({
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const onSubmit = async ({
     date,
     startTime,
     endTime,
   }: z.infer<typeof zodSchema>) => {
-    console.log("suibmit")
-    // const startTimeDate = processTimeInputToDate(date, startTime)
-    // const endTimeDate = processTimeInputToDate(date, endTime)
-    // if (startTimeDate >= endTimeDate) {
-    //   setError("endTime", {
-    //     message: "End time should be greater than start time.",
-    //   })
-    // }
+    setIsSubmitting(true)
+    await submitFn(
+      processTimeInputToDate(date, startTime),
+      processTimeInputToDate(date, endTime),
+    )
+    setIsSubmitting(false)
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2">
-      <div className="flex gap-2">
+      <div className="flex items-start gap-2">
         <div className="flex flex-col">
           <Controller
             control={control}
@@ -106,7 +126,9 @@ export default function EditAppointmentForm() {
               </Popover>
             )}
           />
-          {errors.date && <div>{errors.date.message}</div>}
+          {errors.date && (
+            <div className="text-destructive">* {errors.date.message}</div>
+          )}
         </div>
         <div className="flex flex-col">
           <TimeControlledInput
@@ -114,19 +136,33 @@ export default function EditAppointmentForm() {
             name="startTime"
             placeholder="Start Time"
           />
-          {errors.startTime && <div>{errors.startTime.message}</div>}
+          {errors.startTime && (
+            <div className="text-destructive">* {errors.startTime.message}</div>
+          )}
         </div>
+        <ArrowRight className="mt-2" />
         <div className="flex flex-col">
           <TimeControlledInput
             control={control}
             name="endTime"
             placeholder="End Time"
           />
-          {errors.endTime && <div>{errors.endTime.message}</div>}
+          {errors.endTime && (
+            <div className="text-destructive">* {errors.endTime.message}</div>
+          )}
         </div>
       </div>
-      {errors.globalErrors && <div>{errors.globalErrors.message}</div>}
-      <Button type="submit">submit</Button>
+      {errors.globalErrors && (
+        <div className="text-destructive">* {errors.globalErrors.message}</div>
+      )}
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant={"ghost"}>
+          Cancel
+        </Button>
+        <LoadingButton isLoading={isSubmitting} type="submit">
+          Submit
+        </LoadingButton>
+      </div>
     </form>
   )
 }
@@ -146,7 +182,7 @@ function TimeControlledInput({
       control={control}
       name={name}
       render={({ field }) => (
-        <Select onValueChange={field.onChange}>
+        <Select onValueChange={field.onChange} defaultValue={field.value}>
           <SelectTrigger className="w-fit">
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
@@ -154,7 +190,7 @@ function TimeControlledInput({
             {flatten(
               range(24).map((hour) =>
                 range(0, 60, 15).map((minute) => {
-                  let date = startOfDay(new Date())
+                  let date = startOfWeek(new Date())
                   date = setMinutes(date, hour * 60 + minute)
                   const formattedTime = format(date, "hh:mm aa")
                   return (
