@@ -8,25 +8,20 @@ import {
 } from "@/components/ui/dialog"
 import WeeklyCalendar from "@/components/weeklyCalendar"
 import useUser from "@/hooks/useUser"
+import { MockAppointmentService } from "@/service/appointmentService"
 import { HTTPProfileService } from "@/service/profileService"
-import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useState } from "react"
-import { useForm } from "react-hook-form"
-import toast from "react-hot-toast"
-import { useQuery } from "react-query"
-import { z } from "zod"
-
-const formSchema = z.object({
-  day: z.string(),
-  startTime: z.string(),
-  endTime: z.string(),
-})
+import { useQuery, useQueryClient } from "react-query"
 
 const profileService = new HTTPProfileService()
 export default function Schedule() {
+  const queryClient = useQueryClient()
   const { user } = useUser()
+  const [appointmentService] = useState(
+    new MockAppointmentService(user?.userId || ""),
+  )
   const router = useRouter()
   const tutorId = router.query.tutorId as string
   const isOwnSchedule = user?.userId == tutorId
@@ -58,13 +53,18 @@ export default function Schedule() {
     refetchOnWindowFocus: false,
   })
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const { data: appointmentData } = useQuery({
+    queryKey: ["tutors", tutorId, "appointments"],
+    queryFn: () => appointmentService.getTutorAppointments(tutorId),
   })
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values)
-  }
-  console.log("what")
+
+  const yourAppointmentTimes: Interval[] =
+    appointmentData?.yourAppointments.map((appointment) => ({
+      start: appointment.startTime,
+      end: appointment.endTime,
+    })) || []
+
+  const onCalendarClick = (date: Date) => {}
   return (
     <div className="relative flex h-full w-full flex-col gap-10 overflow-hidden p-10">
       <div className="flex gap-4">
@@ -86,10 +86,12 @@ export default function Schedule() {
       </div>
       <WeeklyCalendar
         onCalendarClick={(clickedDate) => {
+          console.log("what")
           setCreatingAppointment(true)
           setClickedStartTime(clickedDate)
         }}
-        highlightedIntervals={scheduleData || []}
+        // highlightedIntervals={scheduleData || []}
+        highlightedIntervals={yourAppointmentTimes || []}
       />
       <Dialog
         open={creatingAppointment}
@@ -99,15 +101,18 @@ export default function Schedule() {
           <DialogHeader>
             Requesting appointment with {profileData?.name}
           </DialogHeader>
-          <DialogDescription>
+          <DialogDescription asChild>
             <EditAppointmentForm
               startTime={clickedStartTime}
               submitFn={async (start, end) => {
                 await new Promise((resolve) => setTimeout(resolve, 1000))
-                toast(start.toString() + end.toString())
+                // toast(start.toString() + end.toString())
+                await appointmentService.requestAppointment(tutorId, start, end)
+                setCreatingAppointment(false)
+                queryClient.invalidateQueries({ queryKey: ["tutor"] })
                 return true
               }}
-              cancelFn={() => {}}
+              cancelFn={() => setCreatingAppointment(false)}
             />
           </DialogDescription>
         </DialogContent>

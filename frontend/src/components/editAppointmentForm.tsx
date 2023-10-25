@@ -156,7 +156,7 @@ export default function EditAppointmentForm({
         <div className="text-destructive">* {errors.globalErrors.message}</div>
       )}
       <div className="flex justify-end gap-2">
-        <Button type="button" variant={"ghost"}>
+        <Button onClick={cancelFn} type="button" variant={"ghost"}>
           Cancel
         </Button>
         <LoadingButton isLoading={isSubmitting} type="submit">

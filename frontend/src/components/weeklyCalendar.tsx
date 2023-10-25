@@ -74,7 +74,6 @@ export default function WeeklyCalendar({
       setMinutes(setDay(weekDate, day), hourOfDay * 60),
       { nearestTo: 15 },
     )
-    console.log("inside")
     onCalendarClick(clickedDate)
   }
 
