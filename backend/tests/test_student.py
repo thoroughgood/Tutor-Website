@@ -33,9 +33,9 @@ def test_get_args(
     assert resp.status_code == 200
     assert resp.json["id"] == fake_student.id
     assert resp.json["name"] == "Name1"
-    assert resp.json["profilePicture"] == None
+    assert resp.json["profilePicture"] is None
     assert resp.json["location"] == "Australia"
-    assert resp.json["phoneNumber"] == None
+    assert resp.json["phoneNumber"] is None
 
 
 ########################### MODIFY PROFILE TESTS ###############################
@@ -77,7 +77,7 @@ def test_modify_args(
 
     # Invalid name
     resp = client.put("/student/profile", json={"name": ""})
-    assert resp.json == {"error": "name field is invalid"}
+    assert resp.json == {"error": "name field must be at least 1 character(s)"}
     assert resp.status_code == 400
 
     # Invalid email
@@ -162,7 +162,7 @@ def test_admin_modify_args(
 
     # Invalid name
     resp = client.put("/student/profile", json={"id": fake_student.id, "name": ""})
-    assert resp.json == {"error": "name field is invalid"}
+    assert resp.json == {"error": "name field must be at least 1 character(s)"}
     assert resp.status_code == 400
 
     # Invalid email

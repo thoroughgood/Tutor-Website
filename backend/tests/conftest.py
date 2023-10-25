@@ -12,7 +12,13 @@ import os
 from pathlib import Path
 
 # unused import for mocking purposes during tests
-from prisma.actions import UserActions, TutorActions, SubjectActions
+from prisma.actions import (
+    UserActions,
+    TutorActions,
+    SubjectActions,
+    AdminActions,
+    StudentActions,
+)
 
 # hack to import a root level file and be able to run pytest from any dir
 # source: https://www.geeksforgeeks.org/python-import-from-parent-directory/
@@ -99,6 +105,21 @@ def find_many_tutors_mock(mocker: MockerFixture) -> MockType:
 
 
 @pytest.fixture
+def find_many_users_mock(mocker: MockerFixture) -> MockType:
+    return mocker.patch("tests.conftest.UserActions.find_many")
+
+
+@pytest.fixture
+def find_many_students_mock(mocker: MockerFixture) -> MockType:
+    return mocker.patch("tests.conftest.StudentActions.find_many")
+
+
+@pytest.fixture
+def find_many_admins_mock(mocker: MockerFixture) -> MockType:
+    return mocker.patch("tests.conftest.AdminActions.find_many")
+
+
+@pytest.fixture
 def fake_user():
     def __fake_user(email: str, pword: str, type: str) -> models.User:
         id = str(uuid4())
@@ -111,23 +132,28 @@ def fake_user():
                     hashedPassword=sha256(pword.encode()).hexdigest(),
                     studentInfo=models.Student(id=id, userInfoId=id),
                 )
+                user.studentInfo = models.Student(id=id, userInfoId=id, userInfo=user)
                 return user
             case "tutor":
-                return models.User(
+                user = models.User(
                     id=id,
                     name="name",
                     email=email,
                     hashedPassword=sha256(pword.encode()).hexdigest(),
                     tutorInfo=models.Tutor(id=id, userInfoId=id),
                 )
+                user.tutorInfo = models.Tutor(id=id, userInfoId=id, userInfo=user)
+                return user
             case "admin":
-                return models.User(
+                user = models.User(
                     id=id,
                     name="name",
                     email=email,
                     hashedPassword=sha256(pword.encode()).hexdigest(),
                     adminInfo=models.Admin(id=id, userInfoId=id),
                 )
+                user.adminInfo = models.Admin(id=id, userInfoId=id, userInfo=user)
+                return user
             case _:
                 return models.User(
                     id=id, name="name", email=email, hashedPassword=pword

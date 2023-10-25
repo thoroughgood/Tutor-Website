@@ -30,3 +30,18 @@ Wrote tests for login and logout
 Wrote tests for Student Profile
 Written code for resetpassword
 Discussed workload distribution for Sprint 2
+
+Week 5
+Attended regular (daily) standups
+Completed the demonstration in our weekly tutorial
+Fixed up bugs for the code that were written
+Changed some of the backend code according to new frontend requests
+Rewrote tests according to new code
+Attempted to start appointments route for Sprint 2
+
+Week 6
+Attended regular (daily) standups
+Written code for the appointment routes
+Fixed bugs in the previous code (according to frontend)
+Learnt mocker and how to implement mocker tests
+Attempted to write new tests for appointments

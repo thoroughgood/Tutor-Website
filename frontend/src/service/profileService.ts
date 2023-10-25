@@ -75,7 +75,12 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     return await data.json()
   }
   async getTutorProfile(tutorId: string): Promise<TutorProfile> {
-    const resp = wretch(`${this.backendURL}/tutor/${tutorId}`).get()
+    const resp = wretch(`${this.backendURL}/tutor/${tutorId}`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
     return await resp.json()
   }
 
@@ -83,13 +88,33 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     tutorProfile: TutorSelfEditReqBody,
   ): Promise<SuccessResponse> {
     const resp = wretch(`${this.backendURL}/tutor/profile`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
       .json(tutorProfile)
       .put()
     return resp.json()
   }
 
+  async deleteOwnTutorProfile(tutorId: string): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/tutor/`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({})
+      .delete()
+    return await resp.json()
+  }
+
   async getStudentProfile(studentId: string): Promise<StudentProfile> {
-    const resp = wretch(`${this.backendURL}/student/${studentId}`).get()
+    const resp = wretch(`${this.backendURL}/student/${studentId}`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
     return await resp.json()
   }
 
@@ -97,9 +122,23 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     studentProfile: StudentSelfEditReqBody,
   ): Promise<SuccessResponse> {
     const resp = wretch(`${this.backendURL}/student/profile`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
       .json(studentProfile)
       .put()
     return resp.json()
+  }
+  async deleteOwnStudentProfile(studentId: string): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/student/`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({})
+      .delete()
+    return await resp.json()
   }
 }
 
@@ -148,6 +187,10 @@ export class MockProfileService implements ProfileService {
 
   async setOwnTutorProfile(tutorProfile: TutorSelfEditReqBody) {
     this.mockTutorProfile = { ...tutorProfile, id: "1337" }
+    return { success: true }
+  }
+
+  async deleteOwnTutorProfile(tutorId: string) {
     return { success: true }
   }
 
