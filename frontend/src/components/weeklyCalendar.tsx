@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils"
-import { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import {
   setDay,
   setWeek,
@@ -13,18 +13,25 @@ import {
   startOfWeek,
   setMinutes,
   roundToNearestMinutes,
+  min,
 } from "date-fns"
 import { Button } from "./ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
+interface InteractiveInterval {
+  interval: Interval
+  title?: string
+  componentProps: React.ComponentProps<"div">
+}
+
 interface WeeklyCalendarProps {
   className?: string
-  highlightedIntervals: Interval[]
+  interactiveIntervals: InteractiveInterval[]
   onCalendarClick?: (dateClicked: Date) => void
 }
 export default function WeeklyCalendar({
   className,
-  highlightedIntervals,
+  interactiveIntervals,
   onCalendarClick = () => {},
 }: WeeklyCalendarProps) {
   // Below required for scrolling the axis labels
@@ -151,7 +158,7 @@ export default function WeeklyCalendar({
           }}
           ref={scrollRef}
           className={cn(
-            "grid h-full w-full grid-cols-[repeat(7,minmax(100px,1fr))] overflow-auto border",
+            "grid h-full w-full grid-cols-[repeat(7,minmax(100px,1fr))] overflow-auto ",
             className,
           )}
         >
@@ -161,7 +168,7 @@ export default function WeeklyCalendar({
               <DayCol
                 date={setDay(weekDate, dayIndex)}
                 key={dayIndex}
-                highlightedIntervals={highlightedIntervals}
+                interactiveIntervals={interactiveIntervals}
               />
             )
           })}
@@ -176,9 +183,9 @@ interface DayColProps {
   style?: React.CSSProperties
   className?: string
   date: Date
-  highlightedIntervals: Interval[]
+  interactiveIntervals: InteractiveInterval[]
 }
-function DayCol({ className, style, highlightedIntervals, date }: DayColProps) {
+function DayCol({ className, style, interactiveIntervals, date }: DayColProps) {
   const dayInterval = {
     start: startOfDay(date),
     end: endOfDay(date),
@@ -198,48 +205,66 @@ function DayCol({ className, style, highlightedIntervals, date }: DayColProps) {
   }, [])
 
   // remove any intervals that dont occur within this day
-  highlightedIntervals = highlightedIntervals.filter((interval) =>
-    areIntervalsOverlapping(dayInterval, interval),
+  interactiveIntervals = interactiveIntervals.filter((interval) =>
+    areIntervalsOverlapping(dayInterval, interval.interval),
   )
 
   // little bit of math to calculate x offset and height of absolute positioned interval elements
-  const intervalElements = highlightedIntervals.map((interval) => {
-    const startY =
-      (differenceInMinutes(interval.start, startOfDay(date)) / MINUTES_IN_DAY) *
-      colHeight
-    const height =
-      (differenceInMinutes(interval.end, interval.start) / MINUTES_IN_DAY) *
-      colHeight
+  const intervalElements = interactiveIntervals.map(
+    ({ interval, title, componentProps: { className, ...componentProps } }) => {
+      const startY =
+        (differenceInMinutes(interval.start, startOfDay(date)) /
+          MINUTES_IN_DAY) *
+        colHeight
+      const height =
+        (differenceInMinutes(
+          min([interval.end, endOfDay(dayInterval.end)]),
+          interval.start,
+        ) /
+          MINUTES_IN_DAY) *
+        colHeight
 
-    return (
-      <div
-        key={interval.start.toString()}
-        className="absolute w-full bg-green-600/90 p-2 text-sm font-bold text-green-50"
-        style={{
-          height,
-          transform: `translateY(${startY}px)`,
-        }}
-      >
-        {`${format(interval.start, "h:mmaaa")} – ${format(
-          interval.end,
-          "h:mmaaa",
-        )}`}
-      </div>
-    )
-  })
+      return (
+        <div
+          key={interval.start.toString()}
+          className={cn(
+            "absolute flex w-full flex-col bg-gray-400 p-2 text-xs",
+            className,
+          )}
+          style={{
+            height,
+            transform: `translateY(${startY}px)`,
+          }}
+          {...componentProps}
+        >
+          {title && <h4 className="font-bold">{title}</h4>}
+          {`${format(interval.start, "h:mmaaa")} – ${format(
+            interval.end,
+            "h:mmaaa",
+          )}`}
+        </div>
+      )
+    },
+  )
   return (
     <div
       ref={colRef}
       style={style}
       className={cn(
-        "relative grid grid-rows-[repeat(24,1fr)] border",
+        "relative grid grid-rows-[repeat(24,1fr)] border border-zinc-100",
         className,
       )}
     >
       {intervalElements}
       {Array.from(Array(24).keys()).map((hourIndex) => {
-        return <div key={hourIndex} className={cn("min-h-[75px] border")} />
+        return (
+          <div
+            key={hourIndex}
+            className={cn("min-h-[75px] border border-zinc-100")}
+          />
+        )
       })}
+      <div className="absolute -z-20 h-full w-full bg-zinc-300" />
     </div>
   )
 }

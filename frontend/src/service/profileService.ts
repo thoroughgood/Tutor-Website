@@ -2,6 +2,7 @@ import TutorProfile from "@/pages/tutor/[tutorId]"
 import wretch from "wretch"
 import { SuccessResponse } from "./types"
 import { HTTPService } from "./helpers"
+import { addHours } from "date-fns"
 
 interface UserProfile {
   id: string
@@ -154,20 +155,16 @@ export class MockProfileService implements ProfileService {
     courseOfferings: ["COMP2041", "COMP6080"],
     timesAvailable: [
       {
-        startTime: "2023-10-08T12:51:28+11:00",
-        endTime: "2023-10-08T13:51:28+11:00",
+        startTime: addHours(new Date(), 24).toISOString(),
+        endTime: addHours(new Date(), 25).toISOString(),
       },
       {
-        startTime: "2023-10-09T12:00:28+11:00",
-        endTime: "2023-10-09T15:00:28+11:00",
+        startTime: addHours(new Date(), 48).toISOString(),
+        endTime: addHours(new Date(), 54).toISOString(),
       },
       {
-        startTime: "2023-10-09T17:00:28+11:00",
-        endTime: "2023-10-09T20:00:28+11:00",
-      },
-      {
-        startTime: "2023-10-11T17:00:28+11:00",
-        endTime: "2023-10-11T20:00:28+11:00",
+        startTime: addHours(new Date(), 32).toISOString(),
+        endTime: addHours(new Date(), 38).toISOString(),
       },
     ],
   }

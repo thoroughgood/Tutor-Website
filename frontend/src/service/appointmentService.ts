@@ -41,7 +41,7 @@ export class MockAppointmentService implements AppointmentService {
       endTime: endTime ? endTime : addHours(new Date(), 1),
       studentId: this.userId,
       tutorId: tutorId ? tutorId : nanoid(),
-      tutorAccepted: false,
+      tutorAccepted: Math.random() > 0.5,
     }
     this.yourAppointments.push(newAppointment)
     return newAppointment
