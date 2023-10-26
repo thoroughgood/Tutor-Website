@@ -81,7 +81,7 @@ export default function Edit() {
   const isOwnProfile = tutorId === user?.userId
   const [submitLoading, setSubmitLoading] = useState(false)
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isError } = useQuery({
     queryKey: ["tutors", tutorId],
     queryFn: () => profileService.getTutorProfile(tutorId),
     refetchOnWindowFocus: false,
@@ -110,9 +110,12 @@ export default function Edit() {
       form.setValue("profilePicture", "")
     }
   }, [data, form])
-
   if (!data) {
-    return <div> Loading Screen </div>
+    return (
+      <div className="grid h-full w-full  place-content-center overflow-hidden p-16">
+        Loading Screen
+      </div>
+    )
   }
 
   const courses: string[] = []
@@ -161,10 +164,6 @@ export default function Edit() {
     }
     queryClient.invalidateQueries({ queryKey: ["tutors", tutorId] })
     setSubmitLoading(false)
-  }
-
-  if (isLoading) {
-    return <div>Loading screen</div>
   }
 
   if (isError) {
