@@ -35,7 +35,6 @@ const zodSchema = z
   .refine(
     ({ startTime, endTime }) => {
       if (startTime && endTime) {
-        console.log("thwat")
         return (
           processTimeInputToDate(new Date(), startTime) <
           processTimeInputToDate(new Date(), endTime)

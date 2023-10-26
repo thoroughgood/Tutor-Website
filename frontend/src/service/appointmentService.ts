@@ -47,7 +47,6 @@ export class MockAppointmentService implements AppointmentService {
     return newAppointment
   }
   async requestAppointment(tutorId: string, start: Date, end: Date) {
-    console.log(this.yourAppointments)
     return this.generateMockAppointment(tutorId, start, end)
   }
 

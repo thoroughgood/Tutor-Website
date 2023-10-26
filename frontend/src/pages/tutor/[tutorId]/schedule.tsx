@@ -74,7 +74,6 @@ export default function Schedule() {
     queryKey: ["tutors", tutorId, "appointments"],
     queryFn: () => appointmentService.getTutorAppointments(tutorId),
   })
-  console.log(scheduleData)
 
   return (
     <div className="relative flex h-full w-full flex-col gap-10 overflow-hidden p-10">

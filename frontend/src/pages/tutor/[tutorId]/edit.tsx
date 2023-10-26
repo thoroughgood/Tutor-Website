@@ -145,7 +145,7 @@ export default function Edit() {
         location: values.location,
         phoneNumber: values.phoneNumber,
         courseOfferings: courses,
-        timeAvailable: data?.timeAvailable,
+        timesAvailable: data?.timesAvailable,
       }
 
       if (values.phoneNumber.length === 0) {
@@ -160,7 +160,6 @@ export default function Edit() {
       const id = await profileService.setOwnTutorProfile(tutorObj)
     } catch (error) {
       toast.error(getErrorMessage(error))
-      console.log(values)
     }
     queryClient.invalidateQueries({ queryKey: ["tutors", tutorId] })
     setSubmitLoading(false)
