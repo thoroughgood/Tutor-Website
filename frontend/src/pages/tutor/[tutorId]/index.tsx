@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import useUser from "@/hooks/useUser"
 import { HTTPProfileService } from "@/service/profileService"
 import { Calendar, MessageCircle, User } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/router"
 import { useQuery } from "react-query"
 
@@ -39,10 +40,13 @@ export default function TutorProfile() {
         <div className="grid grid-cols-2 gap-2">
           {isOwnProfile ? (
             <>
-              <Button variant="secondary" className="flex gap-2">
-                <User className="w-5" />
-                Edit Profile
+              <Button asChild variant="secondary" className="flex gap-2">
+                <Link className="" href={`${user?.userId}/edit`}>
+                  <User className="w-5" />
+                  Edit Profile
+                </Link>
               </Button>
+
               <Button variant="default" className="flex gap-2">
                 <Calendar className="w-5" />
                 Edit Schedule
@@ -54,9 +58,11 @@ export default function TutorProfile() {
                 <MessageCircle className="w-5" />
                 Message Tutor
               </Button>
-              <Button variant="default" className="flex gap-2">
-                <Calendar className="w-5" />
-                Create Appointment
+              <Button asChild variant="default" className="flex gap-2">
+                <Link href={`/tutor/${tutorId}/schedule`}>
+                  <Calendar className="w-5" />
+                  Create Appointment
+                </Link>
               </Button>
             </>
           )}
