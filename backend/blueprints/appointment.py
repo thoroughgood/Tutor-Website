@@ -21,12 +21,12 @@ def appointment_accept(args):
 
     tutor = tutor_view(id=session["user_id"])
     if not tutor:
-        raise ExpectedError("Insufficient permission to modify appointments", 403)
+        raise ExpectedError("Must be a tutor to modify appointments", 403)
 
     try:
         appointment = Appointment.prisma().update(
             where={"id": args["id"], "tutorId": tutor.id},
-            data={"tutorAccepted": args["accepted"]},
+            data={"tutorAccepted": args["accept"]},
         )
     except RecordNotFoundError:
         raise ExpectedError(
