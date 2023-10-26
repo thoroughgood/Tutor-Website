@@ -157,6 +157,7 @@ export default function Edit() {
       if (values.profilePicture.length === 0) {
         tutorObj.profilePicture = null
       }
+      console.log("before")
       const id = await profileService.setOwnTutorProfile(tutorObj)
     } catch (error) {
       toast.error(getErrorMessage(error))

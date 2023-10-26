@@ -20,7 +20,19 @@ export default function Appointments() {
   })
   return (
     <div className="relative h-full w-full overflow-hidden p-16">
-      <WeeklyCalendar interactiveIntervals={[]} />
+      <WeeklyCalendar
+        onCalendarMouseMove={(date) => console.log(date)}
+        onCalendarMouseUp={(date) => console.log("up")}
+        onCalendarMouseLeave={() => console.log("lave")}
+        interactiveIntervals={
+          data?.map((interval) => ({
+            interval: interval,
+            componentProps: {
+              className: "bg-white -z-10 text-white/0 select-none",
+            },
+          })) || []
+        }
+      />
     </div>
   )
 }

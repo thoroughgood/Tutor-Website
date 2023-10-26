@@ -28,11 +28,19 @@ interface WeeklyCalendarProps {
   className?: string
   interactiveIntervals: InteractiveInterval[]
   onCalendarClick?: (dateClicked: Date) => void
+  onCalendarMouseDown?: (date: Date) => void
+  onCalendarMouseMove?: (date: Date) => void
+  onCalendarMouseUp?: (date: Date) => void
+  onCalendarMouseLeave?: () => void
 }
 export default function WeeklyCalendar({
   className,
   interactiveIntervals,
   onCalendarClick = () => {},
+  onCalendarMouseDown = () => {},
+  onCalendarMouseMove = () => {},
+  onCalendarMouseUp = () => {},
+  onCalendarMouseLeave = () => {},
 }: WeeklyCalendarProps) {
   // Below required for scrolling the axis labels
   const [calHeight, setCalHeight] = useState(0)
@@ -70,7 +78,7 @@ export default function WeeklyCalendar({
     return () => window.removeEventListener("resize", onResize)
   }, [])
 
-  const handleCalendarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const getDateFromMouseEvent = (e: React.MouseEvent<HTMLDivElement>) => {
     const divElement = e.currentTarget
     const rect = divElement.getBoundingClientRect()
     const x = e.clientX - rect.left + divElement.scrollLeft
@@ -81,7 +89,11 @@ export default function WeeklyCalendar({
       setMinutes(setDay(weekDate, day), hourOfDay * 60),
       { nearestTo: 15 },
     )
-    onCalendarClick(clickedDate)
+    return clickedDate
+  }
+
+  const handleCalendarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    onCalendarClick(getDateFromMouseEvent(e))
   }
 
   return (
@@ -151,6 +163,10 @@ export default function WeeklyCalendar({
         {/* Actual Calendar */}
         <div
           onClick={handleCalendarClick}
+          onMouseMove={(e) => onCalendarMouseMove(getDateFromMouseEvent(e))}
+          onMouseUp={(e) => onCalendarMouseUp(getDateFromMouseEvent(e))}
+          onMouseDown={(e) => onCalendarMouseDown(getDateFromMouseEvent(e))}
+          onMouseLeave={onCalendarMouseLeave}
           onScroll={(e) => {
             // Scrolling the x and y axis (necessary since we want them to be sticky as well)
             sideRef.current?.scrollTo(0, e.currentTarget.scrollTop)
