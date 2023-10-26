@@ -47,7 +47,7 @@ def get_profile(tutor_id):
     if tutor.documents is None:
         documents = []
     else:
-        documents = tutor.documents
+        documents = list(map(lambda d: d.id, tutor.documents))
 
     return jsonify(
         {
