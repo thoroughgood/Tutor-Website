@@ -228,7 +228,7 @@ function DayCol({ className, style, interactiveIntervals, date }: DayColProps) {
         <div
           key={interval.start.toString()}
           className={cn(
-            "absolute flex w-full flex-col bg-gray-400 p-2 text-xs",
+            "absolute flex w-full flex-col bg-gray-400 p-2 text-xs ",
             className,
           )}
           style={{
@@ -251,7 +251,7 @@ function DayCol({ className, style, interactiveIntervals, date }: DayColProps) {
       ref={colRef}
       style={style}
       className={cn(
-        "relative grid grid-rows-[repeat(24,1fr)] border border-zinc-100",
+        "relative grid grid-rows-[repeat(24,1fr)] border border-black/50",
         className,
       )}
     >
@@ -260,11 +260,11 @@ function DayCol({ className, style, interactiveIntervals, date }: DayColProps) {
         return (
           <div
             key={hourIndex}
-            className={cn("min-h-[75px] border border-zinc-100")}
+            className={cn("min-h-[75px] border border-black/10")}
           />
         )
       })}
-      <div className="absolute -z-20 h-full w-full bg-zinc-300" />
+      <div className="absolute -z-20 h-full w-full bg-red-100" />
     </div>
   )
 }

@@ -111,9 +111,9 @@ export default function Schedule() {
             } with Daniel Nguyen`,
             componentProps: {
               className: cn(
-                "bg-green-500/20 border border-green-500",
+                "bg-green-300/40 border border-green-500",
                 !appointment.tutorAccepted &&
-                  "bg-slate-500/20 border-dashed border-slate-500",
+                  "bg-slate-300/40 border-dashed border-slate-500",
               ),
               onClick: (e: React.SyntheticEvent) => {
                 e.stopPropagation()
