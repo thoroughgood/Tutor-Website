@@ -129,17 +129,9 @@ function AdminLinks() {
       <SidebarLink href={"/create"}>
         <Plus strokeWidth={1.75} /> Admin Generator
       </SidebarLink>
-      <SidebarLink href="/findTutor">
+      <SidebarLink href="/findUser">
         <Search />
         Find Tutors
-      </SidebarLink>
-      <SidebarLink href="/messages">
-        <MessageSquare />
-        Messages
-      </SidebarLink>
-      <SidebarLink href={`/student/${user?.userId}`}>
-        <User />
-        Profile
       </SidebarLink>
     </>
   )
