@@ -207,7 +207,6 @@ def addingTimes(times_available, tutor_id):
 @tutor.route("/<tutor_id>/appointments", methods=["GET"])
 @error_decorator
 def get_tutor_appointments(tutor_id):
-    # ***find out how to check if id was provided in route params
 
     tutor = tutor_view(id=tutor_id)
 
@@ -219,7 +218,7 @@ def get_tutor_appointments(tutor_id):
     other = []
 
     for appointment in tutor.appointments:
-        ## **** need clarification on whether past appointments are included in return
+
         if "user_id" not in session or appointment.studentId != session["user_id"]:
             other.append(appointment.id)
         elif appointment.studentId == session["user_id"]:
@@ -231,7 +230,6 @@ def get_tutor_appointments(tutor_id):
                 "yourAppointments": yourAppointments,
                 "other": other,
             }
-
         ),
         200,
     )
