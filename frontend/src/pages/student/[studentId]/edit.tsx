@@ -99,7 +99,11 @@ export default function Edit() {
   }, [data, form])
 
   if (!data) {
-    return <div> loading screen </div>
+    return (
+      <div className="grid h-full w-full  place-content-center overflow-hidden p-16">
+        Loading Screen
+      </div>
+    )
   }
 
   const courses: string[] = []
@@ -224,52 +228,51 @@ export default function Edit() {
       </div>
     </div>
   )
+}
+interface CustomFormFieldProps {
+  form: UseFormReturn<z.infer<typeof formSchema>, any, undefined>
+  name: keyof z.infer<typeof formSchema>
+  label: string
+  inputType?: string
+  defaultValue?: string
+  formDescription?: string
+}
 
-  interface CustomFormFieldProps {
-    form: UseFormReturn<z.infer<typeof formSchema>, any, undefined>
-    name: keyof z.infer<typeof formSchema>
-    label: string
-    inputType?: string
-    defaultValue?: string
-    formDescription?: string
-  }
-
-  function CustomFormField({
-    label,
-    form,
-    name,
-    inputType,
-    formDescription,
-  }: CustomFormFieldProps) {
-    return formDescription ? (
-      <FormField
-        control={form.control}
-        name={name}
-        render={({ field }) => (
-          <FormItem>
-            <Label>{label}</Label>
-            <FormControl>
-              <Input {...field} type={inputType} />
-            </FormControl>
-            <FormDescription>{formDescription}</FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    ) : (
-      <FormField
-        control={form.control}
-        name={name}
-        render={({ field }) => (
-          <FormItem>
-            <Label>{label}</Label>
-            <FormControl>
-              <Input {...field} type={inputType} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    )
-  }
+function CustomFormField({
+  label,
+  form,
+  name,
+  inputType,
+  formDescription,
+}: CustomFormFieldProps) {
+  return formDescription ? (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <Label>{label}</Label>
+          <FormControl>
+            <Input {...field} type={inputType} />
+          </FormControl>
+          <FormDescription>{formDescription}</FormDescription>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  ) : (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <Label>{label}</Label>
+          <FormControl>
+            <Input {...field} type={inputType} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  )
 }
