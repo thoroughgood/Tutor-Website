@@ -361,6 +361,202 @@ def test_request_args(
     assert resp.json["tutorAccepted"] == False
 
 
+############################### DELETE TESTS ###################################
+
+
+def test_delete_args(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock,
+    fake_tutor2: User,
+    fake_appointment: Appointment,
+):
+    client = setup_test
+
+    # No JSON Body
+    resp = client.delete("/appointment")
+    assert resp.json == {"error": "content-type was not json or data was malformed"}
+    assert resp.status_code == 415
+
+    # No logged in user
+    resp = client.delete("/appointment", json={})
+    assert resp.json == {"error": "No user is logged in"}
+    assert resp.status_code == 401
+
+    client.post(
+        "/login",
+        json={
+            "email": fake_tutor2.email,
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_tutor2.email}, include=mocker.ANY
+    )
+
+    # Missing id
+    resp = client.delete("/appointment", json={})
+    assert resp.json == {"error": "id field was missing"}
+    assert resp.status_code == 400
+
+    resp = client.delete("/appointment", json={"id": "123"})
+    assert resp.json == {"error": "Appointment does not exist"}
+    assert resp.status_code == 404
+
+    find = mocker.patch("tests.conftest.AppointmentActions.find_unique")
+    find.return_value = fake_appointment
+
+    delete = mocker.patch("tests.conftest.AppointmentActions.delete")
+    resp = client.delete("/appointment", json={"id": fake_appointment.id})
+    delete.assert_called()
+
+    assert resp.status_code == 200
+    assert resp.json["success"] == True
+
+
+############################### MODIFY TESTS ###################################
+
+
+def test_modify_args(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock,
+    fake_tutor2: User,
+    fake_appointment: Appointment,
+):
+    client = setup_test
+
+    # No JSON Body
+    resp = client.put("/appointment")
+    assert resp.json == {"error": "content-type was not json or data was malformed"}
+    assert resp.status_code == 415
+
+    # No logged in user
+    resp = client.put("/appointment", json={})
+    assert resp.json == {"error": "No user is logged in"}
+    assert resp.status_code == 401
+
+    client.post(
+        "/login",
+        json={
+            "email": fake_tutor2.email,
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_tutor2.email}, include=mocker.ANY
+    )
+
+    # Missing id
+    resp = client.put("/appointment", json={})
+    assert resp.json == {"error": "id field was missing"}
+    assert resp.status_code == 400
+
+    # Missing start time
+    resp = client.put("/appointment", json={"id": "123"})
+    assert resp.json == {"error": "startTime field was missing"}
+    assert resp.status_code == 400
+
+    # Missing end time
+    resp = client.put(
+        "/appointment", json={"id": "123", "startTime": "2023-10-20T00:00:00+00:00"}
+    )
+    assert resp.json == {"error": "endTime field was missing"}
+    assert resp.status_code == 400
+
+    # Invalid time (invalid start time format)
+    resp = client.put(
+        "/appointment",
+        json={
+            "id": "123",
+            "startTime": "2023",
+            "endTime": "2024-10-20T01:00:00+00:00",
+        },
+    )
+    assert resp.json == {"error": "timeRange field(s) were malformed"}
+    assert resp.status_code == 400
+
+    # Invalid time (invalid end time format)
+    resp = client.put(
+        "/appointment",
+        json={
+            "id": "123",
+            "startTime": "2024-10-20T00:00:00+00:00",
+            "endTime": "2023",
+        },
+    )
+    assert resp.json == {"error": "timeRange field(s) were malformed"}
+    assert resp.status_code == 400
+
+    # Invalid time (invalid both time format)
+    resp = client.put(
+        "/appointment",
+        json={
+            "id": "123",
+            "startTime": "2023",
+            "endTime": "2024",
+        },
+    )
+    assert resp.json == {"error": "timeRange field(s) were malformed"}
+    assert resp.status_code == 400
+
+    # Invalid end time (et < st)
+    resp = client.put(
+        "/appointment",
+        json={
+            "id": "123",
+            "startTime": "2024-10-20T01:00:00+00:00",
+            "endTime": "2024-10-20T00:00:00+00:00",
+        },
+    )
+    assert resp.json == {"error": "endTime cannot be less than startTime"}
+    assert resp.status_code == 400
+
+    # Invalid start time (st > now)
+    resp = client.put(
+        "/appointment",
+        json={
+            "id": "123",
+            "startTime": "2022-10-20T01:00:00+00:00",
+            "endTime": "2024-10-20T00:00:00+00:00",
+        },
+    )
+    assert resp.json == {"error": "startTime must be in the future"}
+    assert resp.status_code == 400
+
+    # Invalid tutor id
+    resp = client.put(
+        "/appointment",
+        json={
+            "id": "123",
+            "startTime": "2024-11-20T00:00:00+00:00",
+            "endTime": "2024-11-20T01:00:00+00:00",
+        },
+    )
+    assert resp.json == {"error": "Appointment does not exist"}
+    assert resp.status_code == 404
+
+    find = mocker.patch("tests.conftest.AppointmentActions.find_unique")
+    find.return_value = fake_appointment
+
+    update = mocker.patch("tests.conftest.AppointmentActions.update")
+    resp = client.put(
+        "/appointment",
+        json={
+            "id": fake_appointment.id,
+            "startTime": "2024-11-20T00:00:00+00:00",
+            "endTime": "2024-11-20T01:00:00+00:00",
+        },
+    )
+    update.assert_called()
+    assert resp.json == {"success": True}
+    assert resp.status_code == 200
+
+
 ############################### RATING TESTS ###################################
 
 
