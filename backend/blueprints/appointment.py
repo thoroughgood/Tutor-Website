@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, session
 from prisma.errors import RecordNotFoundError
 from prisma.models import User, Student, Tutor, Appointment, Rating
 from jsonschemas.appointment_accept_schema import appointment_accept_schema
+from helpers.process_time_block import process_time_block
 from uuid import uuid4
 from datetime import datetime
 from helpers.views import student_view, tutor_view
@@ -68,16 +69,11 @@ def a_request():
     if "tutorId" not in args:
         raise ExpectedError("Tutor id field was missing", 400)
 
-    try:
-        st = datetime.fromisoformat(args["startTime"])
-        et = datetime.fromisoformat(args["endTime"])
-    except ValueError:
-        raise ExpectedError("timeRange field(s) were malformed", 400)
-
-    if not st < et:
-        raise ExpectedError("endTime cannot be less than startTime", 400)
-    elif st.replace(tzinfo=None) < datetime.now():
-        raise ExpectedError("startTime must be in the future", 400)
+    data = process_time_block(
+        {"startTime": args["startTime"], "endTime": args["endTime"]}
+    )
+    st = data["startTime"]
+    et = data["endTime"]
 
     tutor = tutor_view(id=args["tutorId"])
     if not tutor:
@@ -108,10 +104,10 @@ def a_request():
         }
     )
 
-    Student.prisma().update(
-        where={"id": session["user_id"]},
-        data={"appointments": {"connect": {"id": appointment.id}}},
-    )
+    # Student.prisma().update(
+    #     where={"id": session["user_id"]},
+    #     data={"appointments": {"connect": {"id": appointment.id}}},
+    # )
 
     return (
         jsonify(
@@ -150,7 +146,6 @@ def delete():
     if tutor.appointments is None or appointment not in tutor.appointments:
         raise ExpectedError("Logged in user is not the tutor of the appointment", 403)
 
-    tutor.appointments.remove(appointment)
     Appointment.prisma().delete(where={"id": args["id"]})
 
     return jsonify({"success": True}), 200
@@ -173,16 +168,11 @@ def modify():
     if "endTime" not in args or len(str(args["endTime"]).lower().strip()) == 0:
         raise ExpectedError("endTime field was missing", 400)
 
-    try:
-        st = datetime.fromisoformat(args["startTime"])
-        et = datetime.fromisoformat(args["endTime"])
-    except ValueError:
-        raise ExpectedError("timeRange field(s) were malformed", 400)
-
-    if not st < et:
-        raise ExpectedError("endTime cannot be less than startTime", 400)
-    elif st.replace(tzinfo=None) < datetime.now():
-        raise ExpectedError("startTime must be in the future", 400)
+    data = process_time_block(
+        {"startTime": args["startTime"], "endTime": args["endTime"]}
+    )
+    st = data["startTime"]
+    et = data["endTime"]
 
     tutor = tutor_view(id=session["user_id"])
     if not tutor:

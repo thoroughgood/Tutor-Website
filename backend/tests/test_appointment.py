@@ -221,7 +221,7 @@ def test_request_args(
             "tutorId": "1",
         },
     )
-    assert resp.json == {"error": "timeRange field(s) were malformed"}
+    assert resp.json == {"error": "startTime and/or endTime field(s) was malformed"}
     assert resp.status_code == 400
 
     # Invalid time (invalid end time format)
@@ -233,7 +233,7 @@ def test_request_args(
             "tutorId": "1",
         },
     )
-    assert resp.json == {"error": "timeRange field(s) were malformed"}
+    assert resp.json == {"error": "startTime and/or endTime field(s) was malformed"}
     assert resp.status_code == 400
 
     # Invalid time (invalid both time format)
@@ -245,7 +245,7 @@ def test_request_args(
             "tutorId": "1",
         },
     )
-    assert resp.json == {"error": "timeRange field(s) were malformed"}
+    assert resp.json == {"error": "startTime and/or endTime field(s) was malformed"}
     assert resp.status_code == 400
 
     # Invalid end time (et < st)
@@ -477,7 +477,7 @@ def test_modify_args(
             "endTime": "2024-10-20T01:00:00+00:00",
         },
     )
-    assert resp.json == {"error": "timeRange field(s) were malformed"}
+    assert resp.json == {"error": "startTime and/or endTime field(s) was malformed"}
     assert resp.status_code == 400
 
     # Invalid time (invalid end time format)
@@ -489,7 +489,7 @@ def test_modify_args(
             "endTime": "2023",
         },
     )
-    assert resp.json == {"error": "timeRange field(s) were malformed"}
+    assert resp.json == {"error": "startTime and/or endTime field(s) was malformed"}
     assert resp.status_code == 400
 
     # Invalid time (invalid both time format)
@@ -501,7 +501,7 @@ def test_modify_args(
             "endTime": "2024",
         },
     )
-    assert resp.json == {"error": "timeRange field(s) were malformed"}
+    assert resp.json == {"error": "startTime and/or endTime field(s) was malformed"}
     assert resp.status_code == 400
 
     # Invalid end time (et < st)
