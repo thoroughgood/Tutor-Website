@@ -110,7 +110,7 @@ def delete():
     if appointment not in tutor.appointments:
         raise ExpectedError("Logged in user is not the tutor of the appointment", 403)
 
-    tutor.appointments.disconnect({"id": args["id"]})
+    tutor.appointments.remove(appointment)
     Appointment.prisma().delete(where={"id": args["id"]})
 
     return jsonify({"success": True}), 200
@@ -123,6 +123,9 @@ def modify():
 
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
+
+    if "id" not in args or len(str(args["id"]).lower().strip()) == 0:
+        raise ExpectedError("id field was missing", 400)
 
     if "startTime" not in args or len(str(args["startTime"]).lower().strip()) == 0:
         raise ExpectedError("startTime field was missing", 400)
@@ -153,7 +156,9 @@ def modify():
         raise ExpectedError("Logged in user is not the tutor of the appointment", 403)
 
     for apt in tutor.appointments:
-        if apt.startTime <= st < apt.endTime or apt.startTime < et <= apt.endTime:
+        if apt != appointment and (
+            apt.startTime <= st < apt.endTime or apt.startTime < et <= apt.endTime
+        ):
             raise ExpectedError("Appointment overlaps with another appointment", 400)
 
     Appointment.prisma().update(
