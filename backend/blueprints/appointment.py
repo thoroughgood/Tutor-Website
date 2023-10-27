@@ -1,9 +1,12 @@
 from flask import Blueprint, request, jsonify, session
+from prisma.errors import RecordNotFoundError
 from prisma.models import User, Student, Tutor, Appointment, Rating
+from jsonschemas.appointment_accept_schema import appointment_accept_schema
 from uuid import uuid4
 from datetime import datetime
 from helpers.views import student_view, tutor_view
 from helpers.error_handlers import (
+    validate_decorator,
     ExpectedError,
     error_decorator,
 )
