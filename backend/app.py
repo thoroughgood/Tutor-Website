@@ -13,7 +13,6 @@ from blueprints.search import search_tutor
 from blueprints.appointment import appointment
 from blueprints.admin import admin
 from blueprints.utils import utils
-from blueprints.appointment import appointment
 from helpers.my_request import MyRequest
 
 prisma = Prisma(auto_register=True)
