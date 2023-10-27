@@ -58,7 +58,6 @@ app.register_blueprint(student, url_prefix="/student")
 app.register_blueprint(search_tutor, url_prefix="/")
 app.register_blueprint(appointment, url_prefix="/appointment")
 app.register_blueprint(utils, url_prefix="/utils")
-app.register_blueprint(appointment, url_prefix="/appointment")
 app.register_blueprint(admin, url_prefix="/admin")
 
 
