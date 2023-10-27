@@ -32,9 +32,5 @@ def process_time_block(time_block: ISOTimeBlock) -> DTTimeBlock:
 
     if st > et:
         raise ExpectedError("endTime cannot be less than startTime", 400)
-    # Note: as utcnow() is offset naive, this approach is preferred
-    elif st < datetime.now(timezone.utc):
-        # ? May not be a necessary check
-        raise ExpectedError("startTime must be in the future", 400)
 
     return {"id": str(uuid4()), "startTime": st, "endTime": et}
