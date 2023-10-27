@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime
 from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockType
 from hashlib import sha256
@@ -18,6 +19,7 @@ from prisma.actions import (
     SubjectActions,
     AdminActions,
     StudentActions,
+    AppointmentActions,
 )
 
 # hack to import a root level file and be able to run pytest from any dir
@@ -175,3 +177,19 @@ def fake_tutor(fake_user) -> models.User:
 @pytest.fixture
 def fake_admin(fake_user) -> models.User:
     return fake_user("validemail3@mail.com", "12345678", "admin")
+
+
+@pytest.fixture
+def fake_appointment(fake_tutor, fake_student):
+    apt = models.Appointment(
+        id=str(uuid4()),
+        startTime=datetime.now(),
+        endTime=datetime.now(),
+        tutorAccepted=False,
+        tutor=fake_tutor.tutorInfo,
+        tutorId=fake_tutor.id,
+        student=fake_student.studentInfo,
+        studentId=fake_student.id,
+    )
+
+    return apt
