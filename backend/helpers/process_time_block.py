@@ -28,7 +28,7 @@ def process_time_block(time_block: ISOTimeBlock) -> DTTimeBlock:
         )
         et = datetime.fromisoformat(time_block["endTime"]).replace(tzinfo=timezone.utc)
     except ValueError:
-        raise ExpectedError("timeRange field(s) was malformed", 400)
+        raise ExpectedError("startTime and/or endTime field(s) was malformed", 400)
 
     if st > et:
         raise ExpectedError("endTime cannot be less than startTime", 400)
