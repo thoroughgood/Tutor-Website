@@ -1,4 +1,5 @@
 import LoadingButton from "@/components/loadingButton"
+import LoadingSpinner from "@/components/loadingSpinner"
 import { Button } from "@/components/ui/button"
 import WeeklyCalendar from "@/components/weeklyCalendar"
 import useUser from "@/hooks/useUser"
@@ -67,7 +68,7 @@ function AppointmentsAsTutor() {
   }
 
   if (!initialIntervals || !tutorProfile) {
-    return <div>loading</div>
+    return <LoadingSpinner />
   }
   return (
     <div className="relative flex h-full w-full flex-col gap-2 overflow-hidden p-16">
