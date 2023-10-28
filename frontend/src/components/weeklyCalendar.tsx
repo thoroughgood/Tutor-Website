@@ -235,7 +235,11 @@ function DayCol({ className, style, interactiveIntervals, date }: DayColProps) {
 
   // little bit of math to calculate x offset and height of absolute positioned interval elements
   const intervalElements = interactiveIntervals.map(
-    ({ interval, title, componentProps: { className, ...componentProps } }) => {
+    ({
+      interval,
+      title,
+      componentProps: { className, children, ...componentProps },
+    }) => {
       const startY =
         (differenceInMinutes(interval.start, startOfDay(date)) /
           MINUTES_IN_DAY) *
@@ -261,6 +265,7 @@ function DayCol({ className, style, interactiveIntervals, date }: DayColProps) {
           }}
           {...componentProps}
         >
+          {children}
           {title && <h4 className="font-bold">{title}</h4>}
           {`${format(interval.start, "h:mmaaa")} – ${format(
             interval.end,
