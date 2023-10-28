@@ -1,9 +1,11 @@
+import LoadingSpinner from "@/components/loadingSpinner"
 import ProfileHeader from "@/components/profileHeader"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import useUser from "@/hooks/useUser"
 import { HTTPProfileService } from "@/service/profileService"
 import { MessageCircle, User } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/router"
 import { useQuery } from "react-query"
 
@@ -18,7 +20,7 @@ export default function StudentProfile() {
     queryFn: () => profileService.getStudentProfile(studentId),
   })
   if (!data) {
-    return <div>loading</div>
+    return <LoadingSpinner />
   }
   return (
     <div className="h-full w-full p-12">
@@ -32,9 +34,11 @@ export default function StudentProfile() {
           location={data.location}
         />
         {isOwnProfile ? (
-          <Button variant="secondary" className="flex grow gap-2">
-            <User className="w-5" />
-            Edit Profile
+          <Button asChild variant="secondary" className="flex grow gap-2">
+            <Link href={`${user?.userId}/edit`}>
+              <User className="w-5" />
+              Edit Profile
+            </Link>
           </Button>
         ) : (
           <Button variant="secondary" className="flex grow gap-2">

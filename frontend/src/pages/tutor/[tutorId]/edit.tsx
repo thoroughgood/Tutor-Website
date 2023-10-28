@@ -143,6 +143,7 @@ export default function Edit() {
         phoneNumber: values.phoneNumber,
         courseOfferings: courses,
         timeAvailable: data.timeAvailable,
+
       }
 
       if (values.phoneNumber.length === 0) {
@@ -160,7 +161,6 @@ export default function Edit() {
       }
     } catch (error) {
       toast.error(getErrorMessage(error))
-      console.log(values)
     }
     queryClient.invalidateQueries({ queryKey: ["tutors", tutorId] })
     setSubmitLoading(false)
