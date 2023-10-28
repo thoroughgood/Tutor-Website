@@ -101,13 +101,11 @@ def test_upload_and_get_valid(
     )
     assert resp.status_code == 200
 
-    update_tutor_mock = mocker.patch("tests.conftest.TutorActions.update")
     create_doc_mock = mocker.patch("tests.conftest.DocumentActions.create")
     create_doc_mock.return_value = doc
 
     resp = client.post("/document", json={"document": "test string input"})
     create_doc_mock()
-    update_tutor_mock()
 
     print(doc.id)
     assert resp.status_code == 200

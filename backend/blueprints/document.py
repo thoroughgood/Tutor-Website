@@ -34,11 +34,6 @@ def upload_document():
             "document": args["document"]
         }
     )
-    
-    Tutor.prisma().update(
-        where={"id": tutor.id},
-        data={"documents": {"connect": {"id": doc.id}}},
-    )
 
     return jsonify({"id": doc.id})
 
