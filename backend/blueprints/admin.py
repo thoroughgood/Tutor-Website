@@ -5,7 +5,8 @@ from flask import Blueprint, jsonify, session
 from prisma.models import User, Tutor, Admin, Student
 from jsonschemas.user_search_schema import user_search_schema
 from jsonschemas.admin_create_schema import admin_create_schema
-from helpers.views import user_view, admin_view
+from helpers.views import admin_view
+from helpers.check_user_account_type import check_type
 from helpers.error_handlers import (
     validate_decorator,
     ExpectedError,
@@ -26,28 +27,49 @@ def user_search(args):
     if not admin:
         raise ExpectedError("Insufficient permission to search for users", 403)
 
+    if "id" in args:
+        user = User.prisma().find_unique(
+            where={"id": args["id"]},
+            include={"adminInfo": True, "studentInfo": True, "tutorInfo": True},
+        )
+        if user:
+            return jsonify(
+                {"userInfos": [{"id": user.id, "accountType": check_type(user)}]}
+            )
+
     if "accountType" in args:
         match args["accountType"]:
             case "student":
                 res = Student.prisma().find_many(include={"userInfo": True})
+                users = map(lambda user: (user.userInfo, "student"), res)
             case "tutor":
                 res = Tutor.prisma().find_many(include={"userInfo": True})
+                users = map(lambda user: (user.userInfo, "tutor"), res)
             case "admin":
                 res = Admin.prisma().find_many(include={"userInfo": True})
+                users = map(lambda user: (user.userInfo, "admin"), res)
 
-        users = map(lambda user: user.userInfo, res)
     else:
-        users = User.prisma().find_many()
+        users = User.prisma().find_many(
+            include={"adminInfo": True, "studentInfo": True, "tutorInfo": True}
+        )
+        users = map(lambda user: (user, check_type(user)), users)
 
     if len(args) == 0:
-        return jsonify({"userIds": [user.id for user in users]}), 200
-    elif "id" in args:
-        user = user_view(id=args["id"])
-        if user:
-            return jsonify({"userIds": [user.id]})
+        return (
+            jsonify(
+                {
+                    "userInfos": [
+                        {"id": user.id, "accountType": account_type}
+                        for user, account_type in users
+                    ]
+                }
+            ),
+            200,
+        )
 
     valid_users = []
-    for user in users:
+    for user, account_type in users:
         valid = True
         if "name" in args:
             valid &= re.search(args["name"].lower().strip(), user.name.lower()) != None
@@ -61,9 +83,9 @@ def user_search(args):
             valid &= args["email"] == user.email
 
         if valid:
-            valid_users.append(user.id)
+            valid_users.append({"id": user.id, "accountType": account_type})
 
-    return jsonify({"userIds": valid_users}), 200
+    return jsonify({"userInfos": valid_users}), 200
 
 
 @admin.route("/create", methods=["POST"])
