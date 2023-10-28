@@ -20,14 +20,12 @@ from helpers.error_handlers import (
 appointment = Blueprint("appointment", __name__)
 
 
-@appointment.route("/", methods=["GET"])
+@appointment.route("/<appointment_id>", methods=["GET"])
 @error_decorator
-@validate_decorator("query_string", appointment_get_schema)
-def get_appoinment(args):
-    try:
-        appointment = Appointment.prisma().find_first(where={"id": args["id"]})
-    except RecordNotFoundError:
-        raise ExpectedError("Appointment does not exist", 400)
+def get_appoinment(appointment_id):
+    appointment = Appointment.prisma().find_unique(where={"id": appointment_id})
+    if appointment is None:
+        raise ExpectedError("Given id does not correspond to an appointment", 400)
 
     return_val = {
         "id": appointment.id,

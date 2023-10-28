@@ -153,6 +153,100 @@ def test_appointment_accept(
     assert resp.json["tutorAccepted"] == True
 
 
+############################### GET TESTS ######################################
+
+
+def test_appointment_get_invalid(setup_test: FlaskClient):
+    client = setup_test
+
+    # no appointment id given
+    resp = client.get("/appointment/")
+    assert resp.status_code == 405
+
+    # invalid appointment id given
+    resp = client.get("/appointment/notvalid")
+    assert resp.status_code == 400
+    assert resp.json["error"] == "Given id does not correspond to an appointment"
+
+
+def test_appointment_get(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    fake_appointment,
+    fake_tutor,
+    fake_tutor2,
+):
+    client = setup_test
+
+    appointment_find_unique_mock = mocker.patch(
+        "tests.conftest.AppointmentActions.find_unique"
+    )
+    appointment_find_unique_mock.return_value = fake_appointment
+
+    # not logged in
+    resp = client.get(f"/appointment/{fake_appointment.id}")
+    appointment_find_unique_mock.assert_called_with(where={"id": fake_appointment.id})
+
+    assert resp.json["id"] == fake_appointment.id
+    assert resp.json["startTime"] == fake_appointment.startTime.isoformat()
+    assert resp.json["endTime"] == fake_appointment.endTime.isoformat()
+    assert resp.json["tutorId"] == fake_appointment.tutorId
+    assert resp.json["tutorAccepted"] == fake_appointment.tutorAccepted
+    assert "studentId" not in resp.json
+    assert resp.status_code == 200
+
+    # logged in, but appointment not related to current user
+    client.post(
+        "/login",
+        json={
+            "email": "validemail4@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_tutor2.email}, include=mocker.ANY
+    )
+
+    resp = client.get(f"/appointment/{fake_appointment.id}")
+    appointment_find_unique_mock.assert_called_with(where={"id": fake_appointment.id})
+
+    assert resp.json["id"] == fake_appointment.id
+    assert resp.json["startTime"] == fake_appointment.startTime.isoformat()
+    assert resp.json["endTime"] == fake_appointment.endTime.isoformat()
+    assert resp.json["tutorId"] == fake_appointment.tutorId
+    assert resp.json["tutorAccepted"] == fake_appointment.tutorAccepted
+    assert "studentId" not in resp.json
+    assert resp.status_code == 200
+
+    # logged in, and appointment is related to current user
+    client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_tutor.email}, include=mocker.ANY
+    )
+
+    resp = client.get(f"/appointment/{fake_appointment.id}")
+    appointment_find_unique_mock.assert_called_with(where={"id": fake_appointment.id})
+
+    assert resp.json["id"] == fake_appointment.id
+    assert resp.json["startTime"] == fake_appointment.startTime.isoformat()
+    assert resp.json["endTime"] == fake_appointment.endTime.isoformat()
+    assert resp.json["tutorId"] == fake_appointment.tutorId
+    assert resp.json["tutorAccepted"] == fake_appointment.tutorAccepted
+    assert resp.json["studentId"] == fake_appointment.studentId
+    assert resp.status_code == 200
+
+
 ############################## REQUEST TESTS ###################################
 
 
