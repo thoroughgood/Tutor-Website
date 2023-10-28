@@ -19,6 +19,30 @@ from helpers.error_handlers import (
 appointment = Blueprint("appointment", __name__)
 
 
+@appointment.route("/<appointment_id>", methods=["GET"])
+@error_decorator
+def get_appoinment(appointment_id):
+    appointment = Appointment.prisma().find_unique(where={"id": appointment_id})
+    if appointment is None:
+        raise ExpectedError("Given id does not correspond to an appointment", 404)
+
+    return_val = {
+        "id": appointment.id,
+        "startTime": appointment.startTime.isoformat(),
+        "endTime": appointment.endTime.isoformat(),
+        "tutorId": appointment.tutorId,
+        "tutorAccepted": appointment.tutorAccepted,
+    }
+
+    if "user_id" in session and (
+        appointment.tutorId == session["user_id"]
+        or appointment.studentId == session["user_id"]
+    ):
+        return_val["studentId"] = appointment.studentId
+
+    return jsonify(return_val), 200
+
+
 @appointment.route("/accept", methods=["PUT"])
 @error_decorator
 @validate_decorator("json", appointment_accept_schema)
