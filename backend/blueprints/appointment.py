@@ -1,10 +1,14 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, jsonify, session
 from prisma.errors import RecordNotFoundError
-from prisma.models import User, Student, Tutor, Appointment, Rating
+from prisma.models import Appointment, Rating
 from jsonschemas.appointment_accept_schema import appointment_accept_schema
+from jsonschemas.appointment_request_schema import appointment_request_schema
+from jsonschemas.appointment_delete_schema import appointment_delete_schema
+from jsonschemas.appointment_modify_schema import appointment_modify_schema
+from jsonschemas.appointment_rating_schema import appointment_rating_schema
 from helpers.process_time_block import process_time_block
 from uuid import uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 from helpers.views import student_view, tutor_view
 from helpers.error_handlers import (
     validate_decorator,
@@ -13,6 +17,30 @@ from helpers.error_handlers import (
 )
 
 appointment = Blueprint("appointment", __name__)
+
+
+@appointment.route("/<appointment_id>", methods=["GET"])
+@error_decorator
+def get_appoinment(appointment_id):
+    appointment = Appointment.prisma().find_unique(where={"id": appointment_id})
+    if appointment is None:
+        raise ExpectedError("Given id does not correspond to an appointment", 404)
+
+    return_val = {
+        "id": appointment.id,
+        "startTime": appointment.startTime.isoformat(),
+        "endTime": appointment.endTime.isoformat(),
+        "tutorId": appointment.tutorId,
+        "tutorAccepted": appointment.tutorAccepted,
+    }
+
+    if "user_id" in session and (
+        appointment.tutorId == session["user_id"]
+        or appointment.studentId == session["user_id"]
+    ):
+        return_val["studentId"] = appointment.studentId
+
+    return jsonify(return_val), 200
 
 
 @appointment.route("/accept", methods=["PUT"])
@@ -54,20 +82,10 @@ def appointment_accept(args):
 
 @appointment.route("/request", methods=["POST"])
 @error_decorator
-def a_request():
-    args = request.get_json()
-
+@validate_decorator("json", appointment_request_schema)
+def appointment_request(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
-
-    if "startTime" not in args or len(str(args["startTime"]).lower().strip()) == 0:
-        raise ExpectedError("startTime field was missing", 400)
-
-    if "endTime" not in args or len(str(args["endTime"]).lower().strip()) == 0:
-        raise ExpectedError("endTime field was missing", 400)
-
-    if "tutorId" not in args:
-        raise ExpectedError("Tutor id field was missing", 400)
 
     data = process_time_block(
         {"startTime": args["startTime"], "endTime": args["endTime"]}
@@ -104,11 +122,6 @@ def a_request():
         }
     )
 
-    # Student.prisma().update(
-    #     where={"id": session["user_id"]},
-    #     data={"appointments": {"connect": {"id": appointment.id}}},
-    # )
-
     return (
         jsonify(
             {
@@ -124,16 +137,12 @@ def a_request():
     )
 
 
-@appointment.route("", methods=["DELETE"])
+@appointment.route("/", methods=["DELETE"])
 @error_decorator
-def delete():
-    args = request.get_json()
-
+@validate_decorator("json", appointment_delete_schema)
+def appointment_delete(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
-
-    if "id" not in args or len(str(args["id"]).lower().strip()) == 0:
-        raise ExpectedError("id field was missing", 400)
 
     tutor = tutor_view(id=session["user_id"])
     if not tutor:
@@ -151,22 +160,12 @@ def delete():
     return jsonify({"success": True}), 200
 
 
-@appointment.route("", methods=["PUT"])
+@appointment.route("/", methods=["PUT"])
 @error_decorator
-def modify():
-    args = request.get_json()
-
+@validate_decorator("json", appointment_modify_schema)
+def appointment_modify(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
-
-    if "id" not in args or len(str(args["id"]).lower().strip()) == 0:
-        raise ExpectedError("id field was missing", 400)
-
-    if "startTime" not in args or len(str(args["startTime"]).lower().strip()) == 0:
-        raise ExpectedError("startTime field was missing", 400)
-
-    if "endTime" not in args or len(str(args["endTime"]).lower().strip()) == 0:
-        raise ExpectedError("endTime field was missing", 400)
 
     data = process_time_block(
         {"startTime": args["startTime"], "endTime": args["endTime"]}
@@ -201,17 +200,10 @@ def modify():
 
 @appointment.route("/rating", methods=["POST"])
 @error_decorator
-def rating():
-    args = request.get_json()
-
+@validate_decorator("json", appointment_rating_schema)
+def appointment_rating(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
-
-    if "id" not in args or len(str(args["id"]).lower().strip()) == 0:
-        raise ExpectedError("id field was missing", 400)
-
-    if "rating" not in args or len(str(args["rating"]).lower().strip()) == 0:
-        raise ExpectedError("rating field was missing", 400)
 
     appointment = Appointment.prisma().find_unique(where={"id": args["id"]})
     if not appointment:
@@ -220,24 +212,16 @@ def rating():
     if session["user_id"] != appointment.studentId:
         raise ExpectedError("User is not the student of the appointment", 403)
 
-    if appointment.endTime.replace(tzinfo=None) > datetime.now():
+    if appointment.endTime > datetime.now(timezone.utc):
         raise ExpectedError("Appointment isn't complete yet", 400)
 
-    if not 1 <= args["rating"] <= 5:
-        raise ExpectedError("Rating must be between 1 and 5", 400)
-
-    rating = Rating.prisma().create(
+    Rating.prisma().create(
         data={
             "id": str(uuid4()),
             "score": args["rating"],
             "appointment": {"connect": {"id": args["id"]}},
             "createdFor": {"connect": {"id": appointment.tutorId}},
         }
-    )
-
-    Tutor.prisma().update(
-        where={"id": session["user_id"]},
-        data={"ratings": {"connect": {"id": rating.id}}},
     )
 
     return jsonify({"success": True})

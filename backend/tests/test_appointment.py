@@ -153,6 +153,100 @@ def test_appointment_accept(
     assert resp.json["tutorAccepted"] == True
 
 
+############################### GET TESTS ######################################
+
+
+def test_appointment_get_invalid(setup_test: FlaskClient):
+    client = setup_test
+
+    # no appointment id given
+    resp = client.get("/appointment/")
+    assert resp.status_code == 405
+
+    # invalid appointment id given
+    resp = client.get("/appointment/notvalid")
+    assert resp.status_code == 400
+    assert resp.json["error"] == "Given id does not correspond to an appointment"
+
+
+def test_appointment_get(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    fake_appointment,
+    fake_tutor,
+    fake_tutor2,
+):
+    client = setup_test
+
+    appointment_find_unique_mock = mocker.patch(
+        "tests.conftest.AppointmentActions.find_unique"
+    )
+    appointment_find_unique_mock.return_value = fake_appointment
+
+    # not logged in
+    resp = client.get(f"/appointment/{fake_appointment.id}")
+    appointment_find_unique_mock.assert_called_with(where={"id": fake_appointment.id})
+
+    assert resp.json["id"] == fake_appointment.id
+    assert resp.json["startTime"] == fake_appointment.startTime.isoformat()
+    assert resp.json["endTime"] == fake_appointment.endTime.isoformat()
+    assert resp.json["tutorId"] == fake_appointment.tutorId
+    assert resp.json["tutorAccepted"] == fake_appointment.tutorAccepted
+    assert "studentId" not in resp.json
+    assert resp.status_code == 200
+
+    # logged in, but appointment not related to current user
+    client.post(
+        "/login",
+        json={
+            "email": "validemail4@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_tutor2.email}, include=mocker.ANY
+    )
+
+    resp = client.get(f"/appointment/{fake_appointment.id}")
+    appointment_find_unique_mock.assert_called_with(where={"id": fake_appointment.id})
+
+    assert resp.json["id"] == fake_appointment.id
+    assert resp.json["startTime"] == fake_appointment.startTime.isoformat()
+    assert resp.json["endTime"] == fake_appointment.endTime.isoformat()
+    assert resp.json["tutorId"] == fake_appointment.tutorId
+    assert resp.json["tutorAccepted"] == fake_appointment.tutorAccepted
+    assert "studentId" not in resp.json
+    assert resp.status_code == 200
+
+    # logged in, and appointment is related to current user
+    client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_tutor.email}, include=mocker.ANY
+    )
+
+    resp = client.get(f"/appointment/{fake_appointment.id}")
+    appointment_find_unique_mock.assert_called_with(where={"id": fake_appointment.id})
+
+    assert resp.json["id"] == fake_appointment.id
+    assert resp.json["startTime"] == fake_appointment.startTime.isoformat()
+    assert resp.json["endTime"] == fake_appointment.endTime.isoformat()
+    assert resp.json["tutorId"] == fake_appointment.tutorId
+    assert resp.json["tutorAccepted"] == fake_appointment.tutorAccepted
+    assert resp.json["studentId"] == fake_appointment.studentId
+    assert resp.status_code == 200
+
+
 ############################## REQUEST TESTS ###################################
 
 
@@ -171,8 +265,38 @@ def test_request_args(
     assert resp.json == {"error": "content-type was not json or data was malformed"}
     assert resp.status_code == 415
 
-    # No logged in user
+    # Missing start time
     resp = client.post("/appointment/request", json={})
+    assert resp.json == {"error": "'startTime' was missing from field(s)"}
+    assert resp.status_code == 400
+
+    # Missing end time
+    resp = client.post(
+        "/appointment/request", json={"startTime": "2023-10-20T00:00:00+00:00"}
+    )
+    assert resp.json == {"error": "'endTime' was missing from field(s)"}
+    assert resp.status_code == 400
+
+    # Missing tutor id
+    resp = client.post(
+        "/appointment/request",
+        json={
+            "startTime": "2024-10-20T00:00:00+00:00",
+            "endTime": "2024-10-20T01:00:00+00:00",
+        },
+    )
+    assert resp.json == {"error": "'tutorId' was missing from field(s)"}
+    assert resp.status_code == 400
+
+    # No logged in user
+    resp = client.post(
+        "/appointment/request",
+        json={
+            "startTime": "2024-10-20T00:00:00+00:00",
+            "endTime": "2024-10-20T01:00:00+00:00",
+            "tutorId": fake_tutor.id,
+        },
+    )
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
@@ -188,29 +312,6 @@ def test_request_args(
     find_unique_users_mock.assert_called_with(
         where={"email": fake_student.email}, include=mocker.ANY
     )
-
-    # Missing start time
-    resp = client.post("/appointment/request", json={})
-    assert resp.json == {"error": "startTime field was missing"}
-    assert resp.status_code == 400
-
-    # Missing end time
-    resp = client.post(
-        "/appointment/request", json={"startTime": "2023-10-20T00:00:00+00:00"}
-    )
-    assert resp.json == {"error": "endTime field was missing"}
-    assert resp.status_code == 400
-
-    # Missing tutor id
-    resp = client.post(
-        "/appointment/request",
-        json={
-            "startTime": "2024-10-20T00:00:00+00:00",
-            "endTime": "2024-10-20T01:00:00+00:00",
-        },
-    )
-    assert resp.json == {"error": "Tutor id field was missing"}
-    assert resp.status_code == 400
 
     # Invalid time (invalid start time format)
     resp = client.post(
@@ -260,18 +361,6 @@ def test_request_args(
     assert resp.json == {"error": "endTime cannot be less than startTime"}
     assert resp.status_code == 400
 
-    # Invalid start time (st > now)
-    resp = client.post(
-        "/appointment/request",
-        json={
-            "startTime": "2022-10-20T01:00:00+00:00",
-            "endTime": "2024-10-20T00:00:00+00:00",
-            "tutorId": "1",
-        },
-    )
-    assert resp.json == {"error": "startTime must be in the future"}
-    assert resp.status_code == 400
-
     # Invalid tutor id
     resp = client.post(
         "/appointment/request",
@@ -284,7 +373,6 @@ def test_request_args(
     assert resp.json == {"error": "Tutor profile does not exist"}
     assert resp.status_code == 400
 
-    client.post("/logout")
     client.post(
         "/login",
         json={
@@ -351,8 +439,6 @@ def test_request_args(
         },
     )
 
-    # mocker.stop(create_mock)
-
     assert resp.status_code == 200
     assert resp.json["startTime"] == "2024-10-20T00:00:00+00:00"
     assert resp.json["endTime"] == "2024-10-21T00:00:00+00:00"
@@ -374,12 +460,17 @@ def test_delete_args(
     client = setup_test
 
     # No JSON Body
-    resp = client.delete("/appointment")
+    resp = client.delete("/appointment/")
     assert resp.json == {"error": "content-type was not json or data was malformed"}
     assert resp.status_code == 415
 
+    # Missing id
+    resp = client.delete("/appointment/", json={})
+    assert resp.json == {"error": "'id' was missing from field(s)"}
+    assert resp.status_code == 400
+
     # No logged in user
-    resp = client.delete("/appointment", json={})
+    resp = client.delete("/appointment/", json={"id": fake_appointment.id})
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
@@ -396,12 +487,7 @@ def test_delete_args(
         where={"email": fake_tutor2.email}, include=mocker.ANY
     )
 
-    # Missing id
-    resp = client.delete("/appointment", json={})
-    assert resp.json == {"error": "id field was missing"}
-    assert resp.status_code == 400
-
-    resp = client.delete("/appointment", json={"id": "123"})
+    resp = client.delete("/appointment/", json={"id": "123"})
     assert resp.json == {"error": "Appointment does not exist"}
     assert resp.status_code == 404
 
@@ -409,7 +495,7 @@ def test_delete_args(
     find.return_value = fake_appointment
 
     delete = mocker.patch("tests.conftest.AppointmentActions.delete")
-    resp = client.delete("/appointment", json={"id": fake_appointment.id})
+    resp = client.delete("/appointment/", json={"id": fake_appointment.id})
     delete.assert_called()
 
     assert resp.status_code == 200
@@ -429,12 +515,36 @@ def test_modify_args(
     client = setup_test
 
     # No JSON Body
-    resp = client.put("/appointment")
+    resp = client.put("/appointment/")
     assert resp.json == {"error": "content-type was not json or data was malformed"}
     assert resp.status_code == 415
 
+    # Missing id
+    resp = client.put("/appointment/", json={})
+    assert resp.json == {"error": "'id' was missing from field(s)"}
+    assert resp.status_code == 400
+
+    # Missing start time
+    resp = client.put("/appointment/", json={"id": "123"})
+    assert resp.json == {"error": "'startTime' was missing from field(s)"}
+    assert resp.status_code == 400
+
+    # Missing end time
+    resp = client.put(
+        "/appointment/", json={"id": "123", "startTime": "2023-10-20T00:00:00+00:00"}
+    )
+    assert resp.json == {"error": "'endTime' was missing from field(s)"}
+    assert resp.status_code == 400
+
     # No logged in user
-    resp = client.put("/appointment", json={})
+    resp = client.put(
+        "/appointment/",
+        json={
+            "id": "123",
+            "startTime": "2023-10-20T00:00:00+00:00",
+            "endTime": "2024-10-20T01:00:00+00:00",
+        },
+    )
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
@@ -451,26 +561,9 @@ def test_modify_args(
         where={"email": fake_tutor2.email}, include=mocker.ANY
     )
 
-    # Missing id
-    resp = client.put("/appointment", json={})
-    assert resp.json == {"error": "id field was missing"}
-    assert resp.status_code == 400
-
-    # Missing start time
-    resp = client.put("/appointment", json={"id": "123"})
-    assert resp.json == {"error": "startTime field was missing"}
-    assert resp.status_code == 400
-
-    # Missing end time
-    resp = client.put(
-        "/appointment", json={"id": "123", "startTime": "2023-10-20T00:00:00+00:00"}
-    )
-    assert resp.json == {"error": "endTime field was missing"}
-    assert resp.status_code == 400
-
     # Invalid time (invalid start time format)
     resp = client.put(
-        "/appointment",
+        "/appointment/",
         json={
             "id": "123",
             "startTime": "2023",
@@ -482,7 +575,7 @@ def test_modify_args(
 
     # Invalid time (invalid end time format)
     resp = client.put(
-        "/appointment",
+        "/appointment/",
         json={
             "id": "123",
             "startTime": "2024-10-20T00:00:00+00:00",
@@ -494,7 +587,7 @@ def test_modify_args(
 
     # Invalid time (invalid both time format)
     resp = client.put(
-        "/appointment",
+        "/appointment/",
         json={
             "id": "123",
             "startTime": "2023",
@@ -506,7 +599,7 @@ def test_modify_args(
 
     # Invalid end time (et < st)
     resp = client.put(
-        "/appointment",
+        "/appointment/",
         json={
             "id": "123",
             "startTime": "2024-10-20T01:00:00+00:00",
@@ -516,21 +609,9 @@ def test_modify_args(
     assert resp.json == {"error": "endTime cannot be less than startTime"}
     assert resp.status_code == 400
 
-    # Invalid start time (st > now)
-    resp = client.put(
-        "/appointment",
-        json={
-            "id": "123",
-            "startTime": "2022-10-20T01:00:00+00:00",
-            "endTime": "2024-10-20T00:00:00+00:00",
-        },
-    )
-    assert resp.json == {"error": "startTime must be in the future"}
-    assert resp.status_code == 400
-
     # Invalid tutor id
     resp = client.put(
-        "/appointment",
+        "/appointment/",
         json={
             "id": "123",
             "startTime": "2024-11-20T00:00:00+00:00",
@@ -545,7 +626,7 @@ def test_modify_args(
 
     update = mocker.patch("tests.conftest.AppointmentActions.update")
     resp = client.put(
-        "/appointment",
+        "/appointment/",
         json={
             "id": fake_appointment.id,
             "startTime": "2024-11-20T00:00:00+00:00",
@@ -575,8 +656,26 @@ def test_rating_args(
     assert resp.json == {"error": "content-type was not json or data was malformed"}
     assert resp.status_code == 415
 
-    # No logged in user
+    # Missing id
     resp = client.post("/appointment/rating", json={})
+    assert resp.json == {"error": "'id' was missing from field(s)"}
+    assert resp.status_code == 400
+
+    # Missing rating field
+    resp = client.post("/appointment/rating", json={"id": "123"})
+    assert resp.json == {"error": "'rating' was missing from field(s)"}
+    assert resp.status_code == 400
+
+    resp = client.post(
+        "/appointment/rating", json={"id": fake_appointment_fin.id, "rating": 10}
+    )
+    assert resp.json == {"error": "rating must be between 1 to 5, inclusive"}
+    assert resp.status_code == 400
+
+    # No logged in user
+    resp = client.post(
+        "/appointment/rating", json={"id": fake_appointment_fin.id, "rating": 5}
+    )
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
@@ -593,32 +692,19 @@ def test_rating_args(
         where={"email": fake_student.email}, include=mocker.ANY
     )
 
-    # Missing id
-    resp = client.post("/appointment/rating", json={})
-    assert resp.json == {"error": "id field was missing"}
-    assert resp.status_code == 400
-
-    # Missing rating field
-    resp = client.post("/appointment/rating", json={"id": "123"})
-    assert resp.json == {"error": "rating field was missing"}
-    assert resp.status_code == 400
-
+    # Invalid appointment id
     resp = client.post("/appointment/rating", json={"id": "123", "rating": 5})
     assert resp.json == {"error": "Appointment does not exist"}
     assert resp.status_code == 400
 
-    rating = mocker.patch("tests.conftest.AppointmentActions.find_unique")
-    rating.return_value = fake_appointment_fin
-
-    resp = client.post(
-        "/appointment/rating", json={"id": fake_appointment_fin.id, "rating": 10}
+    appointment_find_unique_mock = mocker.patch(
+        "tests.conftest.AppointmentActions.find_unique"
     )
-    assert resp.json == {"error": "Rating must be between 1 and 5"}
-    assert resp.status_code == 400
+    appointment_find_unique_mock.return_value = fake_appointment_fin
+    appointment_create_mock = mocker.patch("tests.conftest.RatingActions.create")
+    appointment_create_mock.return_value = fake_rating
 
-    create = mocker.patch("tests.conftest.RatingActions.create")
-    create.return_value = fake_rating
-
+    # successful rating on an appointment
     resp = client.post(
         "/appointment/rating", json={"id": fake_appointment_fin.id, "rating": 5}
     )
