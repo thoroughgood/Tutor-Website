@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify, session
+from prisma.models import Tutor, Subject, User
 from jsonschemas.tutor_modify_schema import tutor_modify_schema
-from prisma.models import Tutor, Subject, User, Appointment
-from re import fullmatch
 from helpers.process_time_block import process_time_block
 from helpers.views import tutor_view
 from helpers.admin_id_check import admin_id_check
@@ -207,21 +206,24 @@ def get_tutor_appointments(tutor_id):
     tutor = tutor_view(id=tutor_id)
 
     if tutor == None:
-        raise ExpectedError("no tutor relates to the id", 400)
-
-    yourAppointments = []
+        raise ExpectedError("no tutor relates to the id", 404)
+    your_appointments = []
     other = []
 
     for appointment in tutor.appointments:
-        if "user_id" not in session or appointment.studentId != session["user_id"]:
-            other.append(appointment.id)
-        elif appointment.studentId == session["user_id"]:
-            yourAppointments.append(appointment.id)
+        if "user_id" in session and (
+            appointment.studentId == session["user_id"]
+            or appointment.tutorId == session["user_id"]
+        ):
+            your_appointments.append(appointment.id)
+            continue
+
+        other.append(appointment.id)
 
     return (
         jsonify(
             {
-                "yourAppointments": yourAppointments,
+                "yourAppointments": your_appointments,
                 "other": other,
             }
         ),

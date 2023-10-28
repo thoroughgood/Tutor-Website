@@ -22,6 +22,7 @@ interface AppointmentService {
     end: Date,
   ) => Promise<AppointmentResp>
   getTutorAppointments: (tutorId: string) => Promise<TutorAppointmentsResp>
+  getAppointment: (appointmentId: string) => Promise<AppointmentResp>
 }
 
 export class MockAppointmentService implements AppointmentService {
