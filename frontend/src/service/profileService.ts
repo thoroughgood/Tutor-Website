@@ -15,7 +15,7 @@ interface UserProfile {
 
 export interface TutorProfile extends UserProfile {
   courseOfferings: string[]
-  timeAvailable: {
+  timesAvailable: {
     startTime: string
     endTime: string
   }[]
@@ -152,23 +152,19 @@ export class MockProfileService implements ProfileService {
     location: "Sydney",
     phoneNumber: "0411111111",
     courseOfferings: ["COMP2041", "COMP6080"],
-    timeAvailable: [
-      {
-        startTime: "2023-10-08T12:51:28+11:00",
-        endTime: "2023-10-08T13:51:28+11:00",
-      },
-      {
-        startTime: "2023-10-09T12:00:28+11:00",
-        endTime: "2023-10-09T15:00:28+11:00",
-      },
-      {
-        startTime: "2023-10-09T17:00:28+11:00",
-        endTime: "2023-10-09T20:00:28+11:00",
-      },
-      {
-        startTime: "2023-10-11T17:00:28+11:00",
-        endTime: "2023-10-11T20:00:28+11:00",
-      },
+    timesAvailable: [
+      // {
+      //   startTime: addHours(new Date(), 24).toISOString(),
+      //   endTime: addHours(new Date(), 25).toISOString(),
+      // },
+      // {
+      //   startTime: addHours(new Date(), 48).toISOString(),
+      //   endTime: addHours(new Date(), 54).toISOString(),
+      // },
+      // {
+      //   startTime: addHours(new Date(), 32).toISOString(),
+      //   endTime: addHours(new Date(), 38).toISOString(),
+      // },
     ],
   }
 
@@ -181,7 +177,7 @@ export class MockProfileService implements ProfileService {
     location: "Sydney",
     phoneNumber: "0499999999",
   }
-  async getTutorProfile(tutorId: string) {
+  async getTutorProfile(_tutorId: string) {
     return this.mockTutorProfile
   }
 
@@ -198,7 +194,7 @@ export class MockProfileService implements ProfileService {
     return { tutorIds: ["1337"] }
   }
 
-  async getStudentProfile(studentId: string) {
+  async getStudentProfile(_studentId: string) {
     return this.mockStudentProfile
   }
 

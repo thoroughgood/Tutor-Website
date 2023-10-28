@@ -66,7 +66,7 @@ def get_profile(tutor_id):
     )
 
 
-@tutor.route("profile", methods=["PUT"])
+@tutor.route("/profile", methods=["PUT"])
 @error_decorator
 @validate_decorator("json", tutor_modify_schema)
 def modify_profile(args):
@@ -203,4 +203,35 @@ def addingTimes(times_available, tutor_id):
     Tutor.prisma().update(
         where={"id": tutor_id},
         data={"timesAvailable": {"create": to_create}},
+    )
+
+
+@tutor.route("/<tutor_id>/appointments", methods=["GET"])
+@error_decorator
+def get_tutor_appointments(tutor_id):
+    tutor = tutor_view(id=tutor_id)
+
+    if tutor == None:
+        raise ExpectedError("no tutor relates to the id", 404)
+    your_appointments = []
+    other = []
+
+    for appointment in tutor.appointments:
+        if "user_id" in session and (
+            appointment.studentId == session["user_id"]
+            or appointment.tutorId == session["user_id"]
+        ):
+            your_appointments.append(appointment.id)
+            continue
+
+        other.append(appointment.id)
+
+    return (
+        jsonify(
+            {
+                "yourAppointments": your_appointments,
+                "other": other,
+            }
+        ),
+        200,
     )

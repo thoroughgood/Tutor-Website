@@ -15,7 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { UseFormReturn, useFieldArray, useForm } from "react-hook-form"
+import { UseFormReturn, useForm } from "react-hook-form"
 import * as z from "zod"
 import { Input } from "@/components/ui/input"
 
@@ -81,7 +81,7 @@ export default function Edit() {
   const isOwnProfile = tutorId === user?.userId
   const [submitLoading, setSubmitLoading] = useState(false)
 
-  const { data } = useQuery({
+  const { data, isError } = useQuery({
     queryKey: ["tutors", tutorId],
     queryFn: () => profileService.getTutorProfile(tutorId),
     refetchOnWindowFocus: false,
@@ -102,7 +102,6 @@ export default function Edit() {
       data.courseOfferings.forEach((course) => {
         courseObj.push({ name: course })
       })
-
       form.setValue("name", data.name)
       form.setValue("bio", data.bio)
       form.setValue("location", data.location || "")
@@ -111,14 +110,12 @@ export default function Edit() {
       form.setValue("profilePicture", "")
     }
   }, [data, form])
-
-  const { fields, append, remove } = useFieldArray({
-    name: "courseOfferings",
-    control: form.control,
-  })
-
   if (!data) {
-    return <div> loading screen </div>
+    return (
+      <div className="grid h-full w-full  place-content-center overflow-hidden p-16">
+        Loading Screen
+      </div>
+    )
   }
 
   const courses: string[] = []
@@ -140,12 +137,13 @@ export default function Edit() {
       const tutorObj: TutorSelfEditReqBody = {
         name: values.name,
         bio: values.bio,
-        email: data?.email,
+        email: data.email,
         profilePicture: file,
         location: values.location,
         phoneNumber: values.phoneNumber,
         courseOfferings: courses,
-        timeAvailable: data?.timeAvailable,
+        timeAvailable: data.timeAvailable,
+
       }
 
       if (values.phoneNumber.length === 0) {
@@ -158,13 +156,21 @@ export default function Edit() {
         tutorObj.profilePicture = null
       }
       const id = await profileService.setOwnTutorProfile(tutorObj)
+      if (id.success) {
+        router.push(`/tutor/${tutorId}/`)
+      }
     } catch (error) {
       toast.error(getErrorMessage(error))
-      console.log(values)
     }
     queryClient.invalidateQueries({ queryKey: ["tutors", tutorId] })
     setSubmitLoading(false)
   }
+
+  if (isError) {
+    // Handle error here
+    return <div>Error screen</div>
+  }
+
   return (
     <div className="grid h-full w-full  place-content-center overflow-hidden p-16">
       <Card className="flex w-screen max-w-2xl flex-col overflow-y-auto">
@@ -227,12 +233,7 @@ export default function Edit() {
                   inputType="string"
                 />
               </div>
-              <EditOfferings
-                form={form}
-                fields={fields}
-                append={append}
-                remove={remove}
-              />
+              <EditOfferings form={form} />
               <div className=" mt-4">
                 <LoadingButton
                   role="submit"
@@ -254,52 +255,52 @@ export default function Edit() {
       </div>
     </div>
   )
+}
 
-  interface CustomFormFieldProps {
-    form: UseFormReturn<z.infer<typeof formSchema>, any, undefined>
-    name: keyof z.infer<typeof formSchema>
-    label: string
-    inputType?: string
-    defaultValue?: string
-    formDescription?: string
-  }
+interface CustomFormFieldProps {
+  form: UseFormReturn<z.infer<typeof formSchema>, any, undefined>
+  name: keyof z.infer<typeof formSchema>
+  label: string
+  inputType?: string
+  defaultValue?: string
+  formDescription?: string
+}
 
-  function CustomFormField({
-    label,
-    form,
-    name,
-    inputType,
-    formDescription,
-  }: CustomFormFieldProps) {
-    return formDescription ? (
-      <FormField
-        control={form.control}
-        name={name}
-        render={({ field }) => (
-          <FormItem>
-            <Label>{label}</Label>
-            <FormControl>
-              <Input {...field} type={inputType} />
-            </FormControl>
-            <FormDescription>{formDescription}</FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    ) : (
-      <FormField
-        control={form.control}
-        name={name}
-        render={({ field }) => (
-          <FormItem>
-            <Label>{label}</Label>
-            <FormControl>
-              <Input {...field} type={inputType} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    )
-  }
+function CustomFormField({
+  label,
+  form,
+  name,
+  inputType,
+  formDescription,
+}: CustomFormFieldProps) {
+  return formDescription ? (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <Label>{label}</Label>
+          <FormControl>
+            <Input {...field} type={inputType} />
+          </FormControl>
+          <FormDescription>{formDescription}</FormDescription>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  ) : (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <Label>{label}</Label>
+          <FormControl>
+            <Input {...field} type={inputType} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  )
 }

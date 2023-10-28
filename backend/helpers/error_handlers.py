@@ -53,7 +53,7 @@ def validation_pattern_match(error: ValidationError) -> Tuple[Response, int]:
             "maximum",
         ] | [*_, "properties", "rating", "pattern"]:
             # Error will need to be changed if the boundaries of rating ever change
-            return error_generator("rating must be between 1 to 5, inclusive.", 400)
+            return error_generator("rating must be between 1 to 5, inclusive", 400)
 
 
 def error_decorator(f):

@@ -1,3 +1,4 @@
+import LoadingSpinner from "@/components/loadingSpinner"
 import ProfileHeader from "@/components/profileHeader"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,7 +20,7 @@ export default function StudentProfile() {
     queryFn: () => profileService.getStudentProfile(studentId),
   })
   if (!data) {
-    return <div>loading</div>
+    return <LoadingSpinner />
   }
   return (
     <div className="h-full w-full p-12">

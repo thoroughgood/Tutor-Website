@@ -1,4 +1,5 @@
 import HeaderSeparator from "@/components/headerSeparator"
+import LoadingSpinner from "@/components/loadingSpinner"
 import ProfileHeader from "@/components/profileHeader"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -22,7 +23,7 @@ export default function TutorProfile() {
   })
 
   if (!data) {
-    return <div>loading</div>
+    return <LoadingSpinner />
   }
 
   return (
@@ -58,9 +59,11 @@ export default function TutorProfile() {
                 <MessageCircle className="w-5" />
                 Message Tutor
               </Button>
-              <Button variant="default" className="flex gap-2">
-                <Calendar className="w-5" />
-                Create Appointment
+              <Button asChild variant="default" className="flex gap-2">
+                <Link href={`/tutor/${tutorId}/schedule`}>
+                  <Calendar className="w-5" />
+                  Create Appointment
+                </Link>
               </Button>
             </>
           )}
