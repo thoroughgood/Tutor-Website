@@ -206,21 +206,25 @@ def get_tutor_appointments(tutor_id):
     tutor = tutor_view(id=tutor_id)
 
     if tutor == None:
-        raise ExpectedError("no tutor relates to the id", 400)
+        raise ExpectedError("no tutor relates to the id", 404)
 
-    yourAppointments = []
+    your_appointments = []
     other = []
 
     for appointment in tutor.appointments:
-        if "user_id" not in session or appointment.studentId != session["user_id"]:
-            other.append(appointment.id)
-        elif appointment.studentId == session["user_id"]:
-            yourAppointments.append(appointment.id)
+        if "user_id" in session and (
+            appointment.studentId == session["user_id"]
+            or appointment.tutorId == session["user_id"]
+        ):
+            your_appointments.append(appointment.id)
+            continue
+
+        other.append(appointment.id)
 
     return (
         jsonify(
             {
-                "yourAppointments": yourAppointments,
+                "yourAppointments": your_appointments,
                 "other": other,
             }
         ),

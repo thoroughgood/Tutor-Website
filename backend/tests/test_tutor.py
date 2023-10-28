@@ -40,6 +40,7 @@ def generate_tutor(fake_tutor, fake_student) -> User:
 
     return fake_tutor
 
+
 @pytest.fixture
 def custom_find_unique(
     mocker: MockerFixture, generate_tutor, fake_admin, fake_student
@@ -647,7 +648,9 @@ def test_modify_time_available(
     assert resp.json["timesAvailable"][1]["startTime"] == start_time2.isoformat()
     assert resp.json["timesAvailable"][1]["endTime"] == end_time2.isoformat()
 
+
 # Get Tutor Appointments Tests
+
 
 @pytest.fixture
 def fake_appointments(fake_tutor, fake_student, fake_user: MockType):
@@ -689,6 +692,7 @@ def fake_appointments(fake_tutor, fake_student, fake_user: MockType):
 
     return fake_student, fake_tutor, apt1.id, apt2.id, apt3.id
 
+
 # Test missing id 405
 # def test_get_tutor_appt_missing_id(setup_test: FlaskClient):
 #    client = setup_test
@@ -697,45 +701,45 @@ def fake_appointments(fake_tutor, fake_student, fake_user: MockType):
 #   print(resp.data)
 #   assert resp.status_code == 405
 
+
 # Test invalid id 400
 def test_get_tutor_appt_invalid_id(setup_test: FlaskClient):
     client = setup_test
 
     resp = client.get("/tutor/1/appointments")
-    assert resp.status_code == 400
+    assert resp.status_code == 404
     assert resp.json == {"error": "no tutor relates to the id"}
+
 
 # Test valid no user in session
 def test_get_tutor_appt_no_user_session(
-        setup_test: FlaskClient, 
-        mocker:MockerFixture,
-        custom_find_unique: MockType,
-        fake_appointments,
-    
-    ):
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    custom_find_unique: MockType,
+    fake_appointments,
+):
     client = setup_test
 
     student, tutor, id1, id2, id3 = fake_appointments
 
     resp = client.get(f"tutor/{tutor.id}/appointments")
 
-    custom_find_unique.assert_called_with(
-        where={"id": tutor.id}, include=mocker.ANY
-    )
+    custom_find_unique.assert_called_with(where={"id": tutor.id}, include=mocker.ANY)
 
     assert resp.status_code == 200
     assert resp.json["yourAppointments"] == []
     assert resp.json["other"] == [id1, id2, id3]
 
+
 # Test valid user calls appointment
 
-def test_get_tutor_appt_valid(
-        setup_test: FlaskClient,
-        mocker: MockerFixture,
-        custom_find_unique: MockType,
-        fake_appointments,
-    ):
 
+def test_get_tutor_appt_valid(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    custom_find_unique: MockType,
+    fake_appointments,
+):
     client = setup_test
 
     student, tutor, id1, id2, id3 = fake_appointments
@@ -754,11 +758,8 @@ def test_get_tutor_appt_valid(
     assert resp.status_code == 200
 
     resp = client.get(f"tutor/{tutor.id}/appointments")
-    custom_find_unique.assert_called_with(
-        where={"id": tutor.id}, include=mocker.ANY
-    )
+    custom_find_unique.assert_called_with(where={"id": tutor.id}, include=mocker.ANY)
 
     assert resp.status_code == 200
     assert resp.json["yourAppointments"] == [id1, id2]
     assert resp.json["other"] == [id3]
-    

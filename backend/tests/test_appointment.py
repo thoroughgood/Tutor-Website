@@ -165,7 +165,7 @@ def test_appointment_get_invalid(setup_test: FlaskClient):
 
     # invalid appointment id given
     resp = client.get("/appointment/notvalid")
-    assert resp.status_code == 400
+    assert resp.status_code == 404
     assert resp.json["error"] == "Given id does not correspond to an appointment"
 
 
