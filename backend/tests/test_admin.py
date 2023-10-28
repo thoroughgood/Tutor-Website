@@ -98,8 +98,13 @@ def test_admin_search_no_args(
 
     assert resp.status_code == 200
     assert all(
-        id in [fake_student.id, fake_tutor.id, fake_admin.id]
-        for id in resp.json["userIds"]
+        d
+        in [
+            {"id": fake_student.id, "accountType": "student"},
+            {"id": fake_tutor.id, "accountType": "tutor"},
+            {"id": fake_admin.id, "accountType": "admin"},
+        ]
+        for d in resp.json["userInfos"]
     )
 
 
@@ -127,46 +132,49 @@ def test_admin_search_id(
     find_unique_users_mock.assert_called_with(
         where={"email": fake_admin.email}, include=mocker.ANY
     )
+    find_unique_users_mock.reset_mock()
 
     # id belongs to no one
     find_many_users_mock.return_value = []
 
     resp = client.get("/admin/search", query_string={"id": "nonexist"})
-    find_many_users_mock.assert_called_once()
-    find_many_users_mock.reset_mock()
+    find_unique_users_mock.assert_called_with(
+        where={"id": "nonexist"}, include=mocker.ANY
+    )
+    find_unique_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert len(resp.json["userIds"]) == 0
+    assert len(resp.json["userInfos"]) == 0
 
     # student
-    find_many_users_mock.return_value = [fake_student]
-
     resp = client.get("/admin/search", query_string={"id": fake_student.id})
-    find_many_users_mock.assert_called_once()
-    find_many_users_mock.reset_mock()
+    find_unique_users_mock.assert_called_with(
+        where={"id": fake_student.id}, include=mocker.ANY
+    )
+    find_unique_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_student.id]
+    assert resp.json["userInfos"] == [{"id": fake_student.id, "accountType": "student"}]
 
     # tutor
-    find_many_users_mock.return_value = [fake_tutor]
-
     resp = client.get("/admin/search", query_string={"id": fake_tutor.id})
-    find_many_users_mock.assert_called_once()
-    find_many_users_mock.reset_mock()
+    find_unique_users_mock.assert_called_with(
+        where={"id": fake_tutor.id}, include=mocker.ANY
+    )
+    find_unique_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_tutor.id]
+    assert resp.json["userInfos"] == [{"id": fake_tutor.id, "accountType": "tutor"}]
 
     # admin
-    find_many_users_mock.return_value = [fake_admin]
-
     resp = client.get("/admin/search", query_string={"id": fake_admin.id})
-    find_many_users_mock.assert_called_once()
-    find_many_users_mock.reset_mock()
+    find_unique_users_mock.assert_called_with(
+        where={"id": fake_admin.id}, include=mocker.ANY
+    )
+    find_unique_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_admin.id]
+    assert resp.json["userInfos"] == [{"id": fake_admin.id, "accountType": "admin"}]
 
 
 def test_admin_search_name(
@@ -208,7 +216,7 @@ def test_admin_search_name(
     find_many_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert len(resp.json["userIds"]) == 0
+    assert len(resp.json["userInfos"]) == 0
 
     # student
     find_many_users_mock.return_value = [fake_student]
@@ -218,7 +226,7 @@ def test_admin_search_name(
     find_many_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_student.id]
+    assert resp.json["userInfos"] == [{"id": fake_student.id, "accountType": "student"}]
 
     # tutor
     find_many_users_mock.return_value = [fake_tutor]
@@ -228,7 +236,7 @@ def test_admin_search_name(
     find_many_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_tutor.id]
+    assert resp.json["userInfos"] == [{"id": fake_tutor.id, "accountType": "tutor"}]
 
     # admin
     find_many_users_mock.return_value = [fake_admin]
@@ -238,7 +246,7 @@ def test_admin_search_name(
     find_many_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_admin.id]
+    assert resp.json["userInfos"] == [{"id": fake_admin.id, "accountType": "admin"}]
 
 
 def test_admin_search_email(
@@ -280,7 +288,7 @@ def test_admin_search_email(
     find_many_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert len(resp.json["userIds"]) == 0
+    assert len(resp.json["userInfos"]) == 0
 
     # student
     find_many_users_mock.return_value = [fake_student]
@@ -290,7 +298,7 @@ def test_admin_search_email(
     find_many_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_student.id]
+    assert resp.json["userInfos"] == [{"id": fake_student.id, "accountType": "student"}]
 
     # tutor
     find_many_users_mock.return_value = [fake_tutor]
@@ -300,7 +308,7 @@ def test_admin_search_email(
     find_many_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_tutor.id]
+    assert resp.json["userInfos"] == [{"id": fake_tutor.id, "accountType": "tutor"}]
 
     # admin
     find_many_users_mock.return_value = [fake_admin]
@@ -310,7 +318,7 @@ def test_admin_search_email(
     find_many_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_admin.id]
+    assert resp.json["userInfos"] == [{"id": fake_admin.id, "accountType": "admin"}]
 
 
 def test_admin_search_phone_number(
@@ -346,7 +354,7 @@ def test_admin_search_phone_number(
     find_many_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert len(resp.json["userIds"]) == 0
+    assert len(resp.json["userInfos"]) == 0
 
     # student
     find_many_users_mock.return_value = [fake_student]
@@ -358,7 +366,7 @@ def test_admin_search_phone_number(
     find_many_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_student.id]
+    assert resp.json["userInfos"] == [{"id": fake_student.id, "accountType": "student"}]
 
     # tutor
     find_many_users_mock.return_value = [fake_tutor]
@@ -370,7 +378,7 @@ def test_admin_search_phone_number(
     find_many_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_tutor.id]
+    assert resp.json["userInfos"] == [{"id": fake_tutor.id, "accountType": "tutor"}]
 
     # admin
     find_many_users_mock.return_value = [fake_admin]
@@ -382,7 +390,7 @@ def test_admin_search_phone_number(
     find_many_users_mock.reset_mock()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_admin.id]
+    assert resp.json["userInfos"] == [{"id": fake_admin.id, "accountType": "admin"}]
 
 
 def test_admin_search_account_type(
@@ -425,7 +433,7 @@ def test_admin_search_account_type(
     find_many_students_mock.assert_called_once()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_student.id]
+    assert resp.json["userInfos"] == [{"id": fake_student.id, "accountType": "student"}]
 
     # tutor
     find_many_tutors_mock.return_value = [fake_tutor.tutorInfo]
@@ -434,7 +442,7 @@ def test_admin_search_account_type(
     find_many_tutors_mock.assert_called_once()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_tutor.id]
+    assert resp.json["userInfos"] == [{"id": fake_tutor.id, "accountType": "tutor"}]
 
     # admin
     find_many_admins_mock.return_value = [fake_admin.adminInfo]
@@ -443,7 +451,7 @@ def test_admin_search_account_type(
     find_many_admins_mock.assert_called_once()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_admin.id]
+    assert resp.json["userInfos"] == [{"id": fake_admin.id, "accountType": "admin"}]
 
 
 def test_admin_search_args(
@@ -485,7 +493,7 @@ def test_admin_search_args(
     find_many_students_mock.assert_called_once()
 
     assert resp.status_code == 200
-    assert resp.json["userIds"] == [fake_student.id]
+    assert resp.json["userInfos"] == [{"id": fake_student.id, "accountType": "student"}]
 
 
 def test_admin_create_not_login(setup_test: FlaskClient):
@@ -712,4 +720,11 @@ def test_create_admin_valid(
     find_many_admins_mock.assert_called_once()
 
     assert resp.status_code == 200
-    assert all(id in [new_fake_admin.id, fake_admin.id] for id in resp.json["userIds"])
+    assert all(
+        d
+        in [
+            {"id": new_fake_admin.id, "accountType": "admin"},
+            {"id": fake_admin.id, "accountType": "admin"},
+        ]
+        for d in resp.json["userInfos"]
+    )
