@@ -24,3 +24,9 @@ Week 5:
 Wasnt able to complete my assigned tasks before the demo.
 Focus now is to finish the assigned tasks to prevent blocking everyone else. 
 Then can move on to sprint 2 tasks.
+
+Week 7:
+I completed implementing documentation uploading and retrieving.
+I completed implementing the retreival of tutor appointments.
+Met the deadlines given by the project leader and scrum master, overall performed much better in this sprint compared to the previous sprint.
+This can be attributed to no setup issues and increased familiarity with working with prisma.
