@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, session
 from prisma.errors import RecordNotFoundError
 from prisma.models import Appointment, Rating
+from jsonschemas.appointment_get_schema import appointment_get_schema
 from jsonschemas.appointment_accept_schema import appointment_accept_schema
 from jsonschemas.appointment_request_schema import appointment_request_schema
 from jsonschemas.appointment_delete_schema import appointment_delete_schema
@@ -17,6 +18,32 @@ from helpers.error_handlers import (
 )
 
 appointment = Blueprint("appointment", __name__)
+
+
+@appointment.route("/", methods=["GET"])
+@error_decorator
+@validate_decorator("query_string", appointment_get_schema)
+def get_appoinment(args):
+    try:
+        appointment = Appointment.prisma().find_first(where={"id": args["id"]})
+    except RecordNotFoundError:
+        raise ExpectedError("Appointment does not exist", 400)
+
+    return_val = {
+        "id": appointment.id,
+        "startTime": appointment.startTime.isoformat(),
+        "endTime": appointment.endTime.isoformat(),
+        "tutorId": appointment.tutorId,
+        "tutorAccepted": appointment.tutorAccepted,
+    }
+
+    if "user_id" in session and (
+        appointment.tutorId == session["user_id"]
+        or appointment.studentId == session["user_id"]
+    ):
+        return_val["studentId"] = appointment.studentId
+
+    return jsonify(return_val), 200
 
 
 @appointment.route("/accept", methods=["PUT"])
