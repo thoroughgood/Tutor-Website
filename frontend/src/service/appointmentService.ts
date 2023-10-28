@@ -1,7 +1,8 @@
 import { HTTPService } from "./helpers"
 import wretch from "wretch"
+import { SuccessResponse } from "./types"
 
-interface Appointment {
+export interface Appointment {
   id: string
   startTime: Date
   endTime: Date
@@ -16,20 +17,14 @@ interface AppointmentResp extends Omit<Appointment, "startTime" | "endTime"> {
 }
 
 interface AppointmentsWithTutor {
-  yourAppointments: Appointment[]
-  other: Appointment[]
-}
-
-interface StudentAppointmentsResp {
-  requested: string[]
-  accepted: string[]
-  completed: string[]
+  yourAppointments: string[]
+  other: string[]
 }
 
 interface StudentAppointments {
-  requested: Appointment[]
-  accepted: Appointment[]
-  completed: Appointment[]
+  requested: string[]
+  accepted: string[]
+  completed: string[]
 }
 
 interface AppointmentService {
@@ -41,6 +36,8 @@ interface AppointmentService {
   getTutorAppointments: (tutorId: string) => Promise<AppointmentsWithTutor>
   getAppointment: (appointmentId: string) => Promise<Appointment>
   getOwnStudentAppointments: () => Promise<StudentAppointments>
+  acceptAppointment: (appointmentId: string) => Promise<Appointment>
+  deleteAppointment: (appointmentId: string) => Promise<SuccessResponse>
 }
 
 export class HTTPAppointmentService
@@ -82,21 +79,7 @@ export class HTTPAppointmentService
         mode: "cors",
       })
       .get()
-    interface RawResp {
-      yourAppointments: string[]
-      other: string[]
-    }
-    const respData = (await resp.json()) as RawResp
-    const yourAppointmentsPromises = respData.yourAppointments.map((id) =>
-      this.getAppointment(id),
-    )
-    const otherPromises = respData.other.map((id) => this.getAppointment(id))
-    const populatedResponse: AppointmentsWithTutor = {
-      yourAppointments: await Promise.all(yourAppointmentsPromises),
-      other: await Promise.all(otherPromises),
-    }
-    console.log(populatedResponse)
-    return populatedResponse
+    return await resp.json()
   }
 
   async getOwnStudentAppointments(): Promise<StudentAppointments> {
@@ -106,19 +89,7 @@ export class HTTPAppointmentService
         mode: "cors",
       })
       .get()
-    const respData = (await resp.json()) as StudentAppointmentsResp
-    const populatedResponse: StudentAppointments = {
-      requested: await Promise.all(
-        respData.requested.map((id) => this.getAppointment(id)),
-      ),
-      accepted: await Promise.all(
-        respData.requested.map((id) => this.getAppointment(id)),
-      ),
-      completed: await Promise.all(
-        respData.requested.map((id) => this.getAppointment(id)),
-      ),
-    }
-    return populatedResponse
+    return await resp.json()
   }
 
   async getAppointment(appointmentId: string): Promise<Appointment> {
@@ -135,6 +106,38 @@ export class HTTPAppointmentService
       endTime: new Date(respData.endTime),
     }
     return appointment
+  }
+
+  async acceptAppointment(appointmentId: string): Promise<Appointment> {
+    const resp = wretch(`${this.backendURL}/appointment/accept`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({
+        id: appointmentId,
+        accept: true,
+      })
+      .put()
+    const respData = (await resp.json()) as AppointmentResp
+    return {
+      ...respData,
+      startTime: new Date(respData.startTime),
+      endTime: new Date(respData.endTime),
+    }
+  }
+
+  async deleteAppointment(appointmentId: string): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/appointment/`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({
+        id: appointmentId,
+      })
+      .delete()
+    return await resp.json()
   }
 }
 
