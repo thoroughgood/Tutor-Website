@@ -93,18 +93,26 @@ course_offerings_prop = {
     }
 }
 
+start_time_prop = {
+    "startTime": {
+        "type": "string",
+    },
+}
+
+end_time_prop = {
+    "endTime": {
+        "type": "string",
+    },
+}
+
 times_available_prop = {
     "timesAvailable": {
         "type": "array",
         "items": {
             "type": "object",
             "properties": {
-                "startTime": {
-                    "type": "string",
-                },
-                "endTime": {
-                    "type": "string",
-                },
+                **start_time_prop,
+                **end_time_prop,
             },
             "required": ["startTime", "endTime"],
         },
