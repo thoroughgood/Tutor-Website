@@ -207,7 +207,6 @@ def get_tutor_appointments(tutor_id):
 
     if tutor == None:
         raise ExpectedError("no tutor relates to the id", 404)
-
     your_appointments = []
     other = []
 

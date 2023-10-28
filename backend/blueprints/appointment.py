@@ -108,7 +108,8 @@ def appointment_request(args):
                 or appointment.startTime < et <= appointment.endTime
             ):
                 raise ExpectedError(
-                    "Appointment overlaps with another appointment", 400
+                    "Cannot request an appointment which overlaps with another one",
+                    400,
                 )
 
     appointment = Appointment.prisma().create(
