@@ -18,6 +18,7 @@ from prisma.actions import (
     SubjectActions,
     AdminActions,
     StudentActions,
+    DocumentActions,
 )
 
 # hack to import a root level file and be able to run pytest from any dir
