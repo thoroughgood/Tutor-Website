@@ -1,5 +1,4 @@
-from flask import Blueprint, jsonify, session, current_app
-from prisma.errors import RecordNotFoundError
+from flask import Blueprint, jsonify, session
 from prisma.models import Appointment, Rating
 from jsonschemas.appointment_accept_schema import appointment_accept_schema
 from jsonschemas.appointment_request_schema import appointment_request_schema
