@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime
 from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockType
 from hashlib import sha256
@@ -18,6 +19,8 @@ from prisma.actions import (
     SubjectActions,
     AdminActions,
     StudentActions,
+    AppointmentActions,
+    RatingActions,
 )
 
 # hack to import a root level file and be able to run pytest from any dir
@@ -73,7 +76,7 @@ def test_setup_test_client(setup_test: FlaskClient):
 # such, if tests rely on removal/addition of these cases this will not work
 @pytest.fixture
 def find_unique_users_mock(
-    mocker: MockerFixture, fake_student, fake_admin, fake_tutor
+    mocker: MockerFixture, fake_student, fake_admin, fake_tutor, fake_tutor2
 ) -> MockType:
     def mocked_find_unique(**kwargs):
         # where must exist
@@ -90,6 +93,10 @@ def find_unique_users_mock(
             "email" in kwargs["where"] and kwargs["where"]["email"] == fake_tutor.email
         ):
             return fake_tutor
+        elif ("id" in kwargs["where"] and kwargs["where"]["id"] == fake_tutor2.id) or (
+            "email" in kwargs["where"] and kwargs["where"]["email"] == fake_tutor2.email
+        ):
+            return fake_tutor2
 
         return None
 
@@ -173,5 +180,58 @@ def fake_tutor(fake_user) -> models.User:
 
 
 @pytest.fixture
+def fake_tutor2(fake_user, fake_appointment) -> models.User:
+    fake_tutor = fake_user("validemail4@mail.com", "12345678", "tutor")
+    fake_tutor.tutorInfo.appointments = [fake_appointment]
+    return fake_tutor
+
+
+@pytest.fixture
 def fake_admin(fake_user) -> models.User:
     return fake_user("validemail3@mail.com", "12345678", "admin")
+
+
+@pytest.fixture
+def fake_appointment(fake_tutor, fake_student):
+    apt = models.Appointment(
+        id=str(uuid4()),
+        startTime="2024-10-20T00:00:00+00:00",
+        endTime="2024-10-21T00:00:00+00:00",
+        tutorAccepted=False,
+        tutor=fake_tutor.tutorInfo,
+        tutorId=fake_tutor.id,
+        student=fake_student.studentInfo,
+        studentId=fake_student.id,
+    )
+
+    return apt
+
+
+@pytest.fixture
+def fake_appointment_fin(fake_tutor, fake_student):
+    apt = models.Appointment(
+        id=str(uuid4()),
+        startTime="2023-10-20T00:00:00+00:00",
+        endTime="2023-10-21T00:00:00+00:00",
+        tutorAccepted=False,
+        tutor=fake_tutor.tutorInfo,
+        tutorId=fake_tutor.id,
+        student=fake_student.studentInfo,
+        studentId=fake_student.id,
+    )
+
+    return apt
+
+
+@pytest.fixture
+def fake_rating(fake_appointment):
+    rating = models.Rating(
+        id=str(uuid4()),
+        score=5,
+        appointment=fake_appointment,
+        appointmentId=fake_appointment.id,
+        createdFor=fake_appointment.tutor,
+        tutorId=fake_appointment.tutorId,
+    )
+
+    return rating
