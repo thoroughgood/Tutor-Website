@@ -131,7 +131,7 @@ function AdminLinks() {
       </SidebarLink>
       <SidebarLink href="/findUser">
         <Search />
-        Find Tutors
+        Find Users
       </SidebarLink>
     </>
   )

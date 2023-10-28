@@ -38,6 +38,14 @@ export interface TutorSearchParams {
     endTime: string
   }
 }
+
+export interface AdminSearchParams {
+  name?: string
+  phoneNumber?: string
+  location?: string
+  id?: string
+  email?: string
+}
 export interface ProfileService {
   getTutorProfile: (tutorId: string) => Promise<TutorProfile>
   setOwnTutorProfile: (
@@ -46,6 +54,7 @@ export interface ProfileService {
   searchTutors: (
     searchParams: TutorSearchParams,
   ) => Promise<{ tutorIds: string[] }>
+  searchAll: (searchParams: AdminSearchParams) => Promise<{ userIds: string[] }>
   getStudentProfile: (studentId: string) => Promise<StudentProfile>
   setOwnStudentProfile: (
     studentProfile: StudentSelfEditReqBody,
@@ -76,27 +85,22 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
   }
 
   async searchAll(
-    searchParams: TutorSearchParams,
+    searchParams: AdminSearchParams,
   ): Promise<{ userIds: string[] }> {
-    //params consist of id, name, email, phone number and account type
     const url = new URL(`${this.backendURL}/admin/search`)
     const basicParams = { ...searchParams }
-    delete basicParams.courseOfferings
-    delete basicParams.timeRange
     const params = new URLSearchParams(basicParams as Record<string, string>)
-    if (searchParams.timeRange) {
-      params.set("timeRange", JSON.stringify(searchParams.timeRange))
-    }
-    if (searchParams.courseOfferings) {
-      params.set(
-        "courseOfferings",
-        JSON.stringify(searchParams.courseOfferings),
-      )
-    }
+
     url.search = params.toString()
-    const data = wretch(url.toString()).get()
+    const data = wretch(url.toString())
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
     return await data.json()
   }
+
   async getTutorProfile(tutorId: string): Promise<TutorProfile> {
     const resp = wretch(`${this.backendURL}/tutor/${tutorId}`)
       .options({
@@ -206,6 +210,10 @@ export class MockProfileService implements ProfileService {
   }
   async getTutorProfile(tutorId: string) {
     return this.mockTutorProfile
+  }
+
+  async searchAll(searchParams: AdminSearchParams) {
+    return { userIds: ["1337"] }
   }
 
   async setOwnTutorProfile(tutorProfile: TutorSelfEditReqBody) {

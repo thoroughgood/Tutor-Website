@@ -1,21 +1,20 @@
 import IconInput from "@/components/iconInput"
 import SmallProfileCard from "@/components/smallProfileCard"
 
-import { cn } from "@/lib/utils"
 import { HTTPProfileService } from "@/service/profileService"
-import { Loader2, MapPin, User } from "lucide-react"
+import { Loader2, Phone, User, Mail } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useQuery } from "react-query"
 import { useDebounce } from "usehooks-ts"
 
 const profileService = new HTTPProfileService()
-export default function FindTutor() {
+
+export default function FindUser() {
   const [name, setName] = useState<string>("")
-  const [location, setLocation] = useState<string>("")
-  const [rating, setRating] = useState<null | number>(null)
-  const [courseOfferings, setCourseOfferings] = useState<null | string[]>(null)
-  const [startTime, setStartTime] = useState<null | Date>(null)
-  const [endTime, setEndTime] = useState<null | Date>(null)
+  const [phoneNumber, setPhoneNumber] = useState<string>("")
+  const [userId, setUserId] = useState<string>("")
+  const [email, setEmail] = useState<string>("")
+  const [accountType, setAccountType] = useState<string>("")
   const [filterText, setFilterText] = useState("")
   const [filterOpen, setFilterOpen] = useState(false)
 
@@ -23,40 +22,26 @@ export default function FindTutor() {
     // Build the param obj from all the fields
     // Deletes key if 'null' since we want to use whitelist filtering
     const allParams = {
+      id: userId === "" ? null : userId,
       name: name === "" ? null : name,
-      location: location === "" ? null : location,
-      rating,
-      courseOfferings,
-      timeRange: {
-        startTime,
-        endTime,
-      },
+      email: email === "" ? null : email,
+      phoneNumber: phoneNumber === "" ? null : phoneNumber,
+      accountType: accountType === "" ? null : accountType,
     }
     return Object.fromEntries(
-      Object.entries(allParams).filter(
-        ([k, v]) =>
-          v !== null &&
-          !(k === "timeRange" && (startTime === null || endTime === null)),
-      ),
+      Object.entries(allParams).filter(([k, v]) => v !== null),
     )
-  }, [name, location, rating, courseOfferings, startTime, endTime])
+  }, [name, phoneNumber, userId, email, accountType])
 
   const debouncedSearchParams = useDebounce(searchParams, 250)
 
   const { data: searchResp, isLoading } = useQuery({
-    queryKey: ["tutors", debouncedSearchParams],
+    queryKey: ["userList", debouncedSearchParams],
     queryFn: async () => {
-      return await profileService.searchTutors(debouncedSearchParams)
+      return await profileService.searchAll(debouncedSearchParams)
     },
   })
 
-  const submitFilter = (e: React.SyntheticEvent) => {
-    e.preventDefault()
-    if (!courseOfferings?.includes(filterText) && filterText !== "") {
-      setCourseOfferings([...(courseOfferings || []), filterText])
-    }
-    setFilterText("")
-  }
   return (
     <div className="flex h-full w-full flex-col justify-center gap-10 p-16 md:justify-start">
       {/* Basic Inputs */}
@@ -72,29 +57,23 @@ export default function FindTutor() {
             <User className="h-5 w-5" />
           </IconInput>
           <IconInput
-            onChange={(e) => setLocation(e.currentTarget.value)}
-            placeholder="Location"
+            onChange={(e) => setPhoneNumber(e.currentTarget.value)}
+            placeholder="Phone Number"
           >
-            <MapPin className="h-5 w-5" />
+            <Phone className="h-5 w-5" />
           </IconInput>
-
-          <input
-            type="datetime-local"
-            className={cn(
-              "flex flex-row-reverse gap-2 rounded-md border px-4 py-2 text-muted-foreground",
-              {
-                "text-foreground": startTime !== null,
-              },
-            )}
-            onChange={(e) => {
-              const newTime =
-                e.currentTarget.value === ""
-                  ? null
-                  : new Date(e.currentTarget.value)
-              setStartTime(newTime)
-              setEndTime(newTime)
-            }}
-          />
+          <IconInput
+            onChange={(e) => setUserId(e.currentTarget.value)}
+            placeholder="ID"
+          >
+            <User className="h-5 w-5" />
+          </IconInput>
+          <IconInput
+            onChange={(e) => setEmail(e.currentTarget.value)}
+            placeholder="Email"
+          >
+            <Mail className="h-5 w-5" />
+          </IconInput>
         </div>
       </div>
       {/* Tutor search results */}
@@ -102,8 +81,8 @@ export default function FindTutor() {
         {isLoading ? (
           <Loader2 className="animate-spin" />
         ) : (
-          searchResp?.tutorIds.map((tId) => (
-            <SmallProfileCard key={tId} id={tId} accountType="tutor" />
+          searchResp?.userIds.map((tId) => (
+            <SmallProfileCard key={tId} id={tId} accountType={value} />
           ))
         )}
       </div>

@@ -16,6 +16,7 @@ def get_id():
             accountType = "student"
         elif tutor:
             accountType = "tutor"
+        
         else:
             return jsonify({}), 401
         return jsonify({"id": session["user_id"], "accountType": accountType}), 200
