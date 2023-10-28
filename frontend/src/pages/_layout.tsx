@@ -1,5 +1,4 @@
 import Sidebar from "@/components/sidebar"
-import { ThemeToggle } from "@/components/themeToggle"
 import useUser from "@/hooks/useUser"
 import { Loader2 } from "lucide-react"
 import Image from "next/image"
@@ -36,7 +35,6 @@ export default function Layout({ children }: LayoutProps) {
     return (
       <div className="flex h-screen w-screen">
         <Toaster />
-        <ThemeToggle />
         <div className="grid w-full place-content-center">{children}</div>
         <Image
           src={"/blob-scene-haikei.svg"}

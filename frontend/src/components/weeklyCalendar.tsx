@@ -14,6 +14,7 @@ import {
   setMinutes,
   roundToNearestMinutes,
   min,
+  addMinutes,
 } from "date-fns"
 import { Button } from "./ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -28,11 +29,19 @@ interface WeeklyCalendarProps {
   className?: string
   interactiveIntervals: InteractiveInterval[]
   onCalendarClick?: (dateClicked: Date) => void
+  onCalendarMouseDown?: (interval: Interval) => void
+  onCalendarMouseMove?: (interval: Interval) => void
+  onCalendarMouseUp?: (interval: Interval) => void
+  onCalendarMouseLeave?: () => void
 }
 export default function WeeklyCalendar({
   className,
   interactiveIntervals,
   onCalendarClick = () => {},
+  onCalendarMouseDown = () => {},
+  onCalendarMouseMove = () => {},
+  onCalendarMouseUp = () => {},
+  onCalendarMouseLeave = () => {},
 }: WeeklyCalendarProps) {
   // Below required for scrolling the axis labels
   const [calHeight, setCalHeight] = useState(0)
@@ -70,18 +79,26 @@ export default function WeeklyCalendar({
     return () => window.removeEventListener("resize", onResize)
   }, [])
 
-  const handleCalendarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const getIntervalFromMouseEvent = (
+    e: React.MouseEvent<HTMLDivElement>,
+    nearestTo: number = 15,
+  ) => {
     const divElement = e.currentTarget
     const rect = divElement.getBoundingClientRect()
     const x = e.clientX - rect.left + divElement.scrollLeft
     const y = e.clientY - rect.top + divElement.scrollTop
     const day = (x / divElement.scrollWidth) * 7
     const hourOfDay = (y / divElement.scrollHeight) * 24
-    const clickedDate = roundToNearestMinutes(
-      setMinutes(setDay(weekDate, day), hourOfDay * 60),
-      { nearestTo: 15 },
+    const start = roundToNearestMinutes(
+      setMinutes(setDay(weekDate, day), hourOfDay * 60 - nearestTo / 2),
+      { nearestTo },
     )
-    onCalendarClick(clickedDate)
+    const end = addMinutes(start, nearestTo)
+    return { start, end }
+  }
+
+  const handleCalendarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    onCalendarClick(getIntervalFromMouseEvent(e).start)
   }
 
   return (
@@ -151,6 +168,13 @@ export default function WeeklyCalendar({
         {/* Actual Calendar */}
         <div
           onClick={handleCalendarClick}
+          onMouseMove={(e) => onCalendarMouseMove(getIntervalFromMouseEvent(e))}
+          onMouseUp={(e) => onCalendarMouseUp(getIntervalFromMouseEvent(e))}
+          onMouseDown={(e) => {
+            e.preventDefault()
+            onCalendarMouseDown(getIntervalFromMouseEvent(e))
+          }}
+          onMouseLeave={onCalendarMouseLeave}
           onScroll={(e) => {
             // Scrolling the x and y axis (necessary since we want them to be sticky as well)
             sideRef.current?.scrollTo(0, e.currentTarget.scrollTop)

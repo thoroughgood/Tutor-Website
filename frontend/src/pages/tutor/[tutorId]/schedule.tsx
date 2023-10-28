@@ -30,6 +30,9 @@ export default function Schedule() {
   const [creatingAppointment, setCreatingAppointment] = useState(false)
   const [clickedStartTime, setClickedStartTime] = useState<undefined | Date>()
 
+  if (isOwnSchedule) {
+    router.push("/appointments")
+  }
   const { data: scheduleData } = useQuery({
     queryKey: ["tutors", tutorId, "schedule"],
     queryFn: async () => {
