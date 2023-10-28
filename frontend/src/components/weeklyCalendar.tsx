@@ -21,7 +21,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface InteractiveInterval {
   interval: Interval
-  title?: string
+  title?: string | React.ReactNode
   componentProps: React.ComponentProps<"div">
 }
 

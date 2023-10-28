@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogDescription,
 } from "./ui/dialog"
-import { useQuery } from "react-query"
+import { useQuery, useQueryClient } from "react-query"
 import { HTTPAppointmentService } from "@/service/appointmentService"
 import useUser from "@/hooks/useUser"
 import { HTTPProfileService } from "@/service/profileService"
@@ -20,6 +20,7 @@ interface AppointmentDialogProps {
 const appointmentService = new HTTPAppointmentService()
 const profileService = new HTTPProfileService()
 export default function AppointmentDialog({ id }: AppointmentDialogProps) {
+  const queryClient = useQueryClient()
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [acceptLoading, setAcceptLoading] = useState(false)
   const { data: appointmentData } = useQuery({
@@ -55,7 +56,10 @@ export default function AppointmentDialog({ id }: AppointmentDialogProps) {
       <DialogTrigger className="absolute left-0 top-0 h-full w-full " />
       <DialogContent>
         <DialogHeader>
-          Requsted appointment with{" "}
+          {appointmentData.tutorAccepted
+            ? "Appointment"
+            : "Requested appointment"}{" "}
+          with{" "}
           {userRole === "tutor" ? studentProfile?.name : tutorProfile?.name}
         </DialogHeader>
         <DialogDescription>
@@ -72,6 +76,11 @@ export default function AppointmentDialog({ id }: AppointmentDialogProps) {
                 await toastProtectedFnCall(() =>
                   appointmentService.deleteAppointment(id),
                 )
+                await queryClient.invalidateQueries([
+                  "tutors",
+                  user?.userId,
+                  "appointments",
+                ])
                 setDeleteLoading(false)
               }}
             >
@@ -84,6 +93,7 @@ export default function AppointmentDialog({ id }: AppointmentDialogProps) {
                 await toastProtectedFnCall(() =>
                   appointmentService.acceptAppointment(id),
                 )
+                await queryClient.invalidateQueries(["appointments", id])
                 setAcceptLoading(false)
               }}
             >

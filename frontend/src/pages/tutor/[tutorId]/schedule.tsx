@@ -152,6 +152,40 @@ export default function Schedule() {
               onClick: (e: React.SyntheticEvent) => e.stopPropagation(),
             },
           })) || []),
+          ...((
+            acceptedAppointmentQueries
+              .map((query) => query.data)
+              .filter((data) => data !== undefined) as Appointment[]
+          ).map((appointment) => ({
+            interval: {
+              start: appointment.startTime,
+              end: appointment.endTime,
+            },
+            title: `Appointment with ${userNameMap.get(appointment.tutorId)}`,
+            componentProps: {
+              children: <AppointmentDialog id={appointment.id} />,
+              className: "bg-green-300/40 border border-green-400",
+              onClick: (e: React.SyntheticEvent) => e.stopPropagation(),
+            },
+          })) || []),
+          ...((
+            completedAppointmentQueries
+              .map((query) => query.data)
+              .filter((data) => data !== undefined) as Appointment[]
+          ).map((appointment) => ({
+            interval: {
+              start: appointment.startTime,
+              end: appointment.endTime,
+            },
+            title: `Completed appointment with ${userNameMap.get(
+              appointment.tutorId,
+            )}`,
+            componentProps: {
+              children: <AppointmentDialog id={appointment.id} />,
+              className: "bg-slate-200/40 border border-slate-400",
+              onClick: (e: React.SyntheticEvent) => e.stopPropagation(),
+            },
+          })) || []),
           ...(scheduleData?.map((interval) => ({
             interval,
             componentProps: {
