@@ -24,7 +24,7 @@ appointment = Blueprint("appointment", __name__)
 def get_appoinment(appointment_id):
     appointment = Appointment.prisma().find_unique(where={"id": appointment_id})
     if appointment is None:
-        raise ExpectedError("Given id does not correspond to an appointment", 400)
+        raise ExpectedError("Given id does not correspond to an appointment", 404)
 
     return_val = {
         "id": appointment.id,
