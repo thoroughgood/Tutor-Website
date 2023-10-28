@@ -11,13 +11,11 @@ from prisma.errors import RecordNotFoundError
 
 
 @pytest.fixture
-def appointment_update_mock(mocker: MockerFixture, fake_tutor, fake_appointment):
+def appointment_update_mock(mocker: MockerFixture, fake_appointment):
     apt = fake_appointment
 
     def mocked_appointment_update(**kwargs):
-        if (
-            "tutorId" in kwargs["where"] and kwargs["where"]["tutorId"] == fake_tutor.id
-        ) and ("id" in kwargs["where"] and kwargs["where"]["id"] == apt.id):
+        if "id" in kwargs["where"] and kwargs["where"]["id"] == apt.id:
             apt.tutorAccepted = (
                 kwargs["data"]["tutorAccepted"]
                 if "data" in kwargs and "tutorAccepted" in kwargs["data"]
@@ -85,10 +83,13 @@ def test_appointment_accept_invalid_id(
     setup_test: FlaskClient,
     mocker: MockerFixture,
     find_unique_users_mock: MockType,
-    appointment_update_mock: MockType,
     fake_tutor,
 ):
     client = setup_test
+
+    appointment_find_first_mock = mocker.patch(
+        "tests.conftest.AppointmentActions.find_first"
+    )
 
     # login as tutor
     client.post(
@@ -104,8 +105,10 @@ def test_appointment_accept_invalid_id(
         where={"email": fake_tutor.email}, include=mocker.ANY
     )
 
+    appointment_find_first_mock.return_value = None
+
     resp = client.put("/appointment/accept", json={"id": "id", "accept": True})
-    appointment_update_mock.assert_called()
+    appointment_find_first_mock.assert_called()
 
     assert (
         resp.json["error"]
@@ -125,6 +128,10 @@ def test_appointment_accept(
     client = setup_test
     apt = fake_appointment
 
+    appointment_find_first_mock = mocker.patch(
+        "tests.conftest.AppointmentActions.find_first"
+    )
+
     # login as tutor
     client.post(
         "/login",
@@ -139,9 +146,11 @@ def test_appointment_accept(
         where={"email": fake_tutor.email}, include=mocker.ANY
     )
 
+    appointment_find_first_mock.return_value = fake_appointment
     resp = client.put(
         "/appointment/accept", json={"id": fake_appointment.id, "accept": True}
     )
+    appointment_find_first_mock.assert_called()
     appointment_update_mock.assert_called()
 
     assert resp.status_code == 200
