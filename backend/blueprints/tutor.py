@@ -198,35 +198,3 @@ def addingTimes(times_available, tutor_id):
         where={"id": tutor_id},
         data={"timesAvailable": {"create": to_create}},
     )
-
-
-@tutor.route("/<tutor_id>/appointments", methods=["GET"])
-@error_decorator
-def get_tutor_appointments(tutor_id):
-    tutor = tutor_view(id=tutor_id)
-
-    if tutor == None:
-        raise ExpectedError("no tutor relates to the id", 400)
-
-    your_appointments = []
-    other = []
-
-    for appointment in tutor.appointments:
-        if "user_id" in session and (
-            appointment.studentId == session["user_id"]
-            or appointment.tutorId == session["user_id"]
-        ):
-            your_appointments.append(appointment.id)
-            continue
-
-        other.append(appointment.id)
-
-    return (
-        jsonify(
-            {
-                "yourAppointments": your_appointments,
-                "other": other,
-            }
-        ),
-        200,
-    )
