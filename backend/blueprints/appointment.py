@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, session
 from prisma.models import Appointment, Rating
+from prisma.errors import RecordNotFoundError
 from jsonschemas.appointment_accept_schema import appointment_accept_schema
 from jsonschemas.appointment_request_schema import appointment_request_schema
 from jsonschemas.appointment_delete_schema import appointment_delete_schema
@@ -53,19 +54,16 @@ def appointment_accept(args):
     if not tutor:
         raise ExpectedError("Must be a tutor to modify appointments", 403)
 
-    appointment = Appointment.prisma().find_first(
-        where={"id": args["id"], "tutorId": tutor.id}
-    )
-    if appointment is None:
+    try:
+        appointment = Appointment.prisma().update(
+            where={"id_tutorId": {"id": args["id"], "tutorId": tutor.id}},
+            data={"tutorAccepted": args["accept"]},
+        )
+    except RecordNotFoundError:
         raise ExpectedError(
             "Appointment corresponding to id does not exist or, appointment does not involve tutor",
             400,
         )
-
-    appointment = Appointment.prisma().update(
-        where={"id": args["id"]},
-        data={"tutorAccepted": args["accept"]},
-    )
 
     return (
         jsonify(
