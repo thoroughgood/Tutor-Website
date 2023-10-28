@@ -34,7 +34,7 @@ def generate_tutor(fake_tutor, fake_student) -> User:
         tutorId=fake_tutor.id,
     )
     apt.rating = rating
-    fake_tutor.tutorInfo.appointments = []
+    fake_tutor.tutorInfo.appointments = [apt]
     fake_tutor.tutorInfo.ratings = [rating]
     fake_tutor.tutorInfo.courseOfferings = [science]
 
