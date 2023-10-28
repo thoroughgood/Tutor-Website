@@ -44,6 +44,11 @@ def get_profile(tutor_id):
     else:
         rating = rating_calc(tutor.ratings)
 
+    if tutor.documents is None:
+        documents = []
+    else:
+        documents = list(map(lambda d: d.id, tutor.documents))
+
     return jsonify(
         {
             "id": tutor.id,
@@ -56,6 +61,7 @@ def get_profile(tutor_id):
             "phoneNumber": tutor.phone_number,
             "courseOfferings": course_offerings,
             "timesAvailable": times_available,
+            "documentIds": documents,
         }
     )
 
