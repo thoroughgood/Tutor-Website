@@ -36,3 +36,9 @@ Start coding frontend tasks for sprint 2, including student profile and search f
 Wweek 6
 It was flexi week so I took this week fairly chill.
 Fixed some bugs and worked on appointment creation.
+
+Week 7
+Attended standups, pairr programmed with Terry Thoroughgood and worked through many
+frontend tickets. 
+Refactored weekly schedule calendar to be more extensible through inversion of control. 
+Created various calendar and appointment elements and functionality through new calendar system. 

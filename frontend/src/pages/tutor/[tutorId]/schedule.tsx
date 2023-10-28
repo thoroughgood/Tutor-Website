@@ -1,4 +1,5 @@
 import EditAppointmentForm from "@/components/editAppointmentForm"
+import LoadingSpinner from "@/components/loadingSpinner"
 import SmartAvatar from "@/components/smartAvatar"
 import {
   Dialog,
@@ -8,22 +9,20 @@ import {
 } from "@/components/ui/dialog"
 import WeeklyCalendar from "@/components/weeklyCalendar"
 import useUser from "@/hooks/useUser"
-import { cn } from "@/lib/utils"
-import { MockAppointmentService } from "@/service/appointmentService"
+import { cn, toastProtectedFnCall } from "@/lib/utils"
+import { HTTPAppointmentService } from "@/service/appointmentService"
 import { HTTPProfileService } from "@/service/profileService"
-import { addHours } from "date-fns"
+import { uniq } from "lodash"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useState } from "react"
 import { useQuery, useQueryClient } from "react-query"
 
 const profileService = new HTTPProfileService()
+const appointmentService = new HTTPAppointmentService()
 export default function Schedule() {
   const queryClient = useQueryClient()
   const { user } = useUser()
-  const [appointmentService] = useState(
-    new MockAppointmentService(user?.userId || ""),
-  )
   const router = useRouter()
   const tutorId = router.query.tutorId as string
   const isOwnSchedule = user?.userId == tutorId
@@ -36,22 +35,7 @@ export default function Schedule() {
   const { data: scheduleData } = useQuery({
     queryKey: ["tutors", tutorId, "schedule"],
     queryFn: async () => {
-      let { timesAvailable } = await profileService.getTutorProfile(tutorId)
-      timesAvailable = [
-        ...timesAvailable,
-        {
-          startTime: addHours(new Date(), 24).toISOString(),
-          endTime: addHours(new Date(), 25).toISOString(),
-        },
-        {
-          startTime: addHours(new Date(), 48).toISOString(),
-          endTime: addHours(new Date(), 54).toISOString(),
-        },
-        {
-          startTime: addHours(new Date(), 32).toISOString(),
-          endTime: addHours(new Date(), 38).toISOString(),
-        },
-      ]
+      const { timesAvailable } = await profileService.getTutorProfile(tutorId)
       return timesAvailable.map((ta) => ({
         start: new Date(ta.startTime),
         end: new Date(ta.endTime),
@@ -73,10 +57,40 @@ export default function Schedule() {
     refetchOnWindowFocus: false,
   })
 
-  const { data: appointmentData } = useQuery({
+  const { data: tutorAppointmentData } = useQuery({
     queryKey: ["tutors", tutorId, "appointments"],
     queryFn: () => appointmentService.getTutorAppointments(tutorId),
   })
+
+  const { data: studentAppointmentData } = useQuery({
+    queryKey: ["student", user?.userId, "appointments"],
+    queryFn: () => appointmentService.getOwnStudentAppointments(),
+  })
+
+  let tutorIds: string[] = []
+  if (studentAppointmentData) {
+    tutorIds = uniq([
+      ...studentAppointmentData.requested.map((a) => a.tutorId),
+      ...studentAppointmentData.completed.map((a) => a.tutorId),
+      ...studentAppointmentData.accepted.map((a) => a.tutorId),
+    ])
+  }
+
+  const { data: tutorNames } = useQuery({
+    queryKey: ["tutors", tutorIds, "names"],
+    queryFn: async () => {
+      const profiles = await Promise.all(
+        tutorIds.map((id) => profileService.getTutorProfile(id)),
+      )
+      const idMap = new Map<string, string>()
+      profiles.forEach((profile) => idMap.set(profile.id, profile.name))
+      return idMap
+    },
+  })
+
+  if (!profileData || !tutorAppointmentData || !scheduleData || !tutorNames) {
+    return <LoadingSpinner />
+  }
 
   return (
     <div className="relative flex h-full w-full flex-col gap-10 overflow-hidden p-10">
@@ -103,14 +117,14 @@ export default function Schedule() {
           setClickedStartTime(clickedDate)
         }}
         interactiveIntervals={[
-          ...(appointmentData?.yourAppointments.map((appointment) => ({
+          ...(tutorAppointmentData?.yourAppointments.map((appointment) => ({
             interval: {
               start: appointment.startTime,
               end: appointment.endTime,
             },
             title: `${
               appointment.tutorAccepted ? "Appointment" : "Requested"
-            } with Daniel Nguyen`,
+            } with ${profileData?.name}`,
             componentProps: {
               className: cn(
                 "bg-green-300/40 border border-green-500",
@@ -122,6 +136,25 @@ export default function Schedule() {
               },
             },
           })) || []),
+          ...(studentAppointmentData?.requested
+            .filter(
+              (studentAppointment) =>
+                !tutorAppointmentData.yourAppointments
+                  .map((a) => a.id)
+                  .includes(studentAppointment.id),
+            )
+            .map((appointment) => ({
+              interval: {
+                start: appointment.startTime,
+                end: appointment.endTime,
+              },
+              title: `Requested with ${tutorNames?.get(appointment.tutorId)}`,
+              componentProps: {
+                className:
+                  "bg-slate-50/40 border border-dashed border-slate-500",
+                onClick: (e: React.SyntheticEvent) => e.stopPropagation(),
+              },
+            })) || []),
           ...(scheduleData?.map((interval) => ({
             interval,
             componentProps: {
@@ -144,7 +177,14 @@ export default function Schedule() {
               submitFn={async (start, end) => {
                 await new Promise((resolve) => setTimeout(resolve, 1000))
                 // toast(start.toString() + end.toString())
-                await appointmentService.requestAppointment(tutorId, start, end)
+                await toastProtectedFnCall(
+                  async () =>
+                    await appointmentService.requestAppointment(
+                      tutorId,
+                      start,
+                      end,
+                    ),
+                )
                 setCreatingAppointment(false)
                 queryClient.invalidateQueries({
                   queryKey: ["tutors", tutorId, "appointments"],
