@@ -42,6 +42,8 @@ export default function FindUser() {
     },
   })
 
+  //gonna need to sort through the searchResp and somehow map account types and ids together
+
   return (
     <div className="flex h-full w-full flex-col justify-center gap-10 p-16 md:justify-start">
       {/* Basic Inputs */}
@@ -81,8 +83,12 @@ export default function FindUser() {
         {isLoading ? (
           <Loader2 className="animate-spin" />
         ) : (
-          searchResp?.userIds.map((tId) => (
-            <SmallProfileCard key={tId} id={tId} accountType={value} />
+          searchResp?.userInfos.map((tId) => (
+            <SmallProfileCard
+              key={tId.id}
+              id={tId.id}
+              accountType={tId.accountType}
+            />
           ))
         )}
       </div>
