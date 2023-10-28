@@ -10,12 +10,7 @@ import { cn } from "@/lib/utils"
 import { X } from "lucide-react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
-import {
-  FieldArrayWithId,
-  UseFieldArrayAppend,
-  UseFieldArrayRemove,
-  UseFormReturn,
-} from "react-hook-form"
+import { UseFormReturn, useFieldArray } from "react-hook-form"
 import { z } from "zod"
 const formSchema = z.object({
   name: z
@@ -36,20 +31,12 @@ const formSchema = z.object({
 })
 interface editOfferingsProps {
   form: UseFormReturn<z.infer<typeof formSchema>, any, undefined>
-  fields: FieldArrayWithId<
-    z.infer<typeof formSchema>,
-    "courseOfferings",
-    "id"
-  >[]
-  append: UseFieldArrayAppend<z.infer<typeof formSchema>, "courseOfferings">
-  remove: UseFieldArrayRemove
 }
-export default function editOfferings({
-  form,
-  fields,
-  remove,
-  append,
-}: editOfferingsProps) {
+export default function EditOfferings({ form }: editOfferingsProps) {
+  const { fields, append, remove } = useFieldArray({
+    name: "courseOfferings",
+    control: form.control,
+  })
   return (
     <div>
       {fields.map((field, index) => (
