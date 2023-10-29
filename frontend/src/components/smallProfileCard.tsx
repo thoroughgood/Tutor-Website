@@ -5,7 +5,7 @@ import { MapPin } from "lucide-react"
 import HeaderSeparator from "./headerSeparator"
 import Link from "next/link"
 import { Skeleton } from "./ui/skeleton"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import SmartAvatar from "./smartAvatar"
 
 interface SmallProfileCard {
   id: string
@@ -19,7 +19,7 @@ export default function SmallProfileCard({
   accountType,
 }: SmallProfileCard) {
   const { data } = useQuery({
-    queryKey: [accountType, id],
+    queryKey: [`${accountType}`, id],
     queryFn: async () => {
       if (accountType === "student") {
         return await profileService.getStudentProfile(id)
@@ -38,21 +38,7 @@ export default function SmallProfileCard({
       href={`/${accountType}/${id}`}
       className="flex w-screen max-w-md gap-5 rounded-md bg-background p-5 shadow transition hover:scale-[102%]"
     >
-      <Avatar className="h-32 w-32 text-4xl">
-        {data ? (
-          <>
-            {data.profilePicture && <AvatarImage src={data.profilePicture} />}
-            <AvatarFallback>
-              {data.name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")}
-            </AvatarFallback>
-          </>
-        ) : (
-          <Skeleton className="h-full w-full" />
-        )}
-      </Avatar>
+      <SmartAvatar name={data?.name} profilePicture={data?.profilePicture} />
       <div className="flex grow flex-col justify-between">
         {data ? (
           <>
