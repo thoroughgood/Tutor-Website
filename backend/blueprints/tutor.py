@@ -145,11 +145,10 @@ def addingSubjects(course_offerings, tutor_id):
     # tutor is adding/deleting subjects
     # wipe previous stuff, if there is any
     if tutor.course_offerings is not None:
-        for subject in tutor.course_offerings:
-            Tutor.prisma().update(
-                where={"id": tutor_id},
-                data={"courseOfferings": {"disconnect": {"name": subject.name}}},
-            )
+        Tutor.prisma().update(
+            where={"id": tutor_id},
+            data={"courseOfferings": {"disconnect": True}},
+        )
 
     # tutor is changing their subjects offered to zero
     if course_offerings is None or len(course_offerings) == 0:
@@ -157,16 +156,19 @@ def addingSubjects(course_offerings, tutor_id):
 
     # connect all subjects in the courseofferings list back to the tutor record
     # connect the tutor to the respective subject
+    to_connect = []
     for subject_name in course_offerings:
         subject = Subject.prisma().find_first(where={"name": subject_name})
 
         if subject is None:
             Subject.prisma().create(data={"name": subject_name})
 
-        Tutor.prisma().update(
-            where={"id": tutor_id},
-            data={"courseOfferings": {"connect": {"name": subject_name}}},
-        )
+        to_connect.append({"name": subject_name})
+
+    Tutor.prisma().update(
+        where={"id": tutor_id},
+        data={"courseOfferings": {"connect": to_connect}},
+    )
 
 
 def addingTimes(times_available, tutor_id):
