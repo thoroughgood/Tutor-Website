@@ -144,11 +144,14 @@ def addingSubjects(course_offerings, tutor_id):
     tutor = tutor_view(id=tutor_id)
     # tutor is adding/deleting subjects
     # wipe previous stuff, if there is any
-    if tutor.course_offerings is not None:
-        Tutor.prisma().update(
-            where={"id": tutor_id},
-            data={"courseOfferings": {"disconnect": True}},
-        )
+    to_disconnect = []
+    for offering in tutor.course_offerings:
+        to_disconnect.append({"name": offering.name})
+
+    Tutor.prisma().update(
+        where={"id": tutor_id},
+        data={"courseOfferings": {"disconnect": to_disconnect}},
+    )
 
     # tutor is changing their subjects offered to zero
     if course_offerings is None or len(course_offerings) == 0:
