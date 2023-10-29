@@ -19,7 +19,7 @@ export default function SmallProfileCard({
   accountType,
 }: SmallProfileCard) {
   const { data } = useQuery({
-    queryKey: [`${accountType}`, id],
+    queryKey: [`${accountType}s`, id],
     queryFn: async () => {
       if (accountType === "student") {
         return await profileService.getStudentProfile(id)
