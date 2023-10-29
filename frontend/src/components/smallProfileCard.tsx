@@ -26,7 +26,6 @@ export default function SmallProfileCard({
       } else if (accountType === "tutor") {
         return await profileService.getTutorProfile(id)
       }
-      return null
     },
   })
 
