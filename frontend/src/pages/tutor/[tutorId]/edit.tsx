@@ -26,10 +26,7 @@ import { HTTPAuthService } from "@/service/authService"
 import { getErrorMessage } from "@/lib/utils"
 import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
-import {
-  HTTPProfileService,
-  TutorSelfEditReqBody,
-} from "@/service/profileService"
+import { HTTPProfileService, TutorProfile } from "@/service/profileService"
 import { useQuery, useQueryClient } from "react-query"
 import { Textarea } from "@/components/ui/textarea"
 import toast from "react-hot-toast"
@@ -110,6 +107,14 @@ export default function Edit() {
       form.setValue("profilePicture", "")
     }
   }, [data, form])
+  //if the user is a tutor or student and it's not their profile they dont have access. Admins always have access
+  if (
+    (user?.userType === "tutor" || user?.userType === "student") &&
+    !isOwnProfile
+  ) {
+    return <div>You do not have access to this webpage</div>
+  }
+
   if (!data) {
     return (
       <div className="grid h-full w-full  place-content-center overflow-hidden p-16">
@@ -134,7 +139,8 @@ export default function Edit() {
         file = (await fileToDataUrl(values.profilePicture)) as string
       }
 
-      const tutorObj: TutorSelfEditReqBody = {
+      const tutorObj: TutorProfile = {
+        id: tutorId,
         name: values.name,
         bio: values.bio,
         email: data.email,
@@ -155,6 +161,7 @@ export default function Edit() {
         tutorObj.profilePicture = null
       }
       const response = await profileService.setOwnTutorProfile(tutorObj)
+
       if (response.success) {
         router.push(`/tutor/${router.query.tutorId as string}/`)
       }
@@ -248,9 +255,9 @@ export default function Edit() {
       </Card>
       <div className="p-auto relative mx-auto my-5 max-w-sm text-center">
         <Button asChild className="m-3 p-6" variant="secondary">
-          <Link href={`../${user?.userId}`}> Back </Link>
+          <Link href={`../${tutorId}`}> Back </Link>
         </Button>
-        <DeleteModal profileId={tutorId} />
+        <DeleteModal profileId={tutorId} accountType="tutor" />
       </div>
     </div>
   )

@@ -26,10 +26,7 @@ import { HTTPAuthService } from "@/service/authService"
 import { getErrorMessage } from "@/lib/utils"
 import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
-import {
-  HTTPProfileService,
-  StudentSelfEditReqBody,
-} from "@/service/profileService"
+import { HTTPProfileService, StudentProfile } from "@/service/profileService"
 import { useQuery, useQueryClient } from "react-query"
 import { Textarea } from "@/components/ui/textarea"
 import toast from "react-hot-toast"
@@ -117,7 +114,8 @@ export default function Edit() {
         file = (await fileToDataUrl(values.profilePicture)) as string
       }
 
-      const studentObj: StudentSelfEditReqBody = {
+      const studentObj: StudentProfile = {
+        id: studentId,
         name: values.name,
         bio: values.bio,
         email: data?.email,
@@ -222,9 +220,9 @@ export default function Edit() {
       </Card>
       <div className="p-auto relative mx-auto my-5 max-w-sm text-center">
         <Button asChild className="m-3 p-6" variant="secondary">
-          <Link href={`../${user?.userId}`}> Back </Link>
+          <Link href={`../${studentId}`}> Back </Link>
         </Button>
-        <DeleteModal profileId={studentId} />
+        <DeleteModal profileId={studentId} accountType="student" />
       </div>
     </div>
   )
