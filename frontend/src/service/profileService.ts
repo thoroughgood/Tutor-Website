@@ -103,6 +103,17 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     return await data.json()
   }
 
+  async uploadDocument(documents: string): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/document`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({ document: documents })
+      .post()
+    return await resp.json()
+  }
+
   async getTutorProfile(tutorId: string): Promise<TutorProfile> {
     const resp = wretch(`${this.backendURL}/tutor/${tutorId}`)
       .options({

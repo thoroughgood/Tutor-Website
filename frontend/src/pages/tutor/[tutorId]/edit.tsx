@@ -49,6 +49,11 @@ const ACCEPTED_IMAGE_TYPES = [
   "image/webp",
 ]
 
+const ACCEPTED_FILE_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]
 //null if the string value is empty
 const formSchema = z.object({
   name: z
@@ -58,6 +63,12 @@ const formSchema = z.object({
     })
     .max(50),
   bio: z.string(),
+  document: z
+    .any()
+    .refine(
+      (files) => ACCEPTED_FILE_TYPES.includes(files.type) || files == "",
+      "Not accepted file type",
+    ),
   profilePicture: z
     .any()
     .refine(
@@ -108,6 +119,7 @@ export default function Edit() {
       form.setValue("phoneNumber", data.phoneNumber || "")
       form.setValue("courseOfferings", courseObj)
       form.setValue("profilePicture", "")
+      form.setValue("document", "")
     }
   }, [data, form])
   if (!data) {
@@ -133,6 +145,15 @@ export default function Edit() {
       if (values.profilePicture.length != 0) {
         file = (await fileToDataUrl(values.profilePicture)) as string
       }
+      console.log(values.document)
+      console.log(values.profilePicture)
+      let doc = ""
+      if (values.document.length != 0) {
+        doc = (await fileToDataUrl(values.document)) as string
+      }
+      console.log(doc)
+
+      const docResponse = profileService.uploadDocument(doc)
 
       const tutorObj: TutorSelfEditReqBody = {
         name: values.name,
@@ -194,6 +215,27 @@ export default function Edit() {
                     <FormControl>
                       <Textarea className="resize-none" {...field} />
                     </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="document"
+                render={({ field }) => (
+                  <FormItem>
+                    <Label>Document Upload</Label>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        onChange={(e) => {
+                          e.preventDefault()
+                          if (e.target.files) {
+                            field.onChange(e.target.files[0])
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
