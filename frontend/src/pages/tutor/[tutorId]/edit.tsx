@@ -142,8 +142,7 @@ export default function Edit() {
         location: values.location,
         phoneNumber: values.phoneNumber,
         courseOfferings: courses,
-        timeAvailable: data.timeAvailable,
-
+        timesAvailable: data.timesAvailable,
       }
 
       if (values.phoneNumber.length === 0) {
@@ -155,9 +154,9 @@ export default function Edit() {
       if (values.profilePicture.length === 0) {
         tutorObj.profilePicture = null
       }
-      const id = await profileService.setOwnTutorProfile(tutorObj)
-      if (id.success) {
-        router.push(`/tutor/${tutorId}/`)
+      const response = await profileService.setOwnTutorProfile(tutorObj)
+      if (response.success) {
+        router.push(`/tutor/${router.query.tutorId as string}/`)
       }
     } catch (error) {
       toast.error(getErrorMessage(error))

@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  Plus,
   Search,
   User,
 } from "lucide-react"
@@ -43,7 +44,13 @@ export default function Sidebar() {
           <Image src="/logo.svg" alt="logo" fill />
         </div>
         <div className="flex grow flex-col gap-1 text-muted-foreground">
-          {user?.userType === "student" ? <StudentLinks /> : <TutorLinks />}
+          {user?.userType === "student" ? (
+            <StudentLinks />
+          ) : user?.userType === "tutor" ? (
+            <TutorLinks />
+          ) : (
+            <AdminLinks />
+          )}
         </div>
 
         <Button
@@ -109,6 +116,22 @@ function StudentLinks() {
       <SidebarLink href={`/student/${user?.userId}`}>
         <User />
         Profile
+      </SidebarLink>
+    </>
+  )
+}
+
+function AdminLinks() {
+  const { user } = useUser()
+
+  return (
+    <>
+      <SidebarLink href={"/create"}>
+        <Plus strokeWidth={1.75} /> Admin Generator
+      </SidebarLink>
+      <SidebarLink href="/findUser">
+        <Search />
+        Find Users
       </SidebarLink>
     </>
   )
