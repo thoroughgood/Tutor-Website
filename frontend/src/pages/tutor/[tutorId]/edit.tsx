@@ -153,7 +153,7 @@ export default function Edit() {
       }
       console.log(doc)
 
-      const docResponse = profileService.uploadDocument(doc)
+      const docResponse = await profileService.uploadDocument(doc)
 
       const tutorObj: TutorSelfEditReqBody = {
         name: values.name,
