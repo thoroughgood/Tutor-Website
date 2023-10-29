@@ -143,7 +143,6 @@ export default function Edit() {
         phoneNumber: values.phoneNumber,
         courseOfferings: courses,
         timeAvailable: data.timeAvailable,
-
       }
 
       if (values.phoneNumber.length === 0) {
@@ -157,7 +156,7 @@ export default function Edit() {
       }
       const id = await profileService.setOwnTutorProfile(tutorObj)
       if (id.success) {
-        router.push(`/tutor/${tutorId}/`)
+        router.push(`/tutor/${router.query.tutorId as string}/`)
       }
     } catch (error) {
       toast.error(getErrorMessage(error))
