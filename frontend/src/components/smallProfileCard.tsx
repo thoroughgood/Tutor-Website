@@ -29,9 +29,6 @@ export default function SmallProfileCard({
       return null
     },
   })
-  if (data === null) {
-    return
-  }
 
   return (
     <Link

@@ -210,7 +210,7 @@ export class MockProfileService implements ProfileService {
     return this.mockTutorProfile
   }
 
-  async searchAll(searchParams: AdminSearchParams) {
+  async searchAll(_searchParams: AdminSearchParams) {
     return { userInfos: [{ id: "1337", accountType: "tutor" as "tutor" }] }
   }
 
@@ -219,11 +219,11 @@ export class MockProfileService implements ProfileService {
     return { success: true }
   }
 
-  async deleteOwnTutorProfile(tutorId: string) {
+  async deleteOwnTutorProfile(_tutorId: string) {
     return { success: true }
   }
 
-  async searchTutors(searchParams: TutorSearchParams) {
+  async searchTutors(_searchParams: TutorSearchParams) {
     return { tutorIds: ["1337"] }
   }
 

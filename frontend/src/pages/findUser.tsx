@@ -41,6 +41,12 @@ export default function FindUser() {
       return await profileService.searchAll(debouncedSearchParams)
     },
   })
+  if (searchResp) {
+    searchResp.userInfos.forEach((item, index) => {
+      if (item.accountType === "admin") searchResp.userInfos.splice(index, 1)
+    })
+    console.log(searchResp)
+  }
 
   //gonna need to sort through the searchResp and somehow map account types and ids together
 
@@ -78,7 +84,7 @@ export default function FindUser() {
           </IconInput>
         </div>
       </div>
-      {/* Tutor search results */}
+      {/* Admin search results */}
       <div className="flex flex-wrap justify-center gap-5">
         {isLoading ? (
           <Loader2 className="animate-spin" />
