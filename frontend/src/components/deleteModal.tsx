@@ -21,9 +21,13 @@ const authService = new HTTPAuthService()
 
 export interface deleteModalInterface {
   profileId: string
+  accountType: "student" | "tutor"
 }
 
-export default function DeleteModal({ profileId }: deleteModalInterface) {
+export default function DeleteModal({
+  profileId,
+  accountType,
+}: deleteModalInterface) {
   const [open, setOpen] = useState(false)
   const router = useRouter()
   const [submitLoading, setSubmitLoading] = useState(false)
@@ -32,13 +36,17 @@ export default function DeleteModal({ profileId }: deleteModalInterface) {
   //deleteOwnUserProfile needs to grab the id of the profile we are on
 
   const deleteProfile = async () => {
+    console.log(profileId)
     setSubmitLoading(true)
     try {
-      //if student vs if tutor
-      const deletion =
-        user && user.userType === "student"
-          ? await profileService.deleteOwnStudentProfile(profileId)
-          : await profileService.deleteOwnTutorProfile(profileId)
+      if (accountType === "student") {
+        const response = await profileService.deleteOwnStudentProfile(profileId)
+        console.log(response)
+      }
+      if (accountType === "tutor") {
+        const response = await profileService.deleteOwnTutorProfile(profileId)
+        console.log(response)
+      }
     } catch {
       toast.error(getErrorMessage(Error))
     }
@@ -75,9 +83,13 @@ export default function DeleteModal({ profileId }: deleteModalInterface) {
               await deleteProfile()
               setOpen(false)
               setSubmitLoading(false)
-              if (await toastProtectedFnCall(() => authService.logout())) {
-                setUser(null)
-                router.push("/register")
+              if (user?.userType !== "admin") {
+                if (await toastProtectedFnCall(() => authService.logout())) {
+                  setUser(null)
+                  router.push("/register")
+                }
+              } else {
+                router.push(`../${profileId}`)
               }
             }}
           >

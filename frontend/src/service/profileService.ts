@@ -132,7 +132,7 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
         credentials: "include",
         mode: "cors",
       })
-      .json({})
+      .json({ id: tutorId })
       .delete()
     return await resp.json()
   }
@@ -165,7 +165,7 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
         credentials: "include",
         mode: "cors",
       })
-      .json({})
+      .json({ id: studentId })
       .delete()
     return await resp.json()
   }
