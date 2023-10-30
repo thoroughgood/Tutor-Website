@@ -26,7 +26,10 @@ import { HTTPAuthService } from "@/service/authService"
 import { getErrorMessage } from "@/lib/utils"
 import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
-import { HTTPProfileService, TutorProfile } from "@/service/profileService"
+import {
+  HTTPProfileService,
+  TutorSelfEditReqBody,
+} from "@/service/profileService"
 import { useQuery, useQueryClient } from "react-query"
 import { Textarea } from "@/components/ui/textarea"
 import toast from "react-hot-toast"
@@ -139,8 +142,7 @@ export default function Edit() {
         file = (await fileToDataUrl(values.profilePicture)) as string
       }
 
-      const tutorObj: TutorProfile = {
-        id: tutorId,
+      const tutorObj: TutorSelfEditReqBody = {
         name: values.name,
         bio: values.bio,
         email: data.email,
@@ -160,7 +162,13 @@ export default function Edit() {
       if (values.profilePicture.length === 0) {
         tutorObj.profilePicture = null
       }
-      const response = await profileService.setOwnTutorProfile(tutorObj)
+      let response
+      if (user?.userType === "admin") {
+        tutorObj.id = tutorId
+        response = await profileService.setOwnTutorProfile(tutorObj)
+      } else {
+        response = await profileService.setOwnTutorProfile(tutorObj)
+      }
 
       if (response.success) {
         router.push(`/tutor/${router.query.tutorId as string}/`)
