@@ -19,6 +19,7 @@ from prisma.actions import (
     SubjectActions,
     AdminActions,
     StudentActions,
+    DocumentActions,
     AppointmentActions,
     RatingActions,
 )

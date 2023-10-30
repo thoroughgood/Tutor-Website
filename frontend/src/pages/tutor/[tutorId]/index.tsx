@@ -48,9 +48,11 @@ export default function TutorProfile() {
                 </Link>
               </Button>
 
-              <Button variant="default" className="flex gap-2">
-                <Calendar className="w-5" />
-                Edit Schedule
+              <Button asChild variant="default" className="flex gap-2">
+                <Link href={`/appointments`}>
+                  <Calendar className="w-5" />
+                  Edit Schedule
+                </Link>
               </Button>
             </>
           ) : (

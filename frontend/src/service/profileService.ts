@@ -38,6 +38,14 @@ export interface TutorSearchParams {
     endTime: string
   }
 }
+
+export interface AdminSearchParams {
+  name?: string
+  phoneNumber?: string
+  location?: string
+  id?: string
+  email?: string
+}
 export interface ProfileService {
   getTutorProfile: (tutorId: string) => Promise<TutorProfile>
   setOwnTutorProfile: (
@@ -46,6 +54,9 @@ export interface ProfileService {
   searchTutors: (
     searchParams: TutorSearchParams,
   ) => Promise<{ tutorIds: string[] }>
+  searchAll: (searchParams: AdminSearchParams) => Promise<{
+    userInfos: { id: string; accountType: "tutor" | "student" }[]
+  }>
   getStudentProfile: (studentId: string) => Promise<StudentProfile>
   setOwnStudentProfile: (
     studentProfile: StudentSelfEditReqBody,
@@ -74,6 +85,24 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     const data = wretch(url.toString()).get()
     return await data.json()
   }
+
+  async searchAll(searchParams: AdminSearchParams): Promise<{
+    userInfos: { id: string; accountType: "tutor" | "student" }[]
+  }> {
+    const url = new URL(`${this.backendURL}/admin/search`)
+    const basicParams = { ...searchParams }
+    const params = new URLSearchParams(basicParams as Record<string, string>)
+
+    url.search = params.toString()
+    const data = wretch(url.toString())
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
+    return await data.json()
+  }
+
   async getTutorProfile(tutorId: string): Promise<TutorProfile> {
     const resp = wretch(`${this.backendURL}/tutor/${tutorId}`)
       .options({
@@ -181,12 +210,16 @@ export class MockProfileService implements ProfileService {
     return this.mockTutorProfile
   }
 
+  async searchAll(_searchParams: AdminSearchParams) {
+    return { userInfos: [{ id: "1337", accountType: "tutor" as "tutor" }] }
+  }
+
   async setOwnTutorProfile(tutorProfile: TutorSelfEditReqBody) {
     this.mockTutorProfile = { ...tutorProfile, id: "1337" }
     return { success: true }
   }
 
-  async deleteOwnTutorProfile(tutorId: string) {
+  async deleteOwnTutorProfile(_tutorId: string) {
     return { success: true }
   }
 

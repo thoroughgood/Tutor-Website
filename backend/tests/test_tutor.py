@@ -287,7 +287,7 @@ def test_modify_same_values(
 
     update_user_mock = mocker.patch("tests.conftest.UserActions.update")
     update_tutor_mock = mocker.patch("tests.conftest.TutorActions.update")
-    create_subject_mock = mocker.patch("tests.conftest.SubjectActions.create")
+    create_subject_mock = mocker.patch("tests.conftest.SubjectActions.create_many")
     # same values in fields
     resp = client.put(
         "/tutor/profile",
@@ -349,7 +349,7 @@ def test_modify_different_values(
 
     update_user_mock = mocker.patch("tests.conftest.UserActions.update")
     update_tutor_mock = mocker.patch("tests.conftest.TutorActions.update")
-    create_subject_mock = mocker.patch("tests.conftest.SubjectActions.create")
+    create_subject_mock = mocker.patch("tests.conftest.SubjectActions.create_many")
     resp = client.put(
         "/tutor/profile",
         json={

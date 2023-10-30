@@ -9,9 +9,11 @@ import SmartAvatar from "./smartAvatar"
 
 interface SmallProfileCard {
   id: string
-  accountType: "tutor" // add more later if necessary
+  accountType: "tutor" | "student" // add more later if necessary
 }
+
 const profileService = new HTTPProfileService()
+
 export default function SmallProfileCard({
   id,
   accountType,
@@ -19,12 +21,17 @@ export default function SmallProfileCard({
   const { data } = useQuery({
     queryKey: [`${accountType}s`, id],
     queryFn: async () => {
-      return await profileService.getTutorProfile(id)
+      if (accountType === "student") {
+        return await profileService.getStudentProfile(id)
+      } else if (accountType === "tutor") {
+        return await profileService.getTutorProfile(id)
+      }
     },
   })
+
   return (
     <Link
-      href={`/tutor/${id}`}
+      href={`/${accountType}/${id}`}
       className="flex w-screen max-w-md gap-5 rounded-md bg-background p-5 shadow transition hover:scale-[102%]"
     >
       <SmartAvatar name={data?.name} profilePicture={data?.profilePicture} />
@@ -40,7 +47,7 @@ export default function SmallProfileCard({
                   variant="outline"
                   className="mt-1 border-muted-foreground px-3 py-1 text-xs text-muted-foreground"
                 >
-                  TUTOR
+                  {accountType.toUpperCase()}
                 </Badge>
                 {data.location && (
                   <div className="flex gap-1 text-muted-foreground">
@@ -50,14 +57,18 @@ export default function SmallProfileCard({
                 )}
               </div>
             </div>
-            <HeaderSeparator>Course Offerings</HeaderSeparator>
-            <div className=" flex flex-wrap justify-center gap-2">
-              {data.courseOfferings.map((course) => (
-                <Badge variant="random" key={course}>
-                  {course}
-                </Badge>
-              ))}
-            </div>
+            {accountType === "tutor" && data.courseOfferings.length > 0 && (
+              <>
+                <HeaderSeparator>Course Offerings</HeaderSeparator>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {data.courseOfferings.map((course) => (
+                    <Badge variant="random" key={course}>
+                      {course}
+                    </Badge>
+                  ))}
+                </div>
+              </>
+            )}
           </>
         ) : (
           <div className="space-y-2">
