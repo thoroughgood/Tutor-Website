@@ -2,7 +2,6 @@ from flask import Blueprint, jsonify, session
 from prisma.models import User
 from helpers.error_handlers import error_decorator
 from helpers.check_user_account_type import check_type
-from helpers.views import student_view, tutor_view, admin_view
 
 utils = Blueprint("utils", __name__)
 
