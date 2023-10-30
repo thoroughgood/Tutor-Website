@@ -72,7 +72,9 @@ def user_search(args):
     for user, account_type in users:
         valid = True
         if "name" in args:
-            valid &= re.search(args["name"].lower().strip(), user.name.lower()) != None
+            valid &= (
+                re.search(args["name"].lower().strip(), user.name.lower()) is not None
+            )
 
         if "phoneNumber" in args and user.phoneNumber:
             valid &= args["phoneNumber"] == user.phoneNumber

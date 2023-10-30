@@ -103,7 +103,7 @@ def appointment_request(args):
     if not student:
         raise ExpectedError("Profile is not a student", 400)
 
-    if student.appointments != None:
+    if student.appointments is not None:
         for appointment in student.appointments:
             if (
                 appointment.startTime <= st < appointment.endTime

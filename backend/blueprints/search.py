@@ -65,7 +65,7 @@ def tutor_search(args):
         if "location" in args and tutor.userInfo.location:
             tutor_location = tutor.userInfo.location.lower().strip()
             search_location = args["location"].lower().strip()
-            valid &= re.search(search_location, tutor_location) != None
+            valid &= re.search(search_location, tutor_location) is not None
         elif "location" in args:
             continue
 
