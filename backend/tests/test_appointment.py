@@ -161,6 +161,300 @@ def test_appointment_accept(
     assert resp.json["tutorAccepted"] == True
 
 
+############################### GET TESTS ######################################
+
+
+def test_appointment_get_invalid(setup_test: FlaskClient):
+    client = setup_test
+
+    # no appointment id given
+    resp = client.get("/appointment/")
+    assert resp.status_code == 405
+
+    # invalid appointment id given
+    resp = client.get("/appointment/notvalid")
+    assert resp.status_code == 404
+    assert resp.json["error"] == "Given id does not correspond to an appointment"
+
+
+def test_appointment_get(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    fake_appointment,
+    fake_tutor,
+    fake_tutor2,
+):
+    client = setup_test
+
+    appointment_find_unique_mock = mocker.patch(
+        "tests.conftest.AppointmentActions.find_unique"
+    )
+    appointment_find_unique_mock.return_value = fake_appointment
+
+    # not logged in
+    resp = client.get(f"/appointment/{fake_appointment.id}")
+    appointment_find_unique_mock.assert_called_with(where={"id": fake_appointment.id})
+
+    assert resp.json["id"] == fake_appointment.id
+    assert resp.json["startTime"] == fake_appointment.startTime.isoformat()
+    assert resp.json["endTime"] == fake_appointment.endTime.isoformat()
+    assert resp.json["tutorId"] == fake_appointment.tutorId
+    assert resp.json["tutorAccepted"] == fake_appointment.tutorAccepted
+    assert "studentId" not in resp.json
+    assert resp.status_code == 200
+
+    # logged in, but appointment not related to current user
+    client.post(
+        "/login",
+        json={
+            "email": "validemail4@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_tutor2.email}, include=mocker.ANY
+    )
+
+    resp = client.get(f"/appointment/{fake_appointment.id}")
+    appointment_find_unique_mock.assert_called_with(where={"id": fake_appointment.id})
+
+    assert resp.json["id"] == fake_appointment.id
+    assert resp.json["startTime"] == fake_appointment.startTime.isoformat()
+    assert resp.json["endTime"] == fake_appointment.endTime.isoformat()
+    assert resp.json["tutorId"] == fake_appointment.tutorId
+    assert resp.json["tutorAccepted"] == fake_appointment.tutorAccepted
+    assert "studentId" not in resp.json
+    assert resp.status_code == 200
+
+    # logged in, and appointment is related to current user
+    client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_tutor.email}, include=mocker.ANY
+    )
+
+    resp = client.get(f"/appointment/{fake_appointment.id}")
+    appointment_find_unique_mock.assert_called_with(where={"id": fake_appointment.id})
+
+    assert resp.json["id"] == fake_appointment.id
+    assert resp.json["startTime"] == fake_appointment.startTime.isoformat()
+    assert resp.json["endTime"] == fake_appointment.endTime.isoformat()
+    assert resp.json["tutorId"] == fake_appointment.tutorId
+    assert resp.json["tutorAccepted"] == fake_appointment.tutorAccepted
+    assert resp.json["studentId"] == fake_appointment.studentId
+    assert resp.status_code == 200
+
+
+############################## REQUEST TESTS ###################################
+
+
+def test_request_args(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock: MockType,
+    fake_student: User,
+    fake_tutor: User,
+    fake_appointment: Appointment,
+):
+    client = setup_test
+
+    # No JSON Body
+    resp = client.post("/appointment/request")
+    assert resp.json == {"error": "content-type was not json or data was malformed"}
+    assert resp.status_code == 415
+
+    # Missing start time
+    resp = client.post("/appointment/request", json={})
+    assert resp.json == {"error": "'startTime' was missing from field(s)"}
+    assert resp.status_code == 400
+
+    # Missing end time
+    resp = client.post(
+        "/appointment/request", json={"startTime": "2023-10-20T00:00:00+00:00"}
+    )
+    assert resp.json == {"error": "'endTime' was missing from field(s)"}
+    assert resp.status_code == 400
+
+    # Missing tutor id
+    resp = client.post(
+        "/appointment/request",
+        json={
+            "startTime": "2024-10-20T00:00:00+00:00",
+            "endTime": "2024-10-20T01:00:00+00:00",
+        },
+    )
+    assert resp.json == {"error": "'tutorId' was missing from field(s)"}
+    assert resp.status_code == 400
+
+    # No logged in user
+    resp = client.post(
+        "/appointment/request",
+        json={
+            "startTime": "2024-10-20T00:00:00+00:00",
+            "endTime": "2024-10-20T01:00:00+00:00",
+            "tutorId": fake_tutor.id,
+        },
+    )
+    assert resp.json == {"error": "No user is logged in"}
+    assert resp.status_code == 401
+
+    client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_student.email}, include=mocker.ANY
+    )
+
+    # Invalid time (invalid start time format)
+    resp = client.post(
+        "/appointment/request",
+        json={
+            "startTime": "2023",
+            "endTime": "2024-10-20T01:00:00+00:00",
+            "tutorId": "1",
+        },
+    )
+    assert resp.json == {"error": "startTime and/or endTime field(s) was malformed"}
+    assert resp.status_code == 400
+
+    # Invalid time (invalid end time format)
+    resp = client.post(
+        "/appointment/request",
+        json={
+            "startTime": "2024-10-20T00:00:00+00:00",
+            "endTime": "2023",
+            "tutorId": "1",
+        },
+    )
+    assert resp.json == {"error": "startTime and/or endTime field(s) was malformed"}
+    assert resp.status_code == 400
+
+    # Invalid time (invalid both time format)
+    resp = client.post(
+        "/appointment/request",
+        json={
+            "startTime": "2023",
+            "endTime": "2024",
+            "tutorId": "1",
+        },
+    )
+    assert resp.json == {"error": "startTime and/or endTime field(s) was malformed"}
+    assert resp.status_code == 400
+
+    # Invalid end time (et < st)
+    resp = client.post(
+        "/appointment/request",
+        json={
+            "startTime": "2024-10-20T01:00:00+00:00",
+            "endTime": "2024-10-20T00:00:00+00:00",
+            "tutorId": "1",
+        },
+    )
+    assert resp.json == {"error": "endTime cannot be less than startTime"}
+    assert resp.status_code == 400
+
+    # Invalid tutor id
+    resp = client.post(
+        "/appointment/request",
+        json={
+            "startTime": "2024-11-20T00:00:00+00:00",
+            "endTime": "2024-11-20T01:00:00+00:00",
+            "tutorId": "1",
+        },
+    )
+    assert resp.json == {"error": "Tutor profile does not exist"}
+    assert resp.status_code == 400
+
+    client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+
+    # Invalid user (tutor is logged in)
+    resp = client.post(
+        "/appointment/request",
+        json={
+            "startTime": "2024-10-20T00:00:00+00:00",
+            "endTime": "2024-10-20T01:00:00+00:00",
+            "tutorId": fake_tutor.id,
+        },
+    )
+    assert resp.json == {"error": "Profile is not a student"}
+    assert resp.status_code == 400
+
+    client.post("/logout")
+    client.post(
+        "/login",
+        json={
+            "email": "validemail3@mail.com",
+            "password": "12345678",
+            "accountType": "admin",
+        },
+    )
+
+    # Invalid user (admin is logged in)
+    resp = client.post(
+        "/appointment/request",
+        json={
+            "startTime": "2024-10-20T00:00:00+00:00",
+            "endTime": "2024-10-20T01:00:00+00:00",
+            "tutorId": fake_tutor.id,
+        },
+    )
+    assert resp.json == {"error": "Profile is not a student"}
+    assert resp.status_code == 400
+
+    client.post("/logout")
+    client.post(
+        "/login",
+        json={
+            "email": "validemail@mail.com",
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+
+    create_mock = mocker.patch("tests.conftest.AppointmentActions.create")
+    create_mock.return_value = fake_appointment
+
+    # Valid Input
+    resp = client.post(
+        "/appointment/request",
+        json={
+            "startTime": "2024-10-20T00:00:00+00:00",
+            "endTime": "2024-10-21T00:00:00+00:00",
+            "tutorId": fake_tutor.id,
+        },
+    )
+
+    assert resp.status_code == 200
+    assert resp.json["startTime"] == "2024-10-20T00:00:00+00:00"
+    assert resp.json["endTime"] == "2024-10-21T00:00:00+00:00"
+    assert resp.json["studentId"] == fake_student.id
+    assert resp.json["tutorId"] == fake_tutor.id
+    assert resp.json["tutorAccepted"] == False
+
+
 ############################### DELETE TESTS ###################################
 
 
