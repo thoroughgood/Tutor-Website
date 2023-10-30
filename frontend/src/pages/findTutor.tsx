@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { HTTPProfileService } from "@/service/profileService"
+import { addMinutes } from "date-fns"
 import { Loader2, MapPin, User } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useQuery } from "react-query"
@@ -101,6 +102,7 @@ export default function FindTutor() {
                   : new Date(e.currentTarget.value)
               setStartTime(newTime)
               setEndTime(newTime)
+              newTime && setEndTime(addMinutes(newTime, 15))
             }}
           />
         </div>
@@ -161,7 +163,7 @@ export default function FindTutor() {
         )}
       </div>
       {/* Tutor search results */}
-      <div className="flex flex-wrap justify-center gap-5">
+      <div className="flex flex-wrap justify-center gap-5 overflow-y-auto p-2">
         {isLoading ? (
           <Loader2 className="animate-spin" />
         ) : (
