@@ -55,23 +55,27 @@ def tutor_search(args):
             et = data["endTime"]
 
             # Note: datetimes extracted from the db are default UTC
-            tutor_st = tutor.timesAvailable[0].startTime
-            tutor_et = tutor.timesAvailable[-1].endTime
-            valid &= et >= tutor_st and st <= tutor_et
+            valid &= any(
+                et >= times_available.startTime and st <= times_available.endTime
+                for times_available in tutor.timesAvailable
+            )
         elif "timeRange" in args:
             continue
 
         if "location" in args and tutor.userInfo.location:
             tutor_location = tutor.userInfo.location.lower().strip()
             search_location = args["location"].lower().strip()
-            valid &= re.search(search_location, tutor_location) != None
+            valid &= re.search(search_location, tutor_location) is not None
         elif "location" in args:
             continue
 
         if "rating" in args:
+            # conversion required as rating is passed in a query string
             valid &= rating_calc(tutor.ratings) >= float(args["rating"])
 
         if "courseOfferings" in args:
+            # Although flask has a `get_list` method on request.args,
+            # due to how the current frontend is setup, this is more acceptable
             try:
                 course_offerings = json.loads(args["courseOfferings"])
             except json.decoder.JSONDecodeError:
