@@ -12,7 +12,7 @@ utils = Blueprint("utils", __name__)
 def get_id():
     if "user_id" in session:
         user = User.prisma().find_unique(
-            where={"id": session["id"]},
+            where={"id": session["user_id"]},
             include={"adminInfo": True, "studentInfo": True, "tutorInfo": True},
         )
         return jsonify({"id": session["user_id"], "accountType": check_type(user)}), 200
