@@ -55,9 +55,10 @@ def tutor_search(args):
             et = data["endTime"]
 
             # Note: datetimes extracted from the db are default UTC
-            tutor_st = tutor.timesAvailable[0].startTime
-            tutor_et = tutor.timesAvailable[-1].endTime
-            valid &= et >= tutor_st and st <= tutor_et
+            valid &= any(
+                et >= times_available.startTime and st <= times_available.endTime
+                for times_available in tutor.timesAvailable
+            )
         elif "timeRange" in args:
             continue
 
