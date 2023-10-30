@@ -70,9 +70,12 @@ def tutor_search(args):
             continue
 
         if "rating" in args:
+            # conversion required as rating is passed in a query string
             valid &= rating_calc(tutor.ratings) >= float(args["rating"])
 
         if "courseOfferings" in args:
+            # Although flask has a `get_list` method on request.args,
+            # due to how the current frontend is setup, this is more acceptable
             try:
                 course_offerings = json.loads(args["courseOfferings"])
             except json.decoder.JSONDecodeError:
