@@ -38,6 +38,7 @@ export default function TutorProfile() {
           phoneNumber={data.phoneNumber}
           location={data.location}
         />
+        <img src={pdf} />
         <div className="grid grid-cols-2 gap-2">
           {isOwnProfile ? (
             <>
