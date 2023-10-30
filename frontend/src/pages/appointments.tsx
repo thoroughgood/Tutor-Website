@@ -1,21 +1,28 @@
+import AppointmentDialog from "@/components/appointmentDialog"
 import LoadingButton from "@/components/loadingButton"
 import LoadingSpinner from "@/components/loadingSpinner"
 import { Button } from "@/components/ui/button"
 import WeeklyCalendar from "@/components/weeklyCalendar"
 import useUser from "@/hooks/useUser"
 import {
+  cn,
   excludeInterval,
   getErrorMessage,
   getMergedIntervals,
 } from "@/lib/utils"
+import {
+  Appointment,
+  HTTPAppointmentService,
+} from "@/service/appointmentService"
 import { HTTPProfileService } from "@/service/profileService"
 import { areIntervalsOverlapping } from "date-fns"
 import { omit } from "lodash"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
-import { useQuery, useQueryClient } from "react-query"
+import { useQueries, useQuery, useQueryClient } from "react-query"
 
 const profileService = new HTTPProfileService()
+const appointmentService = new HTTPAppointmentService()
 export default function Appointments() {
   const { user } = useUser()
   if (user?.userType === "tutor") {
@@ -54,13 +61,29 @@ function AppointmentsAsTutor() {
   const { data: tutorProfile } = useQuery({
     queryKey: ["tutors", user?.userId as string],
     queryFn: async () => profileService.getTutorProfile(user?.userId as string),
+    enabled: user?.userId !== undefined,
   })
+
+  const { data: tutorAppointments } = useQuery({
+    queryKey: ["tutors", user?.userId, "appointments"],
+    queryFn: async () =>
+      appointmentService.getTutorAppointments(user?.userId as string),
+    enabled: user?.userId !== undefined,
+  })
+
+  const appointmentIds = tutorAppointments?.yourAppointments
+  const appointmentQueries = useQueries(
+    appointmentIds?.map((id) => ({
+      queryKey: ["appointments", id],
+      queryFn: async () => appointmentService.getAppointment(id),
+    })) || [],
+  )
 
   useEffect(() => {
     setIntervals(initialIntervals || [])
   }, [initialIntervals])
 
-  const setIntervalAvialable = (interval: Interval) => {
+  const setIntervalAvailable = (interval: Interval) => {
     setIntervals(getMergedIntervals([...intervals, interval]))
   }
   const setIntervalUnavailable = (interval: Interval) => {
@@ -76,7 +99,7 @@ function AppointmentsAsTutor() {
         onCalendarMouseMove={(interval) => {
           if (!isEditing || submitLoading) return
           if (mouseMode === "available") {
-            setIntervalAvialable(interval)
+            setIntervalAvailable(interval)
           } else if (mouseMode === "unavailable") {
             setIntervalUnavailable(interval)
           }
@@ -88,17 +111,46 @@ function AppointmentsAsTutor() {
             setIntervalUnavailable(interval)
           } else {
             setMouseMode("available")
-            setIntervalAvialable(interval)
+            setIntervalAvailable(interval)
           }
         }}
         onCalendarMouseUp={() => setMouseMode("none")}
         onCalendarMouseLeave={() => setMouseMode("none")}
-        interactiveIntervals={intervals.map((interval) => ({
-          interval: interval,
-          componentProps: {
-            className: "bg-white -z-10 text-white/0 select-none ",
-          },
-        }))}
+        interactiveIntervals={[
+          ...intervals.map((interval) => ({
+            interval: interval,
+            componentProps: {
+              className: "bg-white -z-10 text-white/0 select-none ",
+            },
+          })),
+          ...(
+            appointmentQueries
+              .map((query) => query.data)
+              .filter((data) => data !== undefined) as Appointment[]
+          ).map((appointment) => ({
+            interval: {
+              start: appointment.startTime,
+              end: appointment.endTime,
+            },
+            title: (
+              <>
+                {appointment.tutorAccepted
+                  ? "Appointment with "
+                  : "Appointment request from "}
+                <NameFromStudentId studentId={appointment.studentId} />
+              </>
+            ),
+
+            componentProps: {
+              children: <AppointmentDialog id={appointment.id} />,
+              className: cn(
+                "bg-slate-100/40 border border-dashed border-slate-500",
+                appointment.tutorAccepted &&
+                  "bg-green-300/40 border-solid border-green-400",
+              ),
+            },
+          })),
+        ]}
       />
       <div className="flex justify-end gap-2">
         <Button
@@ -128,7 +180,11 @@ function AppointmentsAsTutor() {
                 toast.error(getErrorMessage(error))
               }
 
-              await queryClient.invalidateQueries("tutors")
+              await queryClient.invalidateQueries([
+                "tutors",
+                user?.userId,
+                "appointments",
+              ])
               setSubmitLoading(false)
               setIsEditing(false)
             }}
@@ -139,4 +195,13 @@ function AppointmentsAsTutor() {
       </div>
     </div>
   )
+}
+
+function NameFromStudentId({ studentId }: { studentId?: string }) {
+  const { data: profileData } = useQuery({
+    queryKey: ["students", studentId],
+    queryFn: async () => profileService.getStudentProfile(studentId as string),
+    enabled: studentId !== undefined,
+  })
+  return <>{profileData?.name}</>
 }
