@@ -59,6 +59,8 @@ model Document {
   tutor    Tutor  @relation(fields: [tutorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   tutorId  String
   document String
+
+  @@unique([id, tutorId])
 }
 
 model Subject {
@@ -72,6 +74,8 @@ model TutorAvailability {
   tutorId   String
   startTime DateTime
   endTime   DateTime
+
+  @@unique([id, tutorId])
 }
 
 model Rating {
@@ -81,6 +85,10 @@ model Rating {
   appointmentId String      @unique
   createdFor    Tutor       @relation(fields: [tutorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   tutorId       String
+
+  @@unique([id, appointmentId])
+  @@unique([id, tutorId])
+  @@unique([tutorId, appointmentId])
 }
 
 model Appointment {
@@ -93,4 +101,7 @@ model Appointment {
   tutorId       String
   student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   studentId     String
+
+  @@unique([id, tutorId])
+  @@unique([id, studentId])
 }
