@@ -218,7 +218,7 @@ def delete_profile():
 def get_tutor_appointments(tutor_id):
     tutor = tutor_view(id=tutor_id)
 
-    if tutor is not None:
+    if tutor is None:
         raise ExpectedError("no tutor relates to the id", 404)
     your_appointments = []
     other = []
