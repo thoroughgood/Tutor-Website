@@ -2,7 +2,7 @@ import json
 import re
 from flask import Blueprint, jsonify
 from prisma.models import Tutor
-from jsonschemas.tutor_search_schema import tutor_search_schema
+from jsonschemas import tutor_search_schema
 from helpers.process_time_block import process_time_block
 from helpers.rating_calc import rating_calc
 from helpers.error_handlers import (

@@ -3,8 +3,7 @@ from hashlib import sha256
 from uuid import uuid4
 from flask import Blueprint, jsonify, session
 from prisma.models import User, Tutor, Admin, Student
-from jsonschemas.user_search_schema import user_search_schema
-from jsonschemas.admin_create_schema import admin_create_schema
+from jsonschemas import user_search_schema, admin_create_schema
 from helpers.views import admin_view
 from helpers.check_user_account_type import check_type
 from helpers.error_handlers import (
