@@ -108,7 +108,9 @@ def test_register_args(
     with client.session_transaction() as session:
         assert session["user_id"] == resp.json["id"]
 
-    find_unique_mock.assert_called_with(where={"email": fake_student.email})
+    find_unique_mock.assert_called_with(
+        where={"email": fake_student.email}, include=mocker.ANY
+    )
     find_unique_mock.return_value = fake_student
 
     resp = client.post(
@@ -123,7 +125,9 @@ def test_register_args(
     assert resp.json == {"error": "user already exists with this email"}
     assert resp.status_code == 400
 
-    find_unique_mock.assert_called_with(where={"email": fake_student.email})
+    find_unique_mock.assert_called_with(
+        where={"email": fake_student.email}, include=mocker.ANY
+    )
 
     resp = client.post(
         "/register",
@@ -137,7 +141,9 @@ def test_register_args(
     assert resp.json == {"error": "user already exists with this email"}
     assert resp.status_code == 400
 
-    find_unique_mock.assert_called_with(where={"email": fake_student.email})
+    find_unique_mock.assert_called_with(
+        where={"email": fake_student.email}, include=mocker.ANY
+    )
     find_unique_mock.return_value = None
 
     # successfully signup (tutor)
@@ -634,7 +640,9 @@ def test_resetpassword_student(
     )
     assert resp.json == {"error": "New password cannot be the same as the old password"}
     assert resp.status_code == 400
-    find_unique_users_mock.assert_called_with(where={"id": fake_student.id})
+    find_unique_users_mock.assert_called_with(
+        where={"id": fake_student.id}, include=mocker.ANY
+    )
 
     update_mock = mocker.patch("tests.conftest.UserActions.update")
 
@@ -644,7 +652,9 @@ def test_resetpassword_student(
         json={"id": fake_student.id, "newPassword": "123456789"},
     )
 
-    find_unique_users_mock.assert_called_with(where={"id": fake_student.id})
+    find_unique_users_mock.assert_called_with(
+        where={"id": fake_student.id}, include=mocker.ANY
+    )
     update_mock.assert_called()
 
     assert resp.json == {"success": True}
@@ -733,7 +743,9 @@ def test_resetpassword_tutor(
     )
     assert resp.json == {"error": "New password cannot be the same as the old password"}
     assert resp.status_code == 400
-    find_unique_users_mock.assert_called_with(where={"id": fake_tutor.id})
+    find_unique_users_mock.assert_called_with(
+        where={"id": fake_tutor.id}, include=mocker.ANY
+    )
 
     update_mock = mocker.patch("tests.conftest.UserActions.update")
     # Successful reset password
@@ -744,7 +756,9 @@ def test_resetpassword_tutor(
     assert resp.json == {"success": True}
     assert resp.status_code == 200
 
-    find_unique_users_mock.assert_called_with(where={"id": fake_tutor.id})
+    find_unique_users_mock.assert_called_with(
+        where={"id": fake_tutor.id}, include=mocker.ANY
+    )
     update_mock.assert_called()
 
     mocker.stop(find_unique_users_mock)
