@@ -45,6 +45,7 @@ werkzeug = "2.3.7"
 pytest = "^7.4.2"
 pytest-mock = "^3.11.1"
 jsonschema = "^4.19.1"
+pusher = "^3.3.2"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -4,6 +4,7 @@ from flask import Flask
 from flask_session import Session
 from flask_cors import CORS
 from prisma import Prisma
+from pusher import Pusher
 import os
 
 from blueprints.auth import auth
@@ -16,20 +17,34 @@ from blueprints.document import document
 from blueprints.utils import utils
 from helpers.my_request import MyRequest
 
-prisma = Prisma(auto_register=True)
-prisma.connect()
 
 Flask.request_class = MyRequest
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", default="not very secret")
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", default="secret")
 # ? Consider moving to redis in the future?
 app.config["SESSION_TYPE"] = "filesystem"
 # app.config["SESSION_COOKIE_HTTPONLY"] = False # uncomment for debugging in frontend
 app.config["SESSION_COOKIE_SAMESITE"] = "None"
 app.config["SESSION_COOKIE_SECURE"] = True
+
+# Extensions
 server_session = Session(app)
 # todo: figure cors
 cors = CORS(app, supports_credentials=True)
+
+# We'll just say these external clients are 'extensions' of flask
+# Note: definitely not idiomatic!
+# Prisma
+prisma = Prisma(auto_register=True)
+prisma.connect()
+app.extensions["prisma"] = prisma
+# Pusher
+app.extensions["pusher"] = Pusher(
+    app_id=os.getenv("PUSHER_APP_ID"),
+    key=os.getenv("PUSHER_KEY"),
+    secret=os.getenv("PUSHER_SECRET"),
+    cluster=os.getenv("PUSHER_CLUSTER"),
+)
 
 # add a 'super admin' if one isn't already added
 # ? Maybe remove this later for prod
@@ -69,5 +84,5 @@ def hello_world():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=os.getenv("PORT", default=5000), host="0.0.0.0")
+    app.run(debug=True, port=os.getenv("PORT", default=8000), host="0.0.0.0")
     prisma.disconnect()

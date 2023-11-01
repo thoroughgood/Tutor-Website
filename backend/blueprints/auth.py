@@ -2,9 +2,7 @@ from flask import Blueprint, jsonify, session
 from prisma.models import User
 from uuid import uuid4
 from hashlib import sha256
-from jsonschemas.register_schema import register_schema
-from jsonschemas.login_schema import login_schema
-from jsonschemas.reset_password_schema import reset_password_schema
+from jsonschemas import register_schema, reset_password_schema, login_schema
 from helpers.views import user_view, admin_view, tutor_view, student_view
 from helpers.error_handlers import (
     validate_decorator,

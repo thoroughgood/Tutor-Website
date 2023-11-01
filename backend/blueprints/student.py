@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, session
 from datetime import datetime, timezone
 from prisma.models import User
-from jsonschemas.student_modify_schema import student_modify_schema
+from jsonschemas import student_modify_schema
 from helpers.views import student_view
 from helpers.admin_id_check import admin_id_check
 from helpers.error_handlers import (
