@@ -22,7 +22,7 @@ Once you're actually setup, this will also run the server, however, for now it'l
 crash at the end, however, most of the setup will be done automagically
 for you before it does!
 
-For the server to actually run, you'll need to some prisma/database setup first...
+For the server to actually run, you'll need to some more setup.
 
 ## Prisma/Database setup
 Given the obvious fact that every query you run to the database affects it, 
@@ -39,6 +39,18 @@ it will be reflected in the database (which you can view in a nice GUI all in ra
 
 If you want a more integrated way of interacting with the database with all of
 railway's fancy toolkit + a method to deploy your local version of the backend contact @K0FFE1NE about it.
+
+## Pusher Setup
+For messaging / notifications, you must setup a pusher service. Head to [pusher](https://pusher.com/), 
+create an account if you don't have one already, and create a channel app. Call it whatever you
+deem appropriate, and head to the app keys section of your new app. Add these app keys to your `.env` file
+in this format:
+```
+PUSHER_APP_ID=app_id
+PUSHER_KEY=key
+PUSHER_SECRET=secret
+PUSHER_CLUSTER=cluster
+```
 
 ## Working with the database
 For any subsequent changes to the schema, you should run `prisma db push` if 
