@@ -6,6 +6,8 @@ from prisma.models import (
     Rating,
     TutorAvailability,
     Document,
+    Message,
+    DirectMessage,
 )
 
 
@@ -18,6 +20,9 @@ class UserView:
     profile_picture: str | None
     location: str | None
     phone_number: str | None
+    messages: List[Message] | None
+    from_direct_message: List[DirectMessage] | None
+    to_direct_message: List[DirectMessage] | None
 
     def __init__(
         self,
@@ -29,6 +34,9 @@ class UserView:
         profile_picture: str | None,
         location: str | None,
         phone_number: str | None,
+        messages: List[Message] | None,
+        from_direct_message: List[DirectMessage] | None,
+        to_direct_message: List[DirectMessage] | None,
     ):
         self.id = id
         self.email = email
@@ -38,6 +46,9 @@ class UserView:
         self.profile_picture = profile_picture
         self.location = location
         self.phone_number = phone_number
+        self.messages = messages
+        self.from_direct_message = from_direct_message
+        self.to_direct_message = to_direct_message
 
 
 class StudentView(UserView):
@@ -54,6 +65,9 @@ class StudentView(UserView):
         location: str | None,
         phone_number: str | None,
         appointments: List[Appointment] | None,
+        messages: List[Message] | None,
+        from_direct_message: List[DirectMessage] | None,
+        to_direct_message: List[DirectMessage] | None,
     ):
         super().__init__(
             id,
@@ -64,6 +78,9 @@ class StudentView(UserView):
             profile_picture,
             location,
             phone_number,
+            messages,
+            from_direct_message,
+            to_direct_message,
         )
         self.appointments = appointments
 
@@ -90,6 +107,9 @@ class TutorView(UserView):
         course_offerings: List[Subject] | None,
         times_available: List[TutorAvailability] | None,
         documents: List[Document] | None,
+        messages: List[Message] | None,
+        from_direct_message: List[DirectMessage] | None,
+        to_direct_message: List[DirectMessage] | None,
     ):
         super().__init__(
             id,
@@ -100,6 +120,9 @@ class TutorView(UserView):
             profile_picture,
             location,
             phone_number,
+            messages,
+            from_direct_message,
+            to_direct_message,
         )
         self.appointments = appointments
         self.course_offerings = course_offerings
@@ -119,6 +142,9 @@ class AdminView(UserView):
         profile_picture: str | None,
         location: str | None,
         phone_number: str | None,
+        messages: List[Message] | None,
+        from_direct_message: List[DirectMessage] | None,
+        to_direct_message: List[DirectMessage] | None,
     ):
         super().__init__(
             id,
@@ -129,6 +155,9 @@ class AdminView(UserView):
             profile_picture,
             location,
             phone_number,
+            messages,
+            from_direct_message,
+            to_direct_message,
         )
 
 
@@ -139,7 +168,14 @@ def user_view(id: str = None, email: str = None) -> UserView | None:
         raise ValueError("You cannot filter on both id and email")
 
     search_by = {"id": id} if id else {"email": email}
-    user = User.prisma().find_unique(where=search_by)
+    user = User.prisma().find_unique(
+        where=search_by,
+        include={
+            "messages": True,
+            "fromDirectMessages": True,
+            "toDirectMessages": True,
+        },
+    )
 
     return (
         UserView(
@@ -151,6 +187,9 @@ def user_view(id: str = None, email: str = None) -> UserView | None:
             user.profilePicture,
             user.location,
             user.phoneNumber,
+            user.messages,
+            user.fromDirectMessages,
+            user.toDirectMessages,
         )
         if user is not None
         else None
@@ -166,7 +205,12 @@ def student_view(id: str = None, email: str = None) -> StudentView | None:
     search_by = {"id": id} if id else {"email": email}
     user = User.prisma().find_unique(
         where=search_by,
-        include={"studentInfo": {"include": {"appointments": True}}},
+        include={
+            "studentInfo": {"include": {"appointments": True}},
+            "messages": True,
+            "fromDirectMessages": True,
+            "toDirectMessages": True,
+        },
     )
 
     return (
@@ -180,6 +224,9 @@ def student_view(id: str = None, email: str = None) -> StudentView | None:
             user.location,
             user.phoneNumber,
             user.studentInfo.appointments,
+            user.messages,
+            user.fromDirectMessages,
+            user.toDirectMessages,
         )
         if user is not None and user.studentInfo is not None
         else None
@@ -204,7 +251,10 @@ def tutor_view(id: str = None, email: str = None) -> TutorView | None:
                     "timesAvailable": True,
                     "documents": True,
                 }
-            }
+            },
+            "messages": True,
+            "fromDirectMessages": True,
+            "toDirectMessages": True,
         },
     )
     return (
@@ -222,6 +272,9 @@ def tutor_view(id: str = None, email: str = None) -> TutorView | None:
             user.tutorInfo.courseOfferings,
             user.tutorInfo.timesAvailable,
             user.tutorInfo.documents,
+            user.messages,
+            user.fromDirectMessages,
+            user.toDirectMessages,
         )
         if user is not None and user.tutorInfo is not None
         else None
@@ -237,7 +290,12 @@ def admin_view(id: str = None, email: str = None) -> AdminView | None:
     search_by = {"id": id} if id else {"email": email}
     user = User.prisma().find_unique(
         where=search_by,
-        include={"adminInfo": True},
+        include={
+            "adminInfo": True,
+            "messages": True,
+            "fromDirectMessages": True,
+            "toDirectMessages": True,
+        },
     )
     return (
         AdminView(
@@ -249,6 +307,9 @@ def admin_view(id: str = None, email: str = None) -> AdminView | None:
             user.profilePicture,
             user.location,
             user.phoneNumber,
+            user.messages,
+            user.fromDirectMessages,
+            user.toDirectMessages,
         )
         if user is not None and user.adminInfo is not None
         else None
