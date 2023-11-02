@@ -229,3 +229,74 @@ def appointment_rating(args):
     )
 
     return jsonify({"success": True}), 200
+
+
+@appointment.route("/messages", methods=["GET"])
+@error_decorator
+def messages(args):
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 401)
+
+    if "id" not in args:
+        raise ExpectedError("No appointment id provided", 400)
+
+    appointment = Appointment.prisma().find_unique(where={"id": args["id"]})
+    if not appointment:
+        raise ExpectedError("Appointment does not exist", 400)
+
+    if (
+        session["user_id"] != appointment.studentId
+        or session["user_id"] != appointment.tutorId
+    ):
+        raise ExpectedError("User is not the tutor or student of the appointment", 403)
+
+    messages = Message.prisma().find_many(where={"appointmentId": args["id"]})
+    messages = sorted(messages, key=lambda x: x["sentTime"])
+
+    return (
+        jsonify(
+            {
+                "messages": {
+                    [
+                        {
+                            "id": message.id,
+                            "sentBy": message.sendBy,
+                            "sentTime": message.sentTime.isoformat(),
+                            "content": message.content,
+                        }
+                        for message in messages
+                    ],
+                }
+            }
+        ),
+        200,
+    )
+
+
+@appointment.route("/messages", methods=["POST"])
+@error_decorator
+@validate_decorator("json", appointment_message_schema)
+def message(args):
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 401)
+
+    appointment = Appointment.prisma().find_unique(where={"id": args["id"]})
+    if not appointment:
+        raise ExpectedError("Appointment does not exist", 400)
+
+    if (
+        session["user_id"] != appointment.studentId
+        or session["user_id"] != appointment.tutorId
+    ):
+        raise ExpectedError("User is not the tutor or student of the appointment", 403)
+
+    message = Message.prisma().create(
+        data={
+            "id": str(uuid4()),
+            "content": args["message"],
+            "sentBy": session["user_id"],
+            "appointment": {"connect": {"id": args["id"]}},
+        }
+    )
+
+    return jsonify({"id": message.id, "sentTime": message.sentTime}), 200
