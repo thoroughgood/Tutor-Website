@@ -8,6 +8,7 @@ from prisma.models import (
     Document,
     Message,
     DirectMessage,
+    Notification,
 )
 
 
@@ -23,6 +24,8 @@ class UserView:
     messages: List[Message] | None
     from_direct_message: List[DirectMessage] | None
     to_direct_message: List[DirectMessage] | None
+    tutorial_state: bool
+    notifications: List[Notification] | None
 
     def __init__(
         self,
@@ -37,6 +40,8 @@ class UserView:
         messages: List[Message] | None,
         from_direct_message: List[DirectMessage] | None,
         to_direct_message: List[DirectMessage] | None,
+        tutorial_state: bool,
+        notifications: List[Notification] | None,
     ):
         self.id = id
         self.email = email
@@ -49,6 +54,8 @@ class UserView:
         self.messages = messages
         self.from_direct_message = from_direct_message
         self.to_direct_message = to_direct_message
+        self.tutorial_state = tutorial_state
+        self.notifications = notifications
 
 
 class StudentView(UserView):
@@ -68,6 +75,8 @@ class StudentView(UserView):
         messages: List[Message] | None,
         from_direct_message: List[DirectMessage] | None,
         to_direct_message: List[DirectMessage] | None,
+        tutorial_state: bool,
+        notifications: List[Notification] | None,
     ):
         super().__init__(
             id,
@@ -81,6 +90,8 @@ class StudentView(UserView):
             messages,
             from_direct_message,
             to_direct_message,
+            tutorial_state,
+            notifications,
         )
         self.appointments = appointments
 
@@ -110,6 +121,8 @@ class TutorView(UserView):
         messages: List[Message] | None,
         from_direct_message: List[DirectMessage] | None,
         to_direct_message: List[DirectMessage] | None,
+        tutorial_state: bool,
+        notifications: List[Notification] | None,
     ):
         super().__init__(
             id,
@@ -123,6 +136,8 @@ class TutorView(UserView):
             messages,
             from_direct_message,
             to_direct_message,
+            tutorial_state,
+            notifications,
         )
         self.appointments = appointments
         self.course_offerings = course_offerings
@@ -145,6 +160,8 @@ class AdminView(UserView):
         messages: List[Message] | None,
         from_direct_message: List[DirectMessage] | None,
         to_direct_message: List[DirectMessage] | None,
+        tutorial_state: bool,
+        notifications: List[Notification] | None,
     ):
         super().__init__(
             id,
@@ -158,6 +175,8 @@ class AdminView(UserView):
             messages,
             from_direct_message,
             to_direct_message,
+            tutorial_state,
+            notifications,
         )
 
 
@@ -174,6 +193,7 @@ def user_view(id: str = None, email: str = None) -> UserView | None:
             "messages": True,
             "fromDirectMessages": True,
             "toDirectMessages": True,
+            "notifications": True,
         },
     )
 
@@ -190,6 +210,8 @@ def user_view(id: str = None, email: str = None) -> UserView | None:
             user.messages,
             user.fromDirectMessages,
             user.toDirectMessages,
+            user.tutorialState,
+            user.notifications,
         )
         if user is not None
         else None
@@ -210,6 +232,7 @@ def student_view(id: str = None, email: str = None) -> StudentView | None:
             "messages": True,
             "fromDirectMessages": True,
             "toDirectMessages": True,
+            "notifications": True,
         },
     )
 
@@ -227,6 +250,8 @@ def student_view(id: str = None, email: str = None) -> StudentView | None:
             user.messages,
             user.fromDirectMessages,
             user.toDirectMessages,
+            user.tutorialState,
+            user.notifications,
         )
         if user is not None and user.studentInfo is not None
         else None
@@ -255,6 +280,7 @@ def tutor_view(id: str = None, email: str = None) -> TutorView | None:
             "messages": True,
             "fromDirectMessages": True,
             "toDirectMessages": True,
+            "notifications": True,
         },
     )
     return (
@@ -275,6 +301,8 @@ def tutor_view(id: str = None, email: str = None) -> TutorView | None:
             user.messages,
             user.fromDirectMessages,
             user.toDirectMessages,
+            user.tutorialState,
+            user.notifications,
         )
         if user is not None and user.tutorInfo is not None
         else None
@@ -295,6 +323,7 @@ def admin_view(id: str = None, email: str = None) -> AdminView | None:
             "messages": True,
             "fromDirectMessages": True,
             "toDirectMessages": True,
+            "notifications": True,
         },
     )
     return (
@@ -310,6 +339,8 @@ def admin_view(id: str = None, email: str = None) -> AdminView | None:
             user.messages,
             user.fromDirectMessages,
             user.toDirectMessages,
+            user.tutorialState,
+            user.notifications,
         )
         if user is not None and user.adminInfo is not None
         else None
