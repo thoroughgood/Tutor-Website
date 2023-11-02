@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, session
-from prisma.models import User, Appointment
+from prisma.models import User
 from helpers.error_handlers import error_decorator
 from helpers.check_user_account_type import check_type
 
@@ -19,6 +19,3 @@ def get_id():
         return jsonify({"id": session["user_id"], "accountType": check_type(user)}), 200
     else:
         return jsonify({}), 401
-
-
-Appointment.prisma().find_many(where={"order"})

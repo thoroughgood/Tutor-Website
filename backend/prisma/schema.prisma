@@ -98,16 +98,17 @@ model Rating {
 }
 
 model Appointment {
-  id            String    @id
+  id            String        @id
   startTime     DateTime
   endTime       DateTime
-  tutorAccepted Boolean   @default(false)
+  tutorAccepted Boolean       @default(false)
   rating        Rating?
-  tutor         Tutor     @relation(fields: [tutorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tutor         Tutor         @relation(fields: [tutorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   tutorId       String
-  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   studentId     String
   messages      Message[]
+  notification  Notification?
 
   @@unique([id, tutorId])
   @@unique([id, studentId])
@@ -147,11 +148,13 @@ model DirectMessage {
 }
 
 model Notification {
-  id        String   @id
-  message   Message? @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  messageId String   @unique
-  forUser   User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId    String
+  id            String       @id
+  message       Message?     @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  messageId     String       @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  appointmentId String       @unique
+  forUser       User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId        String
 
   @@unique([id, messageId])
   @@unique([id, userId])
