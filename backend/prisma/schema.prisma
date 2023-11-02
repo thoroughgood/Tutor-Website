@@ -159,5 +159,7 @@ model Notification {
 
   @@unique([id, messageId])
   @@unique([id, userId])
+  @@unique([id, appointmentId])
   @@unique([messageId, userId])
+  @@unique([appointmentId, userId])
 }
