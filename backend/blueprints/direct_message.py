@@ -139,10 +139,10 @@ def direct_message(args):
         },
         include={"messages": {"order_by": {"sentTime": "desc"}}},
     )
+    pusher_client: Pusher = current_app.extensions["pusher"]
     dm_id = dm.id if dm else str(uuid4())
     channel_info = pusher_client.channel_info(dm_id, ["subscription_count"])
     if channel_info["subscription_count"] >= 1:
-        pusher_client: Pusher = current_app.extensions["pusher"]
         try:
             pusher_client.trigger(dm_id, "direct_message", args["message"])
         except ValueError:
