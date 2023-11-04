@@ -1,4 +1,4 @@
-from reused_properties import other_id_prop
+from jsonschemas.reused_properties import other_id_prop
 
 direct_message_info_schema = {
     "$id": "/jsonschemas/direct_message_info",

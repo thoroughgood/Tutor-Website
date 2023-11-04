@@ -1,3 +1,4 @@
+from typing import TypedDict
 import pytest
 from datetime import datetime
 from pytest_mock import MockerFixture
@@ -13,16 +14,7 @@ import os
 from pathlib import Path
 
 # unused import for mocking purposes during tests
-from prisma.actions import (
-    UserActions,
-    TutorActions,
-    SubjectActions,
-    AdminActions,
-    StudentActions,
-    DocumentActions,
-    AppointmentActions,
-    RatingActions,
-)
+from prisma.actions import *
 
 # hack to import a root level file and be able to run pytest from any dir
 # source: https://www.geeksforgeeks.org/python-import-from-parent-directory/
@@ -70,6 +62,96 @@ def test_setup_test_client(setup_test: FlaskClient):
 
 
 # mocks / fake data ############################################################
+
+
+class LoginInfo(TypedDict, total=True):
+    email: str
+    password: str
+    accountType: str
+
+
+@pytest.fixture
+def fake_login(
+    setup_test: FlaskClient,
+    find_unique_users_mock: MockType,
+    mocker: MockerFixture,
+    fake_student,
+    fake_tutor,
+    fake_admin,
+    fake_user,
+):
+    def __fake_login(
+        login_as: str | LoginInfo,
+    ):
+        client = setup_test
+
+        match login_as:
+            case "fake_student":
+                user = fake_student
+
+                # login as student
+                resp = client.post(
+                    "/login",
+                    json={
+                        "email": "validemail@mail.com",
+                        "password": "12345678",
+                        "accountType": "student",
+                    },
+                )
+
+                find_unique_users_mock.assert_called_with(
+                    where={"email": fake_student.email}, include=mocker.ANY
+                )
+            case "fake_tutor":
+                user = fake_tutor
+
+                resp = client.post(
+                    "/login",
+                    json={
+                        "email": "validemail2@mail.com",
+                        "password": "12345678",
+                        "accountType": "tutor",
+                    },
+                )
+                find_unique_users_mock.assert_called_with(
+                    where={"email": fake_tutor.email}, include=mocker.ANY
+                )
+            case "fake_admin":
+                user = fake_admin
+
+                resp = client.post(
+                    "/login",
+                    json={
+                        "email": "validemail3@mail.com",
+                        "password": "12345678",
+                        "accountType": "admin",
+                    },
+                )
+                find_unique_users_mock.assert_called_with(
+                    where={"email": fake_admin.email}, include=mocker.ANY
+                )
+            case _:
+                find_unique_mock = mocker.patch(
+                    "tests.conftest.UserActions.find_unique"
+                )
+                user = fake_user(
+                    login_as["email"], login_as["password"], login_as["accountType"]
+                )
+                find_unique_mock.return_value = user
+
+                resp = client.post(
+                    "/login",
+                    json=login_as,
+                )
+                find_unique_mock.assert_called_with(
+                    where={"email": login_as["email"]}, include=mocker.ANY
+                )
+                mocker.stop(find_unique_mock)
+        assert resp.status_code == 200
+
+        return user
+
+    return __fake_login
 
 
 # ! Note: Assumes a db of exactly one fake admin, student, and tutor
@@ -239,3 +321,46 @@ def fake_rating(fake_appointment):
     )
 
     return rating
+
+
+@pytest.fixture
+def fake_dm(fake_student, fake_tutor):
+    dm = models.DirectMessage(
+        id=str(uuid4()),
+        messages=[],
+        fromUser=fake_student,
+        fromUserId=fake_student.id,
+        otherUser=fake_tutor,
+        otherUserId=fake_tutor.id,
+    )
+    dm.messages = [
+        models.Message(
+            id=str(uuid4()),
+            sentTime=datetime.datetime.now(),
+            content="msg",
+            sentBy=fake_student,
+            sentById=fake_student.id,
+            directMessage=dm,
+            directMessageId=dm.id,
+        ),
+        models.Message(
+            id=str(uuid4()),
+            sentTime=datetime.datetime.now(),
+            content="wow",
+            sentBy=fake_student,
+            sentById=fake_student.id,
+            directMessage=dm,
+            directMessageId=dm.id,
+        ),
+        models.Message(
+            id=str(uuid4()),
+            sentTime=datetime.datetime.now(),
+            content="lmao",
+            sentBy=fake_student,
+            sentById=fake_student.id,
+            directMessage=dm,
+            directMessageId=dm.id,
+        ),
+    ]
+
+    return dm

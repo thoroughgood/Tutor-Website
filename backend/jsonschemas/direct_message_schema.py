@@ -1,4 +1,4 @@
-from reused_properties import message_prop, other_id_prop
+from jsonschemas.reused_properties import message_prop, other_id_prop
 
 direct_message_schema = {
     "$id": "/jsonschemas/direct_message",
