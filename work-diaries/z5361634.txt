@@ -52,3 +52,11 @@ Written code for modify and delete in the appointment route
 Fixed some extra bugs according to Postman and API specifications
 Implemented and completed all appointment mocker tests
 Started working on implementing validation checker
+
+Week 8
+Attended regular (daily) standups
+Attended pre-sprint planning session
+Attended and discussed opinions and thoughts on retrospective
+Started writing code for appointment messages and message
+Started writing code for appointments
+Attempted to use postman to test out code
