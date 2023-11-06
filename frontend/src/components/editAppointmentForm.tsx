@@ -162,10 +162,7 @@ export default function EditAppointmentForm({
           <LoadingButton
             onClick={async () => {
               setIsDeleting(true)
-              const deletedSuccess = await deleteFn()
-              if (deletedSuccess) {
-                cancelFn()
-              }
+              await deleteFn()
               setIsDeleting(false)
             }}
             type="button"

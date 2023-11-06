@@ -71,8 +71,11 @@ export default function AppointmentDialog({ id }: AppointmentDialogProps) {
             <EditAppointmentForm
               cancelFn={() => setOpen(false)}
               submitFn={async (start, end) => {
-                console.log(start, end)
-                return true
+                return await toastProtectedFnCall(async () => {
+                  await appointmentService.modifyAppointment(id, start, end)
+                  queryClient.invalidateQueries(["appointments", id])
+                  setOpen(false)
+                })
               }}
               deleteFn={async () => {
                 return await toastProtectedFnCall(async () => {
@@ -82,6 +85,7 @@ export default function AppointmentDialog({ id }: AppointmentDialogProps) {
                     appointmentData.tutorId,
                     "appointments",
                   ])
+                  setOpen(false)
                 })
               }}
               startTime={appointmentData.startTime}
