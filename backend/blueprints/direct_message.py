@@ -3,7 +3,7 @@ from pusher import Pusher
 from prisma import Prisma
 from uuid import uuid4
 from prisma.models import DirectMessage, Notification
-from datetime import datetime, MINYEAR
+from datetime import datetime, MINYEAR, timezone
 from jsonschemas import direct_message_info_schema, direct_message_schema
 from helpers.views import user_view
 from helpers.error_handlers import (
@@ -110,16 +110,16 @@ def dm_message(args):
             },
             include={"messages": {"order_by": {"sentTime": "desc"}}},
         )
-        dm_id = dm.id if dm else str(uuid4())
 
         message_info = {
             "id": str(uuid4()),
-            "sentTime": datetime.now(),
+            "sentTime": datetime.now(timezone.utc),
             "content": args["message"],
             "sentBy": {"connect": {"id": session["user_id"]}},
         }
 
-        if dm is not None and dm.fromUserId == args["otherId"]:
+        dm_id = dm.id if dm else str(uuid4())
+        if dm is not None:
             transaction.directmessage.update(
                 where={"id": dm_id}, data={"messages": {"create": message_info}}
             )
@@ -130,26 +130,41 @@ def dm_message(args):
                     "create": {
                         "id": dm_id,
                         "fromUser": {"connect": {"id": session["user_id"]}},
-                        "otherUser": {"connect": {"id": other_user.id}},
+                        "otherUser": {"connect": {"id": args["otherId"]}},
                         "messages": {"create": message_info},
                     },
                     "update": {"messages": {"create": message_info}},
                 },
             )
 
-        channel_info = pusher_client.channel_info(dm_id, ["subscription_count"])
+        channel_info = pusher_client.channel_info(
+            args["otherId"], ["subscription_count"]
+        )
         if channel_info["subscription_count"] >= 1:
             try:
-                pusher_client.trigger(dm_id, "direct_message", args["message"])
+                pusher_client.trigger(
+                    args["otherId"],
+                    "direct_message",
+                    {
+                        "fromId": session["user_id"],
+                        "content": message_info["content"],
+                        "sentTime": message_info["sentTime"],
+                    },
+                )
             except ValueError:
                 raise ExpectedError("Message format is invalid", 400)
         else:
-            Notification.prisma().create(
+            transaction.notification.create(
                 data={
                     "id": str(uuid4()),
-                    "forUser": {"connect": {"id": other_user.id}},
+                    "forUser": {"connect": {"id": args["otherId"]}},
                     "message": {"connect": {"id": message_info["id"]}},
                 }
             )
 
-    return jsonify({"id": message_info["id"], "sentTime": message_info["sentTime"]})
+    return (
+        jsonify(
+            {"id": message_info["id"], "sentTime": message_info["sentTime"].isoformat()}
+        ),
+        200,
+    )
