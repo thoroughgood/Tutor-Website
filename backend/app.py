@@ -12,6 +12,7 @@ from blueprints.student import student
 from blueprints.search import search_tutor
 from blueprints.appointment import appointment
 from blueprints.admin import admin
+from blueprints.document import document
 from blueprints.utils import utils
 from helpers.my_request import MyRequest
 
@@ -58,6 +59,7 @@ app.register_blueprint(search_tutor, url_prefix="/")
 app.register_blueprint(appointment, url_prefix="/appointment")
 app.register_blueprint(utils, url_prefix="/utils")
 app.register_blueprint(admin, url_prefix="/admin")
+app.register_blueprint(document, url_prefix="/")
 
 
 # default route
