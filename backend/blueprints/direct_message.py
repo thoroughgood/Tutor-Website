@@ -107,8 +107,7 @@ def dm_message(args):
                     {"fromUserId": session["user_id"], "otherUserId": args["otherId"]},
                     {"fromUserId": args["otherId"], "otherUserId": session["user_id"]},
                 ]
-            },
-            include={"messages": {"order_by": {"sentTime": "desc"}}},
+            }
         )
 
         message_info = {
