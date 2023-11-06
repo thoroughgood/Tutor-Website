@@ -13,6 +13,7 @@ import { HTTPProfileService } from "@/service/profileService"
 import { toastProtectedFnCall } from "@/lib/utils"
 import LoadingButton from "./loadingButton"
 import { useState } from "react"
+import EditAppointmentForm from "./editAppointmentForm"
 
 interface AppointmentDialogProps {
   id: string
@@ -23,6 +24,7 @@ export default function AppointmentDialog({ id }: AppointmentDialogProps) {
   const queryClient = useQueryClient()
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [acceptLoading, setAcceptLoading] = useState(false)
+  const [open, setOpen] = useState(false)
   const { data: appointmentData } = useQuery({
     queryKey: ["appointments", id],
     queryFn: async () => appointmentService.getAppointment(id),
@@ -52,7 +54,7 @@ export default function AppointmentDialog({ id }: AppointmentDialogProps) {
     userRole = "student"
   }
   return (
-    <Dialog>
+    <Dialog onOpenChange={(open) => setOpen(open)} open={open}>
       <DialogTrigger className="absolute left-0 top-0 h-full w-full " />
       <DialogContent>
         <DialogHeader>
@@ -62,11 +64,32 @@ export default function AppointmentDialog({ id }: AppointmentDialogProps) {
           with{" "}
           {userRole === "tutor" ? studentProfile?.name : tutorProfile?.name}
         </DialogHeader>
-        <DialogDescription>
+        <DialogDescription className="flex flex-col gap-2">
           {format(appointmentData.startTime, "MMM d | h:mmaaa")} –{" "}
           {format(appointmentData.endTime, "h:mmaaa")}
+          {userRole === "tutor" && appointmentData.tutorAccepted && (
+            <EditAppointmentForm
+              cancelFn={() => setOpen(false)}
+              submitFn={async (start, end) => {
+                console.log(start, end)
+                return true
+              }}
+              deleteFn={async () => {
+                return await toastProtectedFnCall(async () => {
+                  await appointmentService.deleteAppointment(appointmentData.id)
+                  queryClient.invalidateQueries([
+                    "tutors",
+                    appointmentData.tutorId,
+                    "appointments",
+                  ])
+                })
+              }}
+              startTime={appointmentData.startTime}
+              endTime={appointmentData.endTime}
+            />
+          )}
         </DialogDescription>
-        {userRole === "tutor" && (
+        {userRole === "tutor" && !appointmentData.tutorAccepted && (
           <div className="flex justify-end gap-2">
             <LoadingButton
               isLoading={deleteLoading}

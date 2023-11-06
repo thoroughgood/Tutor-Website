@@ -57,11 +57,13 @@ interface EditAppointmentFormProps {
   submitFn: (start: Date, end: Date) => Promise<boolean>
   startTime?: Date
   endTime?: Date
+  deleteFn?: () => Promise<boolean>
 }
 export default function EditAppointmentForm({
   cancelFn,
   submitFn,
   startTime,
+  deleteFn,
   endTime = startTime && addMinutes(startTime, 60),
 }: EditAppointmentFormProps) {
   const {
@@ -82,6 +84,7 @@ export default function EditAppointmentForm({
     },
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const onSubmit = async ({
     date,
     startTime,
@@ -154,7 +157,26 @@ export default function EditAppointmentForm({
       {errors.globalErrors && (
         <div className="text-destructive">* {errors.globalErrors.message}</div>
       )}
-      <div className="flex justify-end gap-2">
+      <div className="flex gap-2">
+        {deleteFn && (
+          <LoadingButton
+            onClick={async () => {
+              setIsDeleting(true)
+              const deletedSuccess = await deleteFn()
+              if (deletedSuccess) {
+                cancelFn()
+              }
+              setIsDeleting(false)
+            }}
+            type="button"
+            variant={"destructive"}
+            isLoading={isDeleting}
+            className="self-start"
+          >
+            Delete
+          </LoadingButton>
+        )}
+        <div className="grow" />
         <Button onClick={cancelFn} type="button" variant={"ghost"}>
           Cancel
         </Button>
