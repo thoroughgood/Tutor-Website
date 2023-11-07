@@ -28,6 +28,7 @@ import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
 import {
   HTTPProfileService,
+  TutorProfile,
   TutorSelfEditReqBody,
 } from "@/service/profileService"
 import { useQuery, useQueryClient } from "react-query"
@@ -133,7 +134,7 @@ export default function Edit() {
 
     try {
       values.courseOfferings.forEach((course) => {
-        courses.push(course.name)
+        if (course.name !== "") courses.push(course.name)
       })
 
       //need to manipulate profile value
@@ -164,7 +165,7 @@ export default function Edit() {
       }
       let response
       if (user?.userType === "admin") {
-        tutorObj.id = tutorId
+        ;(tutorObj as TutorProfile).id = tutorId
         response = await profileService.setOwnTutorProfile(tutorObj)
       } else {
         response = await profileService.setOwnTutorProfile(tutorObj)

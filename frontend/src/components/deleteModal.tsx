@@ -39,13 +39,18 @@ export default function DeleteModal({
     console.log(profileId)
     setSubmitLoading(true)
     try {
-      if (accountType === "student") {
-        const response = await profileService.deleteOwnStudentProfile(profileId)
-        console.log(response)
-      }
-      if (accountType === "tutor") {
-        const response = await profileService.deleteOwnTutorProfile(profileId)
-        console.log(response)
+      if (user?.userType !== "admin") {
+        if (accountType === "student") {
+          const response = await profileService.deleteOwnStudentProfile()
+        }
+        if (accountType === "tutor") {
+          const response = await profileService.deleteOwnTutorProfile()
+        }
+      } else if (user?.userType === "admin") {
+        const response = await profileService.adminDeleteProfile(
+          profileId,
+          accountType,
+        )
       }
     } catch {
       toast.error(getErrorMessage(Error))
@@ -89,7 +94,7 @@ export default function DeleteModal({
                   router.push("/register")
                 }
               } else {
-                router.push(`../${profileId}`)
+                router.push(`../../findUser`)
               }
             }}
           >

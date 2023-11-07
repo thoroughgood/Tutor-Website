@@ -126,13 +126,13 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     return resp.json()
   }
 
-  async deleteOwnTutorProfile(tutorId: string): Promise<SuccessResponse> {
+  async deleteOwnTutorProfile(): Promise<SuccessResponse> {
     const resp = wretch(`${this.backendURL}/tutor/`)
       .options({
         credentials: "include",
         mode: "cors",
       })
-      .json({ id: tutorId })
+      .json({})
       .delete()
     return await resp.json()
   }
@@ -159,15 +159,41 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
       .put()
     return resp.json()
   }
-  async deleteOwnStudentProfile(studentId: string): Promise<SuccessResponse> {
+  async deleteOwnStudentProfile(): Promise<SuccessResponse> {
     const resp = wretch(`${this.backendURL}/student/`)
       .options({
         credentials: "include",
         mode: "cors",
       })
-      .json({ id: studentId })
+      .json({})
       .delete()
     return await resp.json()
+  }
+
+  async adminDeleteProfile(
+    profileId: string,
+    accountType: string,
+  ): Promise<SuccessResponse> {
+    if (accountType === "student") {
+      const resp = wretch(`${this.backendURL}/student/`)
+        .options({
+          credentials: "include",
+          mode: "cors",
+        })
+        .json({ id: profileId })
+        .delete()
+      return await resp.json()
+    } else if (accountType === "tutor") {
+      const resp = wretch(`${this.backendURL}/tutor/`)
+        .options({
+          credentials: "include",
+          mode: "cors",
+        })
+        .json({ id: profileId })
+        .delete()
+      return await resp.json()
+    }
+    return { success: false }
   }
 }
 
