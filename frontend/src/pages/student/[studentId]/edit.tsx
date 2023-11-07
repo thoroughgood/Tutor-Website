@@ -28,6 +28,7 @@ import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
 import {
   HTTPProfileService,
+  StudentProfile,
   StudentSelfEditReqBody,
 } from "@/service/profileService"
 import { useQuery, useQueryClient } from "react-query"
@@ -137,7 +138,7 @@ export default function Edit() {
       }
       let response
       if (user?.userType === "admin") {
-        studentObj.id = studentId
+        ;(studentObj as StudentProfile).id = studentId
         response = await profileService.setOwnStudentProfile(studentObj)
       } else {
         response = await profileService.setOwnStudentProfile(studentObj)

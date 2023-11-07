@@ -40,6 +40,7 @@ import Link from "next/link"
 import DeleteModal from "@/components/deleteModal"
 import EditOfferings from "@/components/editOfferings"
 import { fileToDataUrl } from "@/service/helpers"
+import ResetModal from "@/components/resetModal"
 
 const authService = new HTTPAuthService()
 
@@ -262,11 +263,12 @@ export default function Edit() {
           </Form>
         </CardContent>
       </Card>
-      <div className="p-auto relative mx-auto my-5 max-w-sm text-center">
+      <div className=" p-auto relative mx-auto my-5 grid max-w-sm grid-cols-3 text-center">
         <Button asChild className="m-3 p-6" variant="secondary">
           <Link href={`../${tutorId}`}> Back </Link>
         </Button>
         <DeleteModal profileId={tutorId} accountType="tutor" />
+        <ResetModal />
       </div>
     </div>
   )
