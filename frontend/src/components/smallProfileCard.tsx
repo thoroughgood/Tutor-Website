@@ -1,5 +1,9 @@
 import { useQuery } from "react-query"
-import { HTTPProfileService } from "@/service/profileService"
+import {
+  HTTPProfileService,
+  StudentProfile,
+  TutorProfile,
+} from "@/service/profileService"
 import { Badge } from "./ui/badge"
 import { MapPin } from "lucide-react"
 import HeaderSeparator from "./headerSeparator"
@@ -20,7 +24,7 @@ export default function SmallProfileCard({
 }: SmallProfileCard) {
   const { data } = useQuery({
     queryKey: [`${accountType}s`, id],
-    queryFn: async () => {
+    queryFn: async (): Promise<StudentProfile | TutorProfile | undefined> => {
       if (accountType === "student") {
         return await profileService.getStudentProfile(id)
       } else if (accountType === "tutor") {
@@ -57,18 +61,19 @@ export default function SmallProfileCard({
                 )}
               </div>
             </div>
-            {accountType === "tutor" && data.courseOfferings.length > 0 && (
-              <>
-                <HeaderSeparator>Course Offerings</HeaderSeparator>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {data.courseOfferings.map((course) => (
-                    <Badge variant="random" key={course}>
-                      {course}
-                    </Badge>
-                  ))}
-                </div>
-              </>
-            )}
+            {accountType === "tutor" &&
+              (data as TutorProfile).courseOfferings.length > 0 && (
+                <>
+                  <HeaderSeparator>Course Offerings</HeaderSeparator>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {(data as TutorProfile).courseOfferings.map((course) => (
+                      <Badge variant="random" key={course}>
+                        {course}
+                      </Badge>
+                    ))}
+                  </div>
+                </>
+              )}
           </>
         ) : (
           <div className="space-y-2">

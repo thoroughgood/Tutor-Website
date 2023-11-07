@@ -89,13 +89,15 @@ export default function FindUser() {
         {isLoading ? (
           <Loader2 className="animate-spin" />
         ) : (
-          searchResp?.userInfos.map((tId) => (
-            <SmallProfileCard
-              key={tId.id}
-              id={tId.id}
-              accountType={tId.accountType}
-            />
-          ))
+          searchResp?.userInfos
+            .filter((user) => user.accountType !== "admin")
+            .map((user) => (
+              <SmallProfileCard
+                key={user.id}
+                id={user.id}
+                accountType={user.accountType as "tutor" | "student"}
+              />
+            ))
         )}
       </div>
     </div>
