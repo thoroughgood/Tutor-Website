@@ -69,11 +69,11 @@ def test_doc_upload_invalid(
     assert resp.status_code == 200
 
     resp = client.post("/document", json={})
-    assert resp.json == {"error": "No document was provided"}
+    assert resp.json == {"error": "'document' was missing from field(s)"}
     assert resp.status_code == 400
 
     resp = client.post("/document", json={"document": None})
-    assert resp.json == {"error": "No document was provided"}
+    assert resp.json == {"error": "field 'document' must be of type string"}
     assert resp.status_code == 400
 
 # Valid Test of uploading and getting document
