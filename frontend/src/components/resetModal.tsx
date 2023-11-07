@@ -51,6 +51,7 @@ export default function ResetModal({
     console.log(profileId)
     setSubmitLoading(true)
     try {
+      profileService.resetPassword(form)
     } catch {
       toast.error(getErrorMessage(Error))
     }
