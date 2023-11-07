@@ -25,9 +25,6 @@ def upload_document(args):
         raise ExpectedError("User is not a tutor", 401)
     
     args = request.get_json()
-
-    if "document" not in args or args["document"] is None:
-        raise ExpectedError("No document was provided", 400)
     
     doc = Document.prisma().create(
         data={
