@@ -18,3 +18,26 @@ Week 3
 In week 3 we began setting up our backend and frontend to get a start on our assignment. A basic api document was created for our first sprint. We also finalised 
 our proposal, and then set up a meeting to create all our child issues. We've started sorting out the work with everyone and assigning tasks as well in the leadup
 to our first demo.
+
+week 4:
+Attended our semi-regular standups, and kept digging into getting tutor edit done, was having complications
+with some of our frontend on the tutor profile page, was able to fix it with some pair programming with Daniel
+
+Week 5: 
+Was having some complications with the implementation of tutor edit, and attended our regular standups.
+Was having a fair few complications because it's my first time using typescript and we were using a lot of libraries
+that I was not familiar with, and I'm also not comprehensive with frontend programming in the first place,
+so I was learning a lot as I was going along
+
+Week 6:
+By the end of week 6, I was able to debug most of tutor edit and overall the page was mostly done. 
+I was able to get a start on the admin routes, messing around a bit with the frontend view but no functionality has
+been implemented at this point. I just need a few touchups to finalise it, with profilePicture not being properly
+implemented because I still need to find a way to convert files to data URLS
+
+Week 7:
+I have continued to attend our regular standups, and also began planning how to lay out our approach
+to the retrospective B. Making sure we are keeping up with the things we planned to try laid out in retrospective A.
+I managed to create a lot of progress this week, finishing off the admin create route, and also the user search route. Admin edit/delete was almost 
+done and able to be pushed to main, however there was a small bug discovered before our demonstration. Bug is rectified
+but won't be able to show this off in our demo.

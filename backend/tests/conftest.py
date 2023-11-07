@@ -139,6 +139,7 @@ def fake_user():
                     email=email,
                     hashedPassword=sha256(pword.encode()).hexdigest(),
                     studentInfo=models.Student(id=id, userInfoId=id),
+                    tutorialState=True,
                 )
                 user.studentInfo = models.Student(id=id, userInfoId=id, userInfo=user)
                 return user
@@ -149,6 +150,7 @@ def fake_user():
                     email=email,
                     hashedPassword=sha256(pword.encode()).hexdigest(),
                     tutorInfo=models.Tutor(id=id, userInfoId=id),
+                    tutorialState=True,
                 )
                 user.tutorInfo = models.Tutor(id=id, userInfoId=id, userInfo=user)
                 return user
@@ -159,6 +161,7 @@ def fake_user():
                     email=email,
                     hashedPassword=sha256(pword.encode()).hexdigest(),
                     adminInfo=models.Admin(id=id, userInfoId=id),
+                    tutorialState=True,
                 )
                 user.adminInfo = models.Admin(id=id, userInfoId=id, userInfo=user)
                 return user

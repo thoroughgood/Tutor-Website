@@ -55,7 +55,7 @@ export interface ProfileService {
     searchParams: TutorSearchParams,
   ) => Promise<{ tutorIds: string[] }>
   searchAll: (searchParams: AdminSearchParams) => Promise<{
-    userInfos: { id: string; accountType: "tutor" | "student" }[]
+    userInfos: { id: string; accountType: "tutor" | "student" | "admin" }[]
   }>
   getStudentProfile: (studentId: string) => Promise<StudentProfile>
   setOwnStudentProfile: (
@@ -87,7 +87,7 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
   }
 
   async searchAll(searchParams: AdminSearchParams): Promise<{
-    userInfos: { id: string; accountType: "tutor" | "student" }[]
+    userInfos: { id: string; accountType: "tutor" | "student" | "admin" }[]
   }> {
     const url = new URL(`${this.backendURL}/admin/search`)
     const basicParams = { ...searchParams }

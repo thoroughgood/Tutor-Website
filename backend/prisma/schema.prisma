@@ -17,17 +17,23 @@ generator client {
 // FYI Model names are in PascalCase, and fields are in camelCase
 // see: https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#naming-conventions
 model User {
-  id             String   @id
-  email          String   @unique
-  hashedPassword String
-  name           String
-  bio            String?
-  profilePicture String?
-  location       String?
-  phoneNumber    String?
-  tutorInfo      Tutor?
-  studentInfo    Student?
-  adminInfo      Admin?
+  id                 String          @id
+  email              String          @unique
+  hashedPassword     String
+  name               String
+  bio                String?         @default("")
+  profilePicture     String?
+  location           String?
+  phoneNumber        String?
+  messages           Message[]
+  fromDirectMessages DirectMessage[] @relation(name: "fromDirectMessage")
+  toDirectMessages   DirectMessage[] @relation(name: "toDirectMessage")
+  tutorialState      Boolean         @default(false)
+  notifications      Notification[]
+  // Note: This is a XOR relation
+  tutorInfo          Tutor?
+  studentInfo        Student?
+  adminInfo          Admin?
 }
 
 model Admin {
@@ -59,6 +65,8 @@ model Document {
   tutor    Tutor  @relation(fields: [tutorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   tutorId  String
   document String
+
+  @@unique([id, tutorId])
 }
 
 model Subject {
@@ -72,6 +80,8 @@ model TutorAvailability {
   tutorId   String
   startTime DateTime
   endTime   DateTime
+
+  @@unique([id, tutorId])
 }
 
 model Rating {
@@ -81,16 +91,75 @@ model Rating {
   appointmentId String      @unique
   createdFor    Tutor       @relation(fields: [tutorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   tutorId       String
+
+  @@unique([id, appointmentId])
+  @@unique([id, tutorId])
+  @@unique([appointmentId, tutorId])
 }
 
 model Appointment {
-  id            String   @id
+  id            String        @id
   startTime     DateTime
   endTime       DateTime
-  tutorAccepted Boolean  @default(false)
+  tutorAccepted Boolean       @default(false)
   rating        Rating?
-  tutor         Tutor    @relation(fields: [tutorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tutor         Tutor         @relation(fields: [tutorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   tutorId       String
-  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   studentId     String
+  messages      Message[]
+  notification  Notification?
+
+  @@unique([id, tutorId])
+  @@unique([id, studentId])
+}
+
+model Message {
+  id              String         @id
+  sentTime        DateTime
+  content         String
+  sentBy          User           @relation(fields: [sentById], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  sentById        String
+  notification    Notification?
+  // Note: This is a XOR relation
+  appointment     Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  appointmentId   String?
+  directMessage   DirectMessage? @relation(fields: [directMessageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  directMessageId String?
+
+  @@unique([id, sentById])
+  @@unique([id, appointmentId])
+  @@unique([id, directMessageId])
+  @@unique([sentById, appointmentId])
+  @@unique([sentById, directMessageId])
+}
+
+model DirectMessage {
+  id          String    @id
+  messages    Message[]
+  fromUser    User      @relation(fields: [fromUserId], references: [id], name: "fromDirectMessage", onDelete: Cascade, onUpdate: Cascade)
+  fromUserId  String
+  otherUser   User      @relation(fields: [otherUserId], references: [id], name: "toDirectMessage", onDelete: Cascade, onUpdate: Cascade)
+  otherUserId String
+
+  @@unique([id, fromUserId])
+  @@unique([id, otherUserId])
+  @@unique([fromUserId, otherUserId])
+}
+
+model Notification {
+  id            String       @id
+  forUser       User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId        String
+  // Note: This is a XOR relation
+  message       Message?     @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  messageId     String?      @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  appointmentId String?      @unique
+
+  @@unique([id, messageId])
+  @@unique([id, userId])
+  @@unique([id, appointmentId])
+  @@unique([messageId, userId])
+  @@unique([appointmentId, userId])
 }

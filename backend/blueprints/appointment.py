@@ -1,10 +1,13 @@
 from flask import Blueprint, jsonify, session
 from prisma.models import Appointment, Rating
-from jsonschemas.appointment_accept_schema import appointment_accept_schema
-from jsonschemas.appointment_request_schema import appointment_request_schema
-from jsonschemas.appointment_delete_schema import appointment_delete_schema
-from jsonschemas.appointment_modify_schema import appointment_modify_schema
-from jsonschemas.appointment_rating_schema import appointment_rating_schema
+from prisma.errors import RecordNotFoundError
+from jsonschemas import (
+    appointment_accept_schema,
+    appointment_request_schema,
+    appointment_delete_schema,
+    appointment_modify_schema,
+    appointment_rating_schema,
+)
 from helpers.process_time_block import process_time_block
 from uuid import uuid4
 from datetime import datetime, timezone
@@ -53,19 +56,16 @@ def appointment_accept(args):
     if not tutor:
         raise ExpectedError("Must be a tutor to modify appointments", 403)
 
-    appointment = Appointment.prisma().find_first(
-        where={"id": args["id"], "tutorId": tutor.id}
-    )
-    if appointment is None:
+    try:
+        appointment = Appointment.prisma().update(
+            where={"id_tutorId": {"id": args["id"], "tutorId": tutor.id}},
+            data={"tutorAccepted": args["accept"]},
+        )
+    except RecordNotFoundError:
         raise ExpectedError(
             "Appointment corresponding to id does not exist or, appointment does not involve tutor",
             400,
         )
-
-    appointment = Appointment.prisma().update(
-        where={"id": args["id"]},
-        data={"tutorAccepted": args["accept"]},
-    )
 
     return (
         jsonify(
@@ -103,7 +103,7 @@ def appointment_request(args):
     if not student:
         raise ExpectedError("Profile is not a student", 400)
 
-    if student.appointments != None:
+    if student.appointments is not None:
         for appointment in student.appointments:
             if (
                 appointment.startTime <= st < appointment.endTime
