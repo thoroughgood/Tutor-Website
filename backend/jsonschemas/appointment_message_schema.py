@@ -9,5 +9,5 @@ appointment_message_schema = {
         **id_prop,
         **message_prop,
     },
-    "required": ["id", "message_prop"],
+    "required": ["id", "message"],
 }

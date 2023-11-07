@@ -24,7 +24,7 @@ appointment = Blueprint("appointment", __name__)
 
 @appointment.route("/<appointment_id>", methods=["GET"])
 @error_decorator
-def get_appoinment(appointment_id):
+def get_appointment(appointment_id):
     appointment = Appointment.prisma().find_unique(where={"id": appointment_id})
     if appointment is None:
         raise ExpectedError("Given id does not correspond to an appointment", 404)
@@ -273,7 +273,7 @@ def messages(args):
     )
 
 
-@appointment.route("/messages", methods=["POST"])
+@appointment.route("/message", methods=["POST"])
 @error_decorator
 @validate_decorator("json", appointment_message_schema)
 def message(args):
@@ -286,15 +286,16 @@ def message(args):
 
     if (
         session["user_id"] != appointment.studentId
-        or session["user_id"] != appointment.tutorId
+        and session["user_id"] != appointment.tutorId
     ):
         raise ExpectedError("User is not the tutor or student of the appointment", 403)
 
     message = Message.prisma().create(
         data={
             "id": str(uuid4()),
+            "sentTime": datetime.now(),
             "content": args["message"],
-            "sentBy": session["user_id"],
+            "sentBy": {"connect": {"id": appointment.studentId}},
             "appointment": {"connect": {"id": args["id"]}},
         }
     )
