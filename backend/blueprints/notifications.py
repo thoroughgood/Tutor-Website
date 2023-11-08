@@ -37,11 +37,13 @@ def notifications_get_by_id(notification_id):
         raise ExpectedError("notification is not for this user")
 
     if notification.messageId is None:
-        type = 'appointment'
+        type = "appointment"
     elif notification.appointmentId is None:
-        type = 'message'
+        type = "message"
 
-    
+    Notification.prisma().delete(
+        where={"id": notification_id}
+    )
 
     return jsonify({
         "id": notification.id,
