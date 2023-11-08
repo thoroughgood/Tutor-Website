@@ -252,18 +252,22 @@ def appointment_messages(args):
     messages = Message.prisma().find_many(where={"appointmentId": args["id"]})
     messages.sort(key=lambda x: x.sentTime)
 
-    messages_list = []
-    for message in messages:
-        messages_list.append(
+    return (
+        jsonify(
             {
-                "id": message.id,
-                "sentBy": message.sentById,
-                "sentTime": message.sentTime.isoformat(),
-                "content": message.content,
+                "messages": [
+                    {
+                        "id": message.id,
+                        "sentBy": message.sentById,
+                        "sentTime": message.sentTime.isoformat(),
+                        "content": message.content,
+                    }
+                    for message in messages
+                ]
             }
-        )
-
-    return jsonify({"messages": messages_list}), 200
+        ),
+        200,
+    )
 
 
 @appointment.route("/message", methods=["POST"])

@@ -791,7 +791,7 @@ def test_message_args(
 ############################## MESSAGES TESTS ##################################
 
 
-def test_message_args(
+def test_messages_args(
     setup_test: FlaskClient,
     mocker: MockerFixture,
     find_unique_users_mock,
