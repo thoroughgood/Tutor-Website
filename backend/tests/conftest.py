@@ -22,6 +22,7 @@ from prisma.actions import (
     DocumentActions,
     AppointmentActions,
     RatingActions,
+    MessageActions,
 )
 
 # hack to import a root level file and be able to run pytest from any dir
@@ -239,3 +240,18 @@ def fake_rating(fake_appointment):
     )
 
     return rating
+
+
+@pytest.fixture
+def fake_message(fake_student, fake_appointment):
+    message = models.Message(
+        id=str(uuid4()),
+        sentTime="2023-10-20T00:00:00+00:00",
+        content="Hello",
+        sentBy=fake_student.tutorInfo,
+        sentById=fake_student.id,
+        appointment=fake_appointment,
+        appointmentId=fake_appointment.id,
+    )
+
+    return message

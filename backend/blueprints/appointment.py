@@ -6,6 +6,7 @@ from jsonschemas import (
     appointment_request_schema,
     appointment_delete_schema,
     appointment_message_schema,
+    appointment_messages_schema,
     appointment_modify_schema,
     appointment_rating_schema,
 )
@@ -233,12 +234,10 @@ def appointment_rating(args):
 
 @appointment.route("/messages", methods=["GET"])
 @error_decorator
-def messages(args):
+@validate_decorator("json", appointment_messages_schema)
+def appointment_messages(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
-
-    if "id" not in args:
-        raise ExpectedError("No appointment id provided", 400)
 
     appointment = Appointment.prisma().find_unique(where={"id": args["id"]})
     if not appointment:
@@ -246,37 +245,31 @@ def messages(args):
 
     if (
         session["user_id"] != appointment.studentId
-        or session["user_id"] != appointment.tutorId
+        and session["user_id"] != appointment.tutorId
     ):
         raise ExpectedError("User is not the tutor or student of the appointment", 403)
 
     messages = Message.prisma().find_many(where={"appointmentId": args["id"]})
-    messages = sorted(messages, key=lambda x: x["sentTime"])
+    messages.sort(key=lambda x: x.sentTime)
 
-    return (
-        jsonify(
+    messages_list = []
+    for message in messages:
+        messages_list.append(
             {
-                "messages": {
-                    [
-                        {
-                            "id": message.id,
-                            "sentBy": message.sendBy,
-                            "sentTime": message.sentTime.isoformat(),
-                            "content": message.content,
-                        }
-                        for message in messages
-                    ],
-                }
+                "id": message.id,
+                "sentBy": message.sentById,
+                "sentTime": message.sentTime.isoformat(),
+                "content": message.content,
             }
-        ),
-        200,
-    )
+        )
+
+    return jsonify({"messages": messages_list}), 200
 
 
 @appointment.route("/message", methods=["POST"])
 @error_decorator
 @validate_decorator("json", appointment_message_schema)
-def message(args):
+def appointment_message(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -300,4 +293,4 @@ def message(args):
         }
     )
 
-    return jsonify({"id": message.id, "sentTime": message.sentTime}), 200
+    return jsonify({"id": message.id, "sentTime": message.sentTime.isoformat()}), 200

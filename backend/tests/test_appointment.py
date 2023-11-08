@@ -4,7 +4,7 @@ from datetime import datetime
 from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockType
 from flask.testing import FlaskClient
-from prisma.models import Appointment, User, Rating
+from prisma.models import Appointment, User, Rating, Message
 from prisma.errors import RecordNotFoundError
 
 ########################### APPOINTMENT ACCEPT TESTS ###########################
@@ -718,3 +718,74 @@ def test_rating_args(
     )
     assert resp.status_code == 200
     assert resp.json["success"] == True
+
+
+############################### MESSAGE TESTS ##################################
+
+
+def test_message_args(
+    setup_test: FlaskClient,
+    mocker: MockerFixture,
+    find_unique_users_mock,
+    fake_student: User,
+    fake_appointment: Appointment,
+    fake_message: Message,
+):
+    client = setup_test
+
+    # No JSON Body
+    resp = client.post("/appointment/message")
+    assert resp.json == {"error": "content-type was not json or data was malformed"}
+    assert resp.status_code == 415
+
+    # Missing id
+    resp = client.post("/appointment/message", json={})
+    assert resp.json == {"error": "'id' was missing from field(s)"}
+    assert resp.status_code == 400
+
+    # Missing message field
+    resp = client.post("/appointment/message", json={"id": "123"})
+    assert resp.json == {"error": "'message' was missing from field(s)"}
+    assert resp.status_code == 400
+
+    resp = client.post(
+        "/appointment/message", json={"id": fake_appointment.id, "message": "hi"}
+    )
+    assert resp.json == {"error": "No user is logged in"}
+    assert resp.status_code == 401
+
+    client.post(
+        "/login",
+        json={
+            "email": fake_student.email,
+            "password": "12345678",
+            "accountType": "student",
+        },
+    )
+
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_student.email}, include=mocker.ANY
+    )
+
+    # Invalid appointment id
+    resp = client.post("/appointment/message", json={"id": "123", "message": "hi"})
+    assert resp.json == {"error": "Appointment does not exist"}
+    assert resp.status_code == 400
+
+    appointment_find_unique_mock = mocker.patch(
+        "tests.conftest.AppointmentActions.find_unique"
+    )
+    appointment_find_unique_mock.return_value = fake_appointment
+    appointment_create_mock = mocker.patch("tests.conftest.MessageActions.create")
+    appointment_create_mock.return_value = fake_message
+
+    # successful message on an appointment
+    resp = client.post(
+        "/appointment/message", json={"id": fake_appointment.id, "message": "hi"}
+    )
+    assert resp.status_code == 200
+    assert resp.json["id"] == fake_message.id
+    assert resp.json["sentTime"] == "2023-10-20T00:00:00+00:00"
+
+
+############################## MESSAGES TESTS ##################################
