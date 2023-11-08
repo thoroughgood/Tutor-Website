@@ -15,6 +15,7 @@ from pathlib import Path
 
 # unused import for mocking purposes during tests
 from prisma.actions import *
+from pusher import Pusher
 
 # hack to import a root level file and be able to run pytest from any dir
 # source: https://www.geeksforgeeks.org/python-import-from-parent-directory/
@@ -321,46 +322,3 @@ def fake_rating(fake_appointment):
     )
 
     return rating
-
-
-@pytest.fixture
-def fake_dm(fake_student, fake_tutor):
-    dm = models.DirectMessage(
-        id=str(uuid4()),
-        messages=[],
-        fromUser=fake_student,
-        fromUserId=fake_student.id,
-        otherUser=fake_tutor,
-        otherUserId=fake_tutor.id,
-    )
-    dm.messages = [
-        models.Message(
-            id=str(uuid4()),
-            sentTime=datetime.datetime.now(),
-            content="msg",
-            sentBy=fake_student,
-            sentById=fake_student.id,
-            directMessage=dm,
-            directMessageId=dm.id,
-        ),
-        models.Message(
-            id=str(uuid4()),
-            sentTime=datetime.datetime.now(),
-            content="wow",
-            sentBy=fake_student,
-            sentById=fake_student.id,
-            directMessage=dm,
-            directMessageId=dm.id,
-        ),
-        models.Message(
-            id=str(uuid4()),
-            sentTime=datetime.datetime.now(),
-            content="lmao",
-            sentBy=fake_student,
-            sentById=fake_student.id,
-            directMessage=dm,
-            directMessageId=dm.id,
-        ),
-    ]
-
-    return dm

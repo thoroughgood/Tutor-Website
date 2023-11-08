@@ -4,7 +4,7 @@ from prisma import Prisma
 from uuid import uuid4
 from prisma.models import DirectMessage, Notification
 from datetime import datetime, MINYEAR, timezone
-from jsonschemas import direct_message_info_schema, direct_message_schema
+from jsonschemas import direct_message_schema
 from helpers.views import user_view
 from helpers.error_handlers import (
     validate_decorator,
@@ -48,24 +48,25 @@ def dm_all():
     return jsonify({"otherIds": otherIds}), 200
 
 
-@direct_message.route("/", methods=["GET"])
+@direct_message.route("/<other_id>", methods=["GET"])
 @error_decorator
-@validate_decorator("query_string", direct_message_info_schema)
-def dm_info(args):
+def dm_info(other_id):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
     direct_message = DirectMessage.prisma().find_first(
         where={
             "OR": [
-                {"fromUserId": session["user_id"], "otherUserId": args["otherId"]},
-                {"fromUserId": args["otherId"], "otherUserId": session["user_id"]},
+                {"fromUserId": session["user_id"], "otherUserId": other_id},
+                {"fromUserId": other_id, "otherUserId": session["user_id"]},
             ]
         },
         include={"messages": {"order_by": {"sentTime": "desc"}}},
     )
     if direct_message is None:
-        return ExpectedError("Direct message doesn't exist", 400)
+        raise ExpectedError(
+            f"Direct message between this user and '{other_id}' doesn't exist", 400
+        )
 
     messages = []
     notifications_to_clear = []
@@ -118,23 +119,18 @@ def dm_message(args):
         }
 
         dm_id = dm.id if dm else str(uuid4())
-        if dm is not None:
-            transaction.directmessage.update(
-                where={"id": dm_id}, data={"messages": {"create": message_info}}
-            )
-        else:
-            transaction.directmessage.upsert(
-                where={"id": dm_id},
-                data={
-                    "create": {
-                        "id": dm_id,
-                        "fromUser": {"connect": {"id": session["user_id"]}},
-                        "otherUser": {"connect": {"id": args["otherId"]}},
-                        "messages": {"create": message_info},
-                    },
-                    "update": {"messages": {"create": message_info}},
+        transaction.directmessage.upsert(
+            where={"id": dm_id},
+            data={
+                "create": {
+                    "id": dm_id,
+                    "fromUser": {"connect": {"id": session["user_id"]}},
+                    "otherUser": {"connect": {"id": args["otherId"]}},
+                    "messages": {"create": message_info},
                 },
-            )
+                "update": {"messages": {"create": message_info}},
+            },
+        )
 
         channel_info = pusher_client.channel_info(
             args["otherId"], ["subscription_count"]
@@ -147,17 +143,19 @@ def dm_message(args):
                     {
                         "fromId": session["user_id"],
                         "content": message_info["content"],
-                        "sentTime": message_info["sentTime"],
+                        "sentTime": message_info["sentTime"].isoformat(),
                     },
                 )
-            except ValueError:
+            except (ValueError, TypeError):
                 raise ExpectedError("Message format is invalid", 400)
         else:
+            user = transaction.user.find_unique(where={"id": session["user_id"]})
             transaction.notification.create(
                 data={
                     "id": str(uuid4()),
                     "forUser": {"connect": {"id": args["otherId"]}},
                     "message": {"connect": {"id": message_info["id"]}},
+                    "content": f"Received a direct message from {user.name}",
                 }
             )
 
