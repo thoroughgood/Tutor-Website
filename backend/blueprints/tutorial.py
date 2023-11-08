@@ -1,4 +1,4 @@
-from flask import Blueprints, jsonify, session
+from flask import Blueprint, jsonify, session, Response
 from prisma.models import User
 from helpers.error_handlers import (
     validate_decorator,
@@ -6,9 +6,9 @@ from helpers.error_handlers import (
     error_decorator,
 )
 
-tutorial = Blueprints("tutorial", __name__)
+tutorial = Blueprint("tutorial", __name__)
 
-@tutorial.route("/complete", methods=["POST"])
+@tutorial.route("tutorial/complete", methods=["POST"])
 @error_decorator
 def tutorial_complete():
     if "user_id" not in session:
@@ -19,7 +19,9 @@ def tutorial_complete():
         data={"tutorialState": True},
     )
 
-@tutorial.route("", methods=["GET"])
+    return Response(status=204)
+
+@tutorial.route("tutorial", methods=["GET"])
 @error_decorator
 def tutorial_get():
     if "user_id" not in session:
