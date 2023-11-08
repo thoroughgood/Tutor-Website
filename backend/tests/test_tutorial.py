@@ -1,4 +1,3 @@
-import pytest
 from pytest_mock import MockerFixture
 from flask.testing import FlaskClient
 from prisma.models import User
@@ -10,6 +9,7 @@ def test_tutorial(
     fake_tutor: User,
     mocker: MockerFixture,
     find_unique_users_mock: MockType,
+    fake_login,
 ):
     client = setup_test
 
@@ -23,18 +23,7 @@ def test_tutorial(
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
-    resp = client.post(
-        "/login",
-        json={
-            "email": "validemail2@mail.com",
-            "password": "12345678",
-            "accountType": "tutor",
-        },
-    )
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_tutor.email}, include=mocker.ANY
-    )
-    assert resp.status_code == 200
+    fake_login("fake_tutor")
 
     resp = client.get("tutorial/")
     assert resp.json == {"completed": False}

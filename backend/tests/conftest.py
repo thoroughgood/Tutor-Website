@@ -79,7 +79,6 @@ def fake_login(
     fake_student,
     fake_tutor,
     fake_admin,
-    fake_user,
 ):
     def __fake_login(
         login_as: str | LoginInfo,
@@ -131,23 +130,6 @@ def fake_login(
                 find_unique_users_mock.assert_called_with(
                     where={"email": fake_admin.email}, include=mocker.ANY
                 )
-            case _:
-                find_unique_mock = mocker.patch(
-                    "tests.conftest.UserActions.find_unique"
-                )
-                user = fake_user(
-                    login_as["email"], login_as["password"], login_as["accountType"]
-                )
-                find_unique_mock.return_value = user
-
-                resp = client.post(
-                    "/login",
-                    json=login_as,
-                )
-                find_unique_mock.assert_called_with(
-                    where={"email": login_as["email"]}, include=mocker.ANY
-                )
-                mocker.stop(find_unique_mock)
         assert resp.status_code == 200
 
         return user
@@ -182,6 +164,9 @@ def find_unique_users_mock(
         ):
             return fake_tutor2
 
+        print("-------------")
+        print(kwargs)
+        print("-------------")
         return None
 
     return mocker.patch(

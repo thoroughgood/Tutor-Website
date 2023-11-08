@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, session, Response
 from prisma.models import User
 from helpers.error_handlers import (
-    validate_decorator,
     ExpectedError,
     error_decorator,
 )

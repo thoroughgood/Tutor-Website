@@ -52,8 +52,7 @@ def test_modify_not_json(setup_test: FlaskClient):
 def test_modify_args(
     setup_test: FlaskClient,
     mocker: MockerFixture,
-    find_unique_users_mock: MockType,
-    fake_student: User,
+    fake_login,
 ):
     client = setup_test
 
@@ -62,18 +61,7 @@ def test_modify_args(
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
-    resp = client.post(
-        "/login",
-        json={
-            "email": "validemail@mail.com",
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_student.email}, include=mocker.ANY
-    )
+    fake_login("fake_student")
 
     # Invalid name
     resp = client.put("/student/profile", json={"name": ""})
@@ -122,20 +110,11 @@ def test_admin_modify_args(
     find_unique_users_mock: MockType,
     fake_student: User,
     fake_admin: User,
+    fake_login,
 ):
     client = setup_test
 
-    resp = client.post(
-        "/login",
-        json={
-            "email": "validemail@mail.com",
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_student.email}, include=mocker.ANY
-    )
+    fake_login("fake_student")
 
     resp = client.put("/student/profile", json={"id": fake_student.id})
     assert resp.json == {"error": "id field should not be supplied by a non admin user"}
@@ -265,26 +244,10 @@ def test_delete_no_user(setup_test: FlaskClient):
     assert resp.status_code == 401
 
 
-def test_delete_student_login(
-    setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
-    fake_student: User,
-):
+def test_delete_student_login(setup_test: FlaskClient, fake_student: User, fake_login):
     client = setup_test
 
-    resp = client.post(
-        "/login",
-        json={
-            "email": "validemail@mail.com",
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_student.email}, include=mocker.ANY
-    )
+    fake_login("fake_student")
 
     # Invalid id
     resp = client.delete("/student/", json={"id": "invalid"})
@@ -303,26 +266,11 @@ def test_delete_student_login(
 
 
 def test_delete_admin_login(
-    setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
-    fake_student: User,
-    fake_admin: User,
+    setup_test: FlaskClient, mocker: MockerFixture, fake_student: User, fake_login
 ):
     client = setup_test
 
-    resp = client.post(
-        "/login",
-        json={
-            "email": "validemail3@mail.com",
-            "password": "12345678",
-            "accountType": "admin",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_admin.email}, include=mocker.ANY
-    )
+    fake_login("fake_admin")
 
     # No id
     resp = client.delete("/student/", json={})
@@ -393,52 +341,22 @@ def test_student_appointment_not_login(setup_test: FlaskClient):
     assert resp.status_code == 401
 
 
-def test_student_appointment_not_student_login(
-    setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
-    fake_tutor: User,
-):
+def test_student_appointment_not_student_login(setup_test: FlaskClient, fake_login):
     client = setup_test
 
-    resp = client.post(
-        "/login",
-        json={
-            "email": "validemail2@mail.com",
-            "password": "12345678",
-            "accountType": "tutor",
-        },
-    )
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_tutor.email}, include=mocker.ANY
-    )
+    fake_login("fake_tutor")
 
     resp = client.get("/student/appointments")
     assert resp.json["error"] == "Current user is not a student"
     assert resp.status_code == 400
 
 
-def test_student_appointments(
-    setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
-    fake_appointments,
-):
+def test_student_appointments(setup_test: FlaskClient, fake_appointments, fake_login):
     client = setup_test
 
     data = fake_appointments
 
-    resp = client.post(
-        "/login",
-        json={
-            "email": "validemail@mail.com",
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
-    find_unique_users_mock.assert_called_with(
-        where={"email": data[0].email}, include=mocker.ANY
-    )
+    fake_login("fake_student")
 
     resp = client.get("student/appointments")
     resp.status_code == 200
