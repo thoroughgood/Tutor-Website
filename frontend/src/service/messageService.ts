@@ -7,7 +7,7 @@ interface MessageRawResp {
   content: string
 }
 
-interface Message extends Omit<MessageRawResp, "sentTime"> {
+export interface Message extends Omit<MessageRawResp, "sentTime"> {
   sentTime: Date
 }
 
