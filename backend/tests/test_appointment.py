@@ -4,7 +4,7 @@ from datetime import datetime
 from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockType
 from flask.testing import FlaskClient
-from prisma.models import Appointment, User, Rating, Message
+from prisma.models import Appointment, User, Rating, Message, Notification
 from prisma.errors import RecordNotFoundError
 
 ########################### APPOINTMENT ACCEPT TESTS ###########################
@@ -730,6 +730,7 @@ def test_message_args(
     fake_student: User,
     fake_appointment: Appointment,
     fake_message: Message,
+    fake_notification: Notification,
 ):
     client = setup_test
 
@@ -778,6 +779,8 @@ def test_message_args(
     appointment_find_unique_mock.return_value = fake_appointment
     appointment_create_mock = mocker.patch("tests.conftest.MessageActions.create")
     appointment_create_mock.return_value = fake_message
+    notif_mock = mocker.patch("tests.conftest.NotificationActions.create")
+    notif_mock.return_value = fake_notification
 
     # successful message on an appointment
     resp = client.post(
@@ -852,15 +855,15 @@ def test_messages_args(
     assert resp.status_code == 200
     assert resp.json["messages"] == [
         {
-            "id": fake_message.id,
-            "sentBy": fake_message.sentById,
-            "sentTime": fake_message.sentTime.isoformat(),
-            "content": fake_message.content,
-        },
-        {
             "id": fake_message2.id,
             "sentBy": fake_message2.sentById,
             "sentTime": fake_message2.sentTime.isoformat(),
             "content": fake_message2.content,
+        },
+        {
+            "id": fake_message.id,
+            "sentBy": fake_message.sentById,
+            "sentTime": fake_message.sentTime.isoformat(),
+            "content": fake_message.content,
         },
     ]

@@ -1,5 +1,7 @@
-from flask import Blueprint, jsonify, session
-from prisma.models import Appointment, Rating, Message
+from flask import Blueprint, jsonify, session, current_app
+from pusher import Pusher
+from prisma import Prisma
+from prisma.models import Appointment, Rating, Message, Notification
 from prisma.errors import RecordNotFoundError
 from jsonschemas import (
     appointment_accept_schema,
@@ -249,8 +251,10 @@ def appointment_messages(args):
     ):
         raise ExpectedError("User is not the tutor or student of the appointment", 403)
 
-    messages = Message.prisma().find_many(where={"appointmentId": args["id"]})
-    messages.sort(key=lambda x: x.sentTime)
+    messages = Message.prisma().find_many(
+        where={"appointmentId": args["id"]},
+        include={"messages": {"orderBy": {"sentTime": "desc"}}},
+    )
 
     return (
         jsonify(
@@ -287,14 +291,42 @@ def appointment_message(args):
     ):
         raise ExpectedError("User is not the tutor or student of the appointment", 403)
 
-    message = Message.prisma().create(
-        data={
+    prisma_client: Prisma = current_app.extensions["prisma"]
+    pusher_client: Pusher = current_app.extensions["pusher"]
+    with prisma_client.tx() as transaction:
+        message = {
             "id": str(uuid4()),
             "sentTime": datetime.now(),
             "content": args["message"],
             "sentBy": {"connect": {"id": appointment.studentId}},
             "appointment": {"connect": {"id": args["id"]}},
         }
-    )
+
+        transaction.message.create(data=message)
+
+        channel_info = pusher_client.channel_info(
+            session["user_id"], ["subscription_count"]
+        )
+        if channel_info["subscription_count"] >= 1:
+            try:
+                pusher_client.trigger(
+                    args["id"],
+                    "message",
+                    {
+                        "fromId": session["user_id"],
+                        "content": message.content,
+                        "sentTime": message.sentTime,
+                    },
+                )
+            except ValueError:
+                raise ExpectedError("Message format is invalid", 400)
+        else:
+            transaction.notification.create(
+                data={
+                    "id": str(uuid4()),
+                    "forUser": {"connect": {"id": session["user_id"]}},
+                    "message": {"connect": {"id": message["id"]}},
+                }
+            )
 
     return jsonify({"id": message.id, "sentTime": message.sentTime.isoformat()}), 200
