@@ -1,8 +1,9 @@
+from typing import TypedDict
 from flask import Blueprint, jsonify, session, current_app
 from pusher import Pusher
 from prisma import Prisma
 from uuid import uuid4
-from prisma.models import DirectMessage, Notification
+from prisma.models import DirectMessage, Notification, User
 from datetime import datetime, MINYEAR, timezone
 from jsonschemas import direct_message_schema
 from helpers.views import user_view
@@ -88,6 +89,30 @@ def dm_info(other_id):
     return jsonify({"messages": messages}), 200
 
 
+class MessageInfo(TypedDict, total=True):
+    id: str
+    sentTime: str
+    content: str
+    sentBy: dict
+
+
+def dm_create_message(
+    dm_id: str, sender_id: str, receiver_id: str, message_info: MessageInfo
+):
+    DirectMessage.prisma().upsert(
+        where={"id": dm_id},
+        data={
+            "create": {
+                "id": dm_id,
+                "fromUser": {"connect": {"id": sender_id}},
+                "otherUser": {"connect": {"id": receiver_id}},
+                "messages": {"create": message_info},
+            },
+            "update": {"messages": {"create": message_info}},
+        },
+    )
+
+
 @direct_message.route("/", methods=["POST"])
 @error_decorator
 @validate_decorator("json", direct_message_schema)
@@ -99,65 +124,52 @@ def dm_message(args):
     if other_user is None:
         raise ExpectedError("otherId does not correspond to an user", 400)
 
-    prisma_client: Prisma = current_app.extensions["prisma"]
+    dm = DirectMessage.prisma().find_first(
+        where={
+            "OR": [
+                {"fromUserId": session["user_id"], "otherUserId": args["otherId"]},
+                {"fromUserId": args["otherId"], "otherUserId": session["user_id"]},
+            ]
+        }
+    )
+    dm_id = dm.id if dm else str(uuid4())
+
+    message_info = {
+        "id": str(uuid4()),
+        "sentTime": datetime.now(timezone.utc),
+        "content": args["message"],
+        "sentBy": {"connect": {"id": session["user_id"]}},
+    }
+
     pusher_client: Pusher = current_app.extensions["pusher"]
-    with prisma_client.tx() as transaction:
-        dm = transaction.directmessage.find_first(
-            where={
-                "OR": [
-                    {"fromUserId": session["user_id"], "otherUserId": args["otherId"]},
-                    {"fromUserId": args["otherId"], "otherUserId": session["user_id"]},
-                ]
+    channel_info = pusher_client.channel_info(args["otherId"], ["subscription_count"])
+    if channel_info["subscription_count"] >= 1:
+        try:
+            pusher_client.trigger(
+                args["otherId"],
+                "direct_message",
+                {
+                    "fromId": session["user_id"],
+                    "content": message_info["content"],
+                    "sentTime": message_info["sentTime"].isoformat(),
+                },
+            )
+        except (ValueError, TypeError):
+            raise ExpectedError("Message format is invalid", 400)
+
+        dm_create_message(dm_id, session["user_id"], args["otherId"], message_info)
+    else:
+        dm_create_message(dm_id, session["user_id"], args["otherId"], message_info)
+
+        user = user_view(id=session["user_id"])
+        Notification.prisma().create(
+            data={
+                "id": str(uuid4()),
+                "forUser": {"connect": {"id": args["otherId"]}},
+                "message": {"connect": {"id": message_info["id"]}},
+                "content": f"Received a direct message from {user.name}",
             }
         )
-
-        message_info = {
-            "id": str(uuid4()),
-            "sentTime": datetime.now(timezone.utc),
-            "content": args["message"],
-            "sentBy": {"connect": {"id": session["user_id"]}},
-        }
-
-        dm_id = dm.id if dm else str(uuid4())
-        transaction.directmessage.upsert(
-            where={"id": dm_id},
-            data={
-                "create": {
-                    "id": dm_id,
-                    "fromUser": {"connect": {"id": session["user_id"]}},
-                    "otherUser": {"connect": {"id": args["otherId"]}},
-                    "messages": {"create": message_info},
-                },
-                "update": {"messages": {"create": message_info}},
-            },
-        )
-
-        channel_info = pusher_client.channel_info(
-            args["otherId"], ["subscription_count"]
-        )
-        if channel_info["subscription_count"] >= 1:
-            try:
-                pusher_client.trigger(
-                    args["otherId"],
-                    "direct_message",
-                    {
-                        "fromId": session["user_id"],
-                        "content": message_info["content"],
-                        "sentTime": message_info["sentTime"].isoformat(),
-                    },
-                )
-            except (ValueError, TypeError):
-                raise ExpectedError("Message format is invalid", 400)
-        else:
-            user = transaction.user.find_unique(where={"id": session["user_id"]})
-            transaction.notification.create(
-                data={
-                    "id": str(uuid4()),
-                    "forUser": {"connect": {"id": args["otherId"]}},
-                    "message": {"connect": {"id": message_info["id"]}},
-                    "content": f"Received a direct message from {user.name}",
-                }
-            )
 
     return (
         jsonify(
