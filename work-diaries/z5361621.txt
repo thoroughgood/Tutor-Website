@@ -30,3 +30,8 @@ I completed implementing documentation uploading and retrieving.
 I completed implementing the retreival of tutor appointments.
 Met the deadlines given by the project leader and scrum master, overall performed much better in this sprint compared to the previous sprint.
 This can be attributed to no setup issues and increased familiarity with working with prisma.
+
+Week 8:
+Did the second progressive demo, which went well. 
+As a team we had a pre sprint 3 meeting to breakdown the remaining user stories and assign the work.
+Knowing the assigned work, I aim to start and complete this by week 9 thursday, to give some time before the final presentation.
