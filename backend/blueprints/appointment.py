@@ -166,6 +166,20 @@ def appointment_delete(args):
 
     if tutor.appointments is None or appointment not in tutor.appointments:
         raise ExpectedError("Logged in user is not the tutor of the appointment", 403)
+    
+    Notification.prisma().create(
+        data= {
+            "id": str(uuid4()),
+            "forUser": {"connect": {"id": appointment.studentId}},
+            "content": f"Your appointment with {tutor.name} has been deleted",
+        }
+    )
+
+    
+    # create notification and connect to student
+    # delete notification connected to appointment being deleted
+
+    # maybe have notifiction attribute as list? so notification created when accepted, modified etc
 
     Appointment.prisma().delete(where={"id": args["id"]})
 
