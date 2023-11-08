@@ -1,6 +1,7 @@
 from uuid import uuid4
 from flask import Blueprint, request , jsonify, session
 from prisma.models import Tutor, Document
+from jsonschemas.document_upload_schema import document_upload_schema
 from helpers.views import tutor_view
 from helpers.error_handlers import (
     validate_decorator,
@@ -12,7 +13,8 @@ document = Blueprint("document", __name__)
 
 @document.route("document", methods=["POST"])
 @error_decorator
-def upload_document():
+@validate_decorator("json", document_upload_schema)
+def upload_document(args):
 
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
@@ -23,9 +25,6 @@ def upload_document():
         raise ExpectedError("User is not a tutor", 401)
     
     args = request.get_json()
-
-    if "document" not in args or args["document"] is None:
-        raise ExpectedError("No document was provided", 400)
     
     doc = Document.prisma().create(
         data={
