@@ -38,6 +38,11 @@ interface AppointmentService {
   getOwnStudentAppointments: () => Promise<StudentAppointments>
   acceptAppointment: (appointmentId: string) => Promise<Appointment>
   deleteAppointment: (appointmentId: string) => Promise<SuccessResponse>
+  modifyAppointment: (
+    appointmentId: string,
+    start: Date,
+    end: Date,
+  ) => Promise<SuccessResponse>
 }
 
 export class HTTPAppointmentService
@@ -137,6 +142,25 @@ export class HTTPAppointmentService
         id: appointmentId,
       })
       .delete()
+    return await resp.json()
+  }
+
+  async modifyAppointment(
+    appointmentId: string,
+    start: Date,
+    end: Date,
+  ): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/appointment/`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({
+        id: appointmentId,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+      })
+      .put()
     return await resp.json()
   }
 }
