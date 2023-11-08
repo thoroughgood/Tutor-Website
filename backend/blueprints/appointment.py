@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, session
-from prisma.models import Appointment, Rating
+from prisma.models import Appointment, Rating, Notification
 from prisma.errors import RecordNotFoundError
 from jsonschemas import (
     appointment_accept_schema,
@@ -66,6 +66,15 @@ def appointment_accept(args):
             "Appointment corresponding to id does not exist or, appointment does not involve tutor",
             400,
         )
+    
+    Notification.prisma().create(
+        data= {
+            "id": str(uuid4()),
+            "forUser": {"connect": {"id": appointment.studentId}},
+            "content": f"{tutor.name} has accepted your appointment",
+            "appointment": {"connect": {"id": appointment.id}}
+        }
+    )
 
     return (
         jsonify(
