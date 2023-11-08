@@ -21,7 +21,7 @@ def get_id():
         return jsonify({}), 401
 
 
-@utils.route("/usertype/<user_id>")
+@utils.route("/usertype/<user_id>", methods=["GET"])
 @error_decorator
 def get_type(user_id):
     user = User.prisma().find_unique(
