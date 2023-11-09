@@ -657,7 +657,6 @@ def test_message_args(
     fake_student: User,
     fake_appointment: Appointment,
     fake_message: Message,
-    fake_notification: Notification,
 ):
     client = setup_test
 
@@ -706,13 +705,15 @@ def test_message_args(
     appointment_find_unique_mock.return_value = fake_appointment
     appointment_create_mock = mocker.patch("tests.conftest.MessageActions.create")
     appointment_create_mock.return_value = fake_message
+    pusher_channel_info_mock = mocker.patch("tests.conftest.Pusher.channel_info")
+    pusher_channel_info_mock.return_value = {"occupied": True, "subscription_count": 0}
     notif_mock = mocker.patch("tests.conftest.NotificationActions.create")
-    notif_mock.return_value = fake_notification
 
     # successful message on an appointment
     resp = client.post(
         "/appointment/message", json={"id": fake_appointment.id, "message": "hi"}
     )
+    notif_mock.assert_called()
     assert resp.status_code == 200
     assert resp.json["id"] == fake_message.id
     assert resp.json["sentTime"] == "2023-10-20T00:00:00+00:00"

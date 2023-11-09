@@ -12,20 +12,6 @@ import subprocess
 import sys
 import os
 from pathlib import Path
-
-# unused import for mocking purposes during tests
-from prisma.actions import (
-    UserActions,
-    TutorActions,
-    SubjectActions,
-    AdminActions,
-    StudentActions,
-    DocumentActions,
-    AppointmentActions,
-    RatingActions,
-    MessageActions,
-    NotificationActions,
-)
 from prisma.actions import *
 from pusher import Pusher
 
@@ -366,16 +352,3 @@ def fake_appointment_msg(fake_student, fake_tutor, fake_message, fake_message2):
     )
 
     return apt
-
-
-@pytest.fixture
-def fake_notification(fake_tutor, fake_message):
-    notif = models.Notification(
-        id=str(uuid4()),
-        forUser=fake_tutor.tutorInfo,
-        userId=fake_tutor.id,
-        message=fake_message,
-        messageId=fake_message.id,
-    )
-
-    return notif

@@ -15,7 +15,7 @@ from jsonschemas import (
 from helpers.process_time_block import process_time_block
 from uuid import uuid4
 from datetime import datetime, timezone
-from helpers.views import student_view, tutor_view
+from helpers.views import student_view, tutor_view, user_view
 from helpers.error_handlers import (
     validate_decorator,
     ExpectedError,
@@ -291,42 +291,48 @@ def appointment_message(args):
     ):
         raise ExpectedError("User is not the tutor or student of the appointment", 403)
 
-    prisma_client: Prisma = current_app.extensions["prisma"]
-    pusher_client: Pusher = current_app.extensions["pusher"]
-    with prisma_client.tx() as transaction:
-        message = {
+    if session["user_id"] == appointment.studentId:
+        other_id = appointment.tutorId
+    else:
+        other_id = appointment.studentId
+
+    msg = Message.prisma().create(
+        data={
             "id": str(uuid4()),
             "sentTime": datetime.now(),
             "content": args["message"],
             "sentBy": {"connect": {"id": appointment.studentId}},
             "appointment": {"connect": {"id": args["id"]}},
         }
+    )
 
-        transaction.message.create(data=message)
-
-        channel_info = pusher_client.channel_info(
-            session["user_id"], ["subscription_count"]
-        )
-        if channel_info["subscription_count"] >= 1:
-            try:
-                pusher_client.trigger(
-                    args["id"],
-                    "message",
-                    {
-                        "fromId": session["user_id"],
-                        "content": message.content,
-                        "sentTime": message.sentTime,
-                    },
-                )
-            except ValueError:
-                raise ExpectedError("Message format is invalid", 400)
-        else:
-            transaction.notification.create(
-                data={
-                    "id": str(uuid4()),
-                    "forUser": {"connect": {"id": session["user_id"]}},
-                    "message": {"connect": {"id": message["id"]}},
-                }
+    pusher_client: Pusher = current_app.extensions["pusher"]
+    channel_info = pusher_client.channel_info(other_id, ["subscription_count"])
+    if channel_info["subscription_count"] >= 1:
+        try:
+            pusher_client.trigger(
+                other_id,
+                "message",
+                {
+                    "fromId": session["user_id"],
+                    "content": msg.content,
+                    "sentTime": msg.sentTime.isoformat(),
+                },
             )
+        except (ValueError, TypeError):
+            raise ExpectedError("Message format is invalid", 400)
+    else:
+        user = user_view(id=session["user_id"])
+        Notification.prisma().create(
+            data={
+                "id": str(uuid4()),
+                "forUser": {"connect": {"id": other_id}},
+                "message": {"connect": {"id": msg.id}},
+                "content": f"Received a direct message from {user.name}",
+            }
+        )
 
-    return jsonify({"id": message.id, "sentTime": message.sentTime.isoformat()}), 200
+    return (
+        jsonify({"id": msg.id, "sentTime": msg.sentTime.isoformat()}),
+        200,
+    )
