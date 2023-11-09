@@ -16,7 +16,7 @@ def notifications_get():
     
     user = User.prisma().find_unique(where={"id": session["user_id"]})
 
-    notifications_l = list(map(lambda n: n.id, user.notifications))
+    notifications_l = list(map(lambda n: n.id, user.notifications)) if user.notifications is not None else []
 
     return jsonify({"notifications": notifications_l})
 
@@ -29,8 +29,6 @@ def notifications_get_by_id(notificationId):
     notification = Notification.prisma().find_unique(
         where={"id": notificationId}
     )
-
-    print(notification)
 
     if notification is None:
         raise ExpectedError("id does not correspond to a notification", 404)

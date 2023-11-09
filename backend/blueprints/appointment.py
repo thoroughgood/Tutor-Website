@@ -131,15 +131,13 @@ def appointment_request(args):
             "tutorAccepted": False,
             "tutor": {"connect": {"id": args["tutorId"]}},
             "student": {"connect": {"id": session["user_id"]}},
-        }
-    )
-
-    Notification.prisma().create(
-        data= {
-            "id": str(uuid4()),
-            "forUser": {"connect": {"id": appointment.tutorId}},
-            "content": f"{appointment.studentId} has requested an appointment with you",
-            "appointment": {"connect": {"id": appointment.id}}
+            "notification": {
+                "create": {
+                    "id": str(uuid4()),
+                    "forUser": {"connect": {"id": args["tutorId"]}},
+                    "content": f"{session['user_id']} has requested an appointment with you"
+                }
+            }
         }
     )
 
