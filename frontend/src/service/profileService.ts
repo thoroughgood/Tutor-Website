@@ -61,6 +61,7 @@ export interface ProfileService {
   setOwnStudentProfile: (
     studentProfile: StudentSelfEditReqBody,
   ) => Promise<SuccessResponse>
+  getUserType: (userId: string) => Promise<"tutor" | "student" | "admin">
   resetPassword: (password: string, id: string) => Promise<SuccessResponse>
 }
 
@@ -169,6 +170,14 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
       .json({})
       .delete()
     return await resp.json()
+  }
+
+  async getUserType(userId: string): Promise<"tutor" | "student" | "admin"> {
+    const resp = wretch(`${this.backendURL}/utils/usertype/${userId}`).get()
+    const respData = (await resp.json()) as {
+      accountType: "tutor" | "student" | "admin"
+    }
+    return respData.accountType
   }
 
   async resetPassword(
@@ -282,5 +291,9 @@ export class MockProfileService implements ProfileService {
       id: this.mockStudentProfile.id,
     }
     return { success: true }
+  }
+
+  async getUserType(_userId: string): Promise<"tutor" | "student" | "admin"> {
+    return "tutor"
   }
 }
