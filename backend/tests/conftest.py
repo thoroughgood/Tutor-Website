@@ -1,3 +1,4 @@
+from typing import TypedDict
 import pytest
 from datetime import datetime
 from pytest_mock import MockerFixture
@@ -13,16 +14,8 @@ import os
 from pathlib import Path
 
 # unused import for mocking purposes during tests
-from prisma.actions import (
-    UserActions,
-    TutorActions,
-    SubjectActions,
-    AdminActions,
-    StudentActions,
-    DocumentActions,
-    AppointmentActions,
-    RatingActions,
-)
+from prisma.actions import *
+from pusher import Pusher
 
 # hack to import a root level file and be able to run pytest from any dir
 # source: https://www.geeksforgeeks.org/python-import-from-parent-directory/
@@ -72,6 +65,78 @@ def test_setup_test_client(setup_test: FlaskClient):
 # mocks / fake data ############################################################
 
 
+class LoginInfo(TypedDict, total=True):
+    email: str
+    password: str
+    accountType: str
+
+
+@pytest.fixture
+def fake_login(
+    setup_test: FlaskClient,
+    find_unique_users_mock: MockType,
+    mocker: MockerFixture,
+    fake_student,
+    fake_tutor,
+    fake_admin,
+):
+    def __fake_login(
+        login_as: str | LoginInfo,
+    ):
+        client = setup_test
+
+        match login_as:
+            case "fake_student":
+                user = fake_student
+
+                # login as student
+                resp = client.post(
+                    "/login",
+                    json={
+                        "email": "validemail@mail.com",
+                        "password": "12345678",
+                        "accountType": "student",
+                    },
+                )
+
+                find_unique_users_mock.assert_called_with(
+                    where={"email": fake_student.email}, include=mocker.ANY
+                )
+            case "fake_tutor":
+                user = fake_tutor
+
+                resp = client.post(
+                    "/login",
+                    json={
+                        "email": "validemail2@mail.com",
+                        "password": "12345678",
+                        "accountType": "tutor",
+                    },
+                )
+                find_unique_users_mock.assert_called_with(
+                    where={"email": fake_tutor.email}, include=mocker.ANY
+                )
+            case "fake_admin":
+                user = fake_admin
+
+                resp = client.post(
+                    "/login",
+                    json={
+                        "email": "validemail3@mail.com",
+                        "password": "12345678",
+                        "accountType": "admin",
+                    },
+                )
+                find_unique_users_mock.assert_called_with(
+                    where={"email": fake_admin.email}, include=mocker.ANY
+                )
+        assert resp.status_code == 200
+
+        return user
+
+    return __fake_login
+
+
 # ! Note: Assumes a db of exactly one fake admin, student, and tutor
 # with the ids and emails of the 'fake' admin, student, user
 # such, if tests rely on removal/addition of these cases this will not work
@@ -99,6 +164,9 @@ def find_unique_users_mock(
         ):
             return fake_tutor2
 
+        print("-------------")
+        print(kwargs)
+        print("-------------")
         return None
 
     return mocker.patch(
