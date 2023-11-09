@@ -43,7 +43,9 @@ export default function FindUser() {
   })
   if (searchResp) {
     searchResp.userInfos.forEach((item, index) => {
-      if (item.accountType === "admin") searchResp.userInfos.splice(index, 1)
+      const acceptedTypes = ["student", "tutor"]
+      if (item.accountType !== "student" && item.accountType !== "tutor")
+        searchResp.userInfos.splice(index, 1)
     })
   }
 
