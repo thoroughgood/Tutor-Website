@@ -175,7 +175,10 @@ def appointment_delete(args):
         }
     )
 
-    
+    Notification.prisma().deletemany(
+        where= {"appointmentId": appointment.id}
+    )
+
     # create notification and connect to student
     # delete notification connected to appointment being deleted
 
@@ -219,6 +222,14 @@ def appointment_modify(args):
     Appointment.prisma().update(
         where={"id": args["id"]},
         data={"startTime": args["startTime"], "endTime": args["endTime"]},
+    )
+
+    Notification.prisma().create(
+        data= {
+            "id": str(uuid4()),
+            "forUser": {"connect": {"id": appointment.studentId}},
+            "content": f"Your appointment with {tutor.name} has been modified",
+        }
     )
 
     return jsonify({"success": True}), 200
