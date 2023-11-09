@@ -61,6 +61,7 @@ export interface ProfileService {
   setOwnStudentProfile: (
     studentProfile: StudentSelfEditReqBody,
   ) => Promise<SuccessResponse>
+  resetPassword: (password: string, id: string) => Promise<SuccessResponse>
 }
 
 export class HTTPProfileService extends HTTPService implements ProfileService {
@@ -126,7 +127,7 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     return resp.json()
   }
 
-  async deleteOwnTutorProfile(tutorId: string): Promise<SuccessResponse> {
+  async deleteOwnTutorProfile(): Promise<SuccessResponse> {
     const resp = wretch(`${this.backendURL}/tutor/`)
       .options({
         credentials: "include",
@@ -159,7 +160,7 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
       .put()
     return resp.json()
   }
-  async deleteOwnStudentProfile(studentId: string): Promise<SuccessResponse> {
+  async deleteOwnStudentProfile(): Promise<SuccessResponse> {
     const resp = wretch(`${this.backendURL}/student/`)
       .options({
         credentials: "include",
@@ -168,6 +169,46 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
       .json({})
       .delete()
     return await resp.json()
+  }
+
+  async resetPassword(
+    password: string,
+    profileId: string,
+  ): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/resetpassword`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({ newPassword: password, id: profileId })
+      .put()
+    return await resp.json()
+  }
+
+  async adminDeleteProfile(
+    profileId: string,
+    accountType: string,
+  ): Promise<SuccessResponse> {
+    if (accountType === "student") {
+      const resp = wretch(`${this.backendURL}/student/`)
+        .options({
+          credentials: "include",
+          mode: "cors",
+        })
+        .json({ id: profileId })
+        .delete()
+      return await resp.json()
+    } else if (accountType === "tutor") {
+      const resp = wretch(`${this.backendURL}/tutor/`)
+        .options({
+          credentials: "include",
+          mode: "cors",
+        })
+        .json({ id: profileId })
+        .delete()
+      return await resp.json()
+    }
+    return { success: false }
   }
 }
 
@@ -212,6 +253,10 @@ export class MockProfileService implements ProfileService {
 
   async searchAll(_searchParams: AdminSearchParams) {
     return { userInfos: [{ id: "1337", accountType: "tutor" as "tutor" }] }
+  }
+
+  async resetPassword(_profileId: string) {
+    return { success: true }
   }
 
   async setOwnTutorProfile(tutorProfile: TutorSelfEditReqBody) {
