@@ -7,25 +7,26 @@ import { useQuery } from "react-query"
 import SmartAvatar from "./smartAvatar"
 import { prettySentence } from "@/lib/utils"
 import Link from "next/link"
+import useUserType from "@/hooks/useUserType"
 
 interface MessageChannelPreviewProps {
   id: string
-  accountType: "tutor" | "student"
   channelType: "direct" | "appointment"
 }
 
 const profileService = new HTTPProfileService()
 export default function MessageChannelPreview({
   id,
-  accountType,
   channelType,
 }: MessageChannelPreviewProps) {
+  const userType = useUserType(id)
   const { data: profileData } = useQuery<StudentProfile | TutorProfile>({
-    queryKey: [`${accountType}s`, id],
+    queryKey: [`${userType}s`, id],
     queryFn: async () =>
-      accountType === "tutor"
+      userType === "tutor"
         ? await profileService.getTutorProfile(id)
         : await profileService.getStudentProfile(id),
+    enabled: !!userType,
   })
 
   return (
@@ -39,7 +40,7 @@ export default function MessageChannelPreview({
       <div className="flex flex-col justify-center">
         <h4>{profileData?.name}</h4>
         <h5 className="text-sm text-muted-foreground">
-          {prettySentence(accountType)}
+          {prettySentence(userType || "")}
         </h5>
       </div>
     </Link>

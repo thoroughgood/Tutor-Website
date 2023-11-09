@@ -1,28 +1,33 @@
-import Messages from "@/components/messages"
+import Messages, { OptimisticMessage } from "@/components/messages"
 import SmartAvatar from "@/components/smartAvatar"
 import useUser from "@/hooks/useUser"
+import useUserType from "@/hooks/useUserType"
 import { HTTPMessageService, Message } from "@/service/messageService"
 import { HTTPProfileService } from "@/service/profileService"
+import { nanoid } from "nanoid"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
-import { useMutation, useQuery } from "react-query"
+import { useMutation, useQuery, useQueryClient } from "react-query"
 
 const messageService = new HTTPMessageService()
 const profileService = new HTTPProfileService()
 export default function DirectMessage() {
   const router = useRouter()
   const otherUserId = router.query.userId as string
+  const otherUserType = useUserType(otherUserId)
   const { user } = useUser()
+  const queryClient = useQueryClient()
 
   const { data: otherUserProfile } = useQuery({
-    queryKey: [user?.userType === "tutor" ? "students" : "tutors", otherUserId],
+    queryKey: [`${otherUserType}s`, otherUserId],
     queryFn: async () => {
-      if (user?.userType === "tutor") {
+      if (otherUserType === "student") {
         return await profileService.getStudentProfile(otherUserId)
       }
       return await profileService.getTutorProfile(otherUserId)
     },
+    enabled: !!otherUserType,
   })
 
   const { data: initialMessages } = useQuery({
@@ -32,20 +37,35 @@ export default function DirectMessage() {
   const { mutate: sendMessage } = useMutation({
     mutationFn: async (messageContent: string) =>
       await messageService.sendDirectMessage(otherUserId, messageContent),
-    mutationKey: ["messages", "direct", user?.userId],
-    onSuccess: (newMessageResp, content) => {
-      const newMessageObj: Message = {
-        ...newMessageResp,
-        sentBy: user?.userId || "",
-        content,
+    onMutate: async (messageContent: string) => {
+      await queryClient.cancelQueries({
+        queryKey: ["messages", "direct", user?.userId],
+      })
+      const prevMessages = queryClient.getQueryData([
+        "messages",
+        "direct",
+        user?.userId,
+      ])
+      const optimisticMessage: OptimisticMessage = {
+        isOptimistic: true,
+        content: messageContent,
+        id: "tmp-" + nanoid(),
       }
-      setMessages([...messages, newMessageObj])
+      queryClient.setQueryData<(Message | OptimisticMessage)[]>(
+        ["messages", "direct", user?.userId],
+        (old) => [optimisticMessage, ...(old || [])],
+      )
+      return { prevMessages }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(["messages", "direct", user?.userId])
     },
   })
 
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<(Message | OptimisticMessage)[]>([])
   useEffect(() => {
-    initialMessages && setMessages(initialMessages)
+    initialMessages && setMessages(initialMessages.toReversed())
+    console.log(initialMessages)
   }, [initialMessages])
   return (
     <div className="flex h-full w-full flex-col p-8">

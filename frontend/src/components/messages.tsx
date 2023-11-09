@@ -9,9 +9,13 @@ import { SendIcon } from "lucide-react"
 
 interface MessagesProps {
   className?: string
-  messages: Message[]
+  messages: (Message | OptimisticMessage)[]
   sendMessage: (content: string) => void
   header: React.ReactNode
+}
+export interface OptimisticMessage
+  extends Omit<Message, "sentTime" | "sentBy"> {
+  isOptimistic: true
 }
 export default function Messages({
   className,
@@ -31,8 +35,9 @@ export default function Messages({
             key={m.id}
             className={cn(
               "mr-8 inline self-start rounded border bg-secondary p-2 px-3 text-secondary-foreground",
-              user?.userId === m.sentBy &&
+              ("isOptimistic" in m || user?.userId === m.sentBy) &&
                 "ml-8 mr-0 self-end bg-primary text-primary-foreground",
+              "isOptimistic" in m && "opacity-50",
             )}
           >
             {m.content}
