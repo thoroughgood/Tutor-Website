@@ -61,6 +61,7 @@ export interface ProfileService {
   setOwnStudentProfile: (
     studentProfile: StudentSelfEditReqBody,
   ) => Promise<SuccessResponse>
+  resetPassword: (password: string, id: string) => Promise<SuccessResponse>
 }
 
 export class HTTPProfileService extends HTTPService implements ProfileService {
@@ -170,6 +171,20 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     return await resp.json()
   }
 
+  async resetPassword(
+    password: string,
+    profileId: string,
+  ): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/resetpassword`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({ newPassword: password, id: profileId })
+      .put()
+    return await resp.json()
+  }
+
   async adminDeleteProfile(
     profileId: string,
     accountType: string,
@@ -238,6 +253,10 @@ export class MockProfileService implements ProfileService {
 
   async searchAll(_searchParams: AdminSearchParams) {
     return { userInfos: [{ id: "1337", accountType: "tutor" as "tutor" }] }
+  }
+
+  async resetPassword(_profileId: string) {
+    return { success: true }
   }
 
   async setOwnTutorProfile(tutorProfile: TutorSelfEditReqBody) {

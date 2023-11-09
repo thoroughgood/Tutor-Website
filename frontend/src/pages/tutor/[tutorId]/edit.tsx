@@ -263,12 +263,12 @@ export default function Edit() {
           </Form>
         </CardContent>
       </Card>
-      <div className=" p-auto relative mx-auto my-5 grid max-w-sm grid-cols-3 text-center">
+      <div className=" p-auto relative mx-auto my-5 max-w-sm text-center">
         <Button asChild className="m-3 p-6" variant="secondary">
           <Link href={`../${tutorId}`}> Back </Link>
         </Button>
         <DeleteModal profileId={tutorId} accountType="tutor" />
-        <ResetModal />
+        {user?.userType === "admin" && <ResetModal profileId={tutorId} />}
       </div>
     </div>
   )

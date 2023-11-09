@@ -39,6 +39,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
 import DeleteModal from "@/components/deleteModal"
 import { fileToDataUrl } from "@/service/helpers"
+import ResetModal from "@/components/resetModal"
 
 const authService = new HTTPAuthService()
 
@@ -232,6 +233,7 @@ export default function Edit() {
           <Link href={`../${studentId}`}> Back </Link>
         </Button>
         <DeleteModal profileId={studentId} accountType="student" />
+        {user?.userType === "admin" && <ResetModal profileId={studentId} />}
       </div>
     </div>
   )
