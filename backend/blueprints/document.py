@@ -17,7 +17,7 @@ document = Blueprint("document", __name__)
 def upload_document(args):
 
     if "user_id" not in session:
-        raise ExpectedError("No user is logged in", 400)
+        raise ExpectedError("No user is logged in", 401)
     
     tutor = tutor_view(id=session["user_id"])
 
