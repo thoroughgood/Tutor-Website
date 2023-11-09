@@ -19,6 +19,7 @@ export interface TutorProfile extends UserProfile {
     startTime: string
     endTime: string
   }[]
+  documentIds: string[]
 }
 
 export interface StudentProfile extends UserProfile {}
@@ -216,6 +217,7 @@ export class MockProfileService implements ProfileService {
       //   endTime: addHours(new Date(), 38).toISOString(),
       // },
     ],
+    documentIds: [],
   }
 
   private mockStudentProfile: StudentProfile = {

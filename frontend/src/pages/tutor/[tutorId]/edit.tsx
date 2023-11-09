@@ -164,6 +164,7 @@ export default function Edit() {
         phoneNumber: values.phoneNumber,
         courseOfferings: courses,
         timesAvailable: data.timesAvailable,
+        documentIds: data.documentIds,
       }
 
       if (values.phoneNumber.length === 0) {
