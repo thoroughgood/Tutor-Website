@@ -134,6 +134,15 @@ def appointment_request(args):
         }
     )
 
+    Notification.prisma().create(
+        data= {
+            "id": str(uuid4()),
+            "forUser": {"connect": {"id": appointment.tutorId}},
+            "content": f"{appointment.studentId} has requested an appointment with you",
+            "appointment": {"connect": {"id": appointment.id}}
+        }
+    )
+
     return (
         jsonify(
             {
