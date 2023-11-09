@@ -13,6 +13,7 @@ import { Calendar, MessageCircle, User } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useState } from "react"
+import { Document, Page } from "react-pdf"
 import { useQuery } from "react-query"
 
 const profileService = new HTTPProfileService()
@@ -34,7 +35,6 @@ export default function TutorProfile() {
 
   //need to loop over document ids and get them from the backend, then display images of them
 
-  console.log(data.documentIds)
 
   return (
     <div className="h-full w-full p-12">
@@ -96,6 +96,8 @@ export default function TutorProfile() {
         </Card>
         <DocumentModal documentIds={data.documentIds} />
       </div>
+
+
     </div>
   )
 }
