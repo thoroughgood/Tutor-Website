@@ -1,10 +1,6 @@
-import { useState } from "react"
-import useUser from "@/hooks/useUser"
 import { HTTPProfileService } from "@/service/profileService"
-import { useRouter } from "next/router"
 import { useQuery } from "react-query"
 import LoadingSpinner from "./loadingSpinner"
-import { Document, Page } from "react-pdf"
 const profileService = new HTTPProfileService()
 
 export interface documentImgInterface {
@@ -19,13 +15,10 @@ export default function DocumentImg({ documentId }: documentImgInterface) {
   })
 
   if (!data) {
-    return (<LoadingSpinner />)
+    return <LoadingSpinner />
   } else if (data.document) {
-    return <iframe src={data.document} className="h-96 w-3/10"/>
+    return <iframe src={data.document} className="w-3/10 h-96" />
   }
-
-
-
 
   //need to import something to read the pdf files
 }

@@ -13,7 +13,6 @@ import { Calendar, MessageCircle, User } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useState } from "react"
-import { Document, Page } from "react-pdf"
 import { useQuery } from "react-query"
 
 const profileService = new HTTPProfileService()
@@ -92,8 +91,6 @@ export default function TutorProfile() {
         </Card>
         <DocumentModal documentIds={data.documentIds} />
       </div>
-
-
     </div>
   )
 }

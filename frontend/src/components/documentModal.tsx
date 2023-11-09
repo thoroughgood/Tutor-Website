@@ -7,10 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog"
-import LoadingButton from "./loadingButton"
 import { useState } from "react"
-import toast from "react-hot-toast"
-import { getErrorMessage, toastProtectedFnCall } from "@/lib/utils"
 import useUser from "@/hooks/useUser"
 import { Button } from "./ui/button"
 import { HTTPProfileService } from "@/service/profileService"
@@ -31,7 +28,6 @@ export default function DocumentModal({ documentIds }: documentModalInterface) {
 
   //we need to do for each item in documentIds -> render a new one given document id as a key and passing it in as a parameter
 
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -39,17 +35,16 @@ export default function DocumentModal({ documentIds }: documentModalInterface) {
           View Documents
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-5xl overflow-auto max-h-[53%]">
+      <DialogContent className="max-h-[53%] max-w-5xl overflow-auto">
         <DialogHeader>
           <DialogTitle> Documents </DialogTitle>
-          <DialogDescription className="flex gap-4 flex-wrap ">
+          <DialogDescription className="flex flex-wrap gap-4 ">
             {documentIds.map((tId) => (
               <DocumentImg key={tId} documentId={tId} />
             ))}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
-        </DialogFooter>
+        <DialogFooter />
       </DialogContent>
     </Dialog>
   )
