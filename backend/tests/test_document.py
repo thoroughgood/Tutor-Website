@@ -32,7 +32,7 @@ def test_doc_upload_invalid(
 
     resp = client.post("/document", json={"document": "test string input"})
     assert resp.json == {"error": "No user is logged in"}
-    assert resp.status_code == 400
+    assert resp.status_code == 401
 
     resp = client.post(
         "/login",
