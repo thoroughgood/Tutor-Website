@@ -149,6 +149,7 @@ model Notification {
   id            String       @id
   forUser       User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId        String
+  content       String
   // Note: This is a XOR relation
   message       Message?     @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   messageId     String?      @unique
@@ -158,6 +159,4 @@ model Notification {
   @@unique([id, messageId])
   @@unique([id, userId])
   @@unique([id, appointmentId])
-  @@unique([messageId, userId])
-  @@unique([appointmentId, userId])
 }
