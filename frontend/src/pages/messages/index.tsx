@@ -32,7 +32,6 @@ export default function Messages() {
         <CardContent className="flex flex-col gap-6 overflow-y-auto">
           {directMessageChannels?.map((userId) => (
             <MessageChannelPreview
-              accountType="tutor"
               id={userId}
               channelType={
                 viewingAppointmentMessages ? "appointment" : "direct"
