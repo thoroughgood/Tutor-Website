@@ -21,7 +21,6 @@ export default function DocumentImg({ documentId }: documentImgInterface) {
   if (!data) {
     return (<LoadingSpinner />)
   } else if (data.document) {
-    console.log(data.document)
     return <iframe src={data.document} className="h-96 w-3/10"/>
   }
 

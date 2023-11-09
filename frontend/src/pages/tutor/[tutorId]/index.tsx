@@ -31,10 +31,6 @@ export default function TutorProfile() {
   if (!data) {
     return <LoadingSpinner />
   }
-  const docIds = data.documentIds
-
-  //need to loop over document ids and get them from the backend, then display images of them
-
 
   return (
     <div className="h-full w-full p-12">

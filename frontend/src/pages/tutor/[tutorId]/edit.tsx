@@ -145,15 +145,12 @@ export default function Edit() {
       if (values.profilePicture.length != 0) {
         file = (await fileToDataUrl(values.profilePicture)) as string
       }
-      console.log(values.document)
-      console.log(values.profilePicture)
       let doc = ""
       if (values.document.length != 0) {
         doc = (await fileToDataUrl(values.document)) as string
       }
 
       const docResponse = await profileService.uploadDocument(doc)
-      console.log(docResponse)
 
       const tutorObj: TutorSelfEditReqBody = {
         name: values.name,
