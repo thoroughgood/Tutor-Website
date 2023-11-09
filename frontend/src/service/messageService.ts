@@ -1,5 +1,7 @@
 import { nanoid } from "nanoid"
 import { HTTPProfileService } from "./profileService"
+import { HTTPService } from "./helpers"
+import wretch from "wretch"
 interface MessageRawResp {
   id: string
   sentBy: string
@@ -23,6 +25,54 @@ interface MessageService {
     otherUserId: string,
     content: string,
   ): Promise<MessageSentResp>
+}
+
+export class HTTPMessageService extends HTTPService implements MessageService {
+  async getDirectMessages(otherUserId: string): Promise<Message[]> {
+    const resp = (await wretch(
+      `${this.backendURL}/directmessage/${otherUserId}`,
+    )
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
+      .json()) as { messages: MessageRawResp[] }
+
+    return resp.messages.map((m) => ({
+      ...m,
+      sentTime: new Date(m.sentTime),
+    }))
+  }
+
+  async getDirectChannelList(): Promise<string[]> {
+    const resp = wretch(`${this.backendURL}/directmessage/all`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
+    const respData: { otherIds: string[] } = await resp.json()
+    return respData.otherIds
+  }
+
+  async sendDirectMessage(
+    otherUserId: string,
+    content: string,
+  ): Promise<MessageSentResp> {
+    const resp = (await wretch(`${this.backendURL}/directmessage/`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({
+        otherId: otherUserId,
+        message: content,
+      })
+      .post()
+      .json()) as { id: string; sentTime: string }
+    return { ...resp, sentTime: new Date(resp.sentTime) }
+  }
 }
 
 export class MockMessageService implements MessageService {

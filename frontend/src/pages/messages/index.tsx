@@ -1,16 +1,14 @@
 import MessageChannelPreview from "@/components/messageChannelPreview"
 import ToggleSwitch from "@/components/toggleSwitch"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import useUser from "@/hooks/useUser"
-import { MockMessageService } from "@/service/messageService"
+import { HTTPMessageService } from "@/service/messageService"
 import { useState } from "react"
 import { useQuery } from "react-query"
 
+const messageService = new HTTPMessageService()
 export default function Messages() {
   const [viewingAppointmentMessages, setViewingAppointmentMessages] =
     useState(false)
-  const { user } = useUser()
-  const messageService = new MockMessageService(user?.userId || "")
   const { data: directMessageChannels } = useQuery({
     queryKey: ["directMessages"],
     queryFn: async () => await messageService.getDirectChannelList(),

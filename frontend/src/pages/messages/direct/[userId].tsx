@@ -1,16 +1,14 @@
 import Messages from "@/components/messages"
 import SmartAvatar from "@/components/smartAvatar"
 import useUser from "@/hooks/useUser"
-import { Message, MockMessageService } from "@/service/messageService"
+import { HTTPMessageService, Message } from "@/service/messageService"
 import { HTTPProfileService } from "@/service/profileService"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
 import { useMutation, useQuery } from "react-query"
 
-const messageService = new MockMessageService(
-  "ae93acef-22a5-471d-b4d4-c75290c5803f",
-)
+const messageService = new HTTPMessageService()
 const profileService = new HTTPProfileService()
 export default function DirectMessage() {
   const router = useRouter()
@@ -19,7 +17,12 @@ export default function DirectMessage() {
 
   const { data: otherUserProfile } = useQuery({
     queryKey: [user?.userType === "tutor" ? "students" : "tutors", otherUserId],
-    queryFn: async () => await profileService.getStudentProfile(otherUserId),
+    queryFn: async () => {
+      if (user?.userType === "tutor") {
+        return await profileService.getStudentProfile(otherUserId)
+      }
+      return await profileService.getTutorProfile(otherUserId)
+    },
   })
 
   const { data: initialMessages } = useQuery({
