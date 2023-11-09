@@ -15,6 +15,7 @@ from blueprints.appointment import appointment
 from blueprints.appointments import appointments
 from blueprints.admin import admin
 from blueprints.document import document
+from blueprints.direct_message import direct_message
 from blueprints.tutorial import tutorial
 from blueprints.utils import utils
 from helpers.my_request import MyRequest
@@ -77,8 +78,9 @@ app.register_blueprint(appointment, url_prefix="/appointment")
 app.register_blueprint(appointments, url_prefix="/appointments")
 app.register_blueprint(utils, url_prefix="/utils")
 app.register_blueprint(admin, url_prefix="/admin")
-app.register_blueprint(document, url_prefix="/")
-app.register_blueprint(tutorial, url_prefix="/")
+app.register_blueprint(document, url_prefix="/document")
+app.register_blueprint(direct_message, url_prefix="/directmessage")
+app.register_blueprint(tutorial, url_prefix="/tutorial")
 
 
 # default route

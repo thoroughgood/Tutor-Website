@@ -118,3 +118,15 @@ times_available_prop = {
         },
     }
 }
+
+other_id_prop = {
+    "otherId": {
+        "type": "string",
+    }
+}
+
+message_prop = {
+    "message": {
+        "type": "string",
+    }
+}

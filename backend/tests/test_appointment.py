@@ -1,6 +1,4 @@
-from uuid import uuid4
 import pytest
-from datetime import datetime
 from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockType
 from flask.testing import FlaskClient
@@ -62,27 +60,11 @@ def test_appointment_accept_missing_args(setup_test: FlaskClient):
     assert resp.status_code == 401
 
 
-def test_appointment_accept_student_login(
-    setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
-    fake_student,
-):
+def test_appointment_accept_student_login(setup_test: FlaskClient, fake_login):
     client = setup_test
 
     # login as student
-    client.post(
-        "/login",
-        json={
-            "email": "validemail@mail.com",
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_student.email}, include=mocker.ANY
-    )
+    fake_login("fake_student")
 
     resp = client.put("/appointment/accept", json={"id": "id", "accept": True})
     assert resp.json["error"] == "Must be a tutor to modify appointments"
@@ -90,27 +72,12 @@ def test_appointment_accept_student_login(
 
 
 def test_appointment_accept_invalid_id(
-    setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
-    appointment_update_mock: MockType,
-    fake_tutor,
+    setup_test: FlaskClient, appointment_update_mock: MockType, fake_login
 ):
     client = setup_test
 
     # login as tutor
-    client.post(
-        "/login",
-        json={
-            "email": "validemail2@mail.com",
-            "password": "12345678",
-            "accountType": "tutor",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_tutor.email}, include=mocker.ANY
-    )
+    fake_login("fake_tutor")
 
     resp = client.put("/appointment/accept", json={"id": "id", "accept": True})
     appointment_update_mock.assert_called()
@@ -124,28 +91,15 @@ def test_appointment_accept_invalid_id(
 
 def test_appointment_accept(
     setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
     appointment_update_mock: MockType,
     fake_appointment,
-    fake_tutor,
+    fake_login,
 ):
     client = setup_test
     apt = fake_appointment
 
     # login as tutor
-    client.post(
-        "/login",
-        json={
-            "email": "validemail2@mail.com",
-            "password": "12345678",
-            "accountType": "tutor",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_tutor.email}, include=mocker.ANY
-    )
+    fake_login("fake_tutor")
 
     resp = client.put(
         "/appointment/accept", json={"id": fake_appointment.id, "accept": True}
@@ -183,7 +137,7 @@ def test_appointment_get(
     find_unique_users_mock: MockType,
     fake_appointment,
     fake_tutor,
-    fake_tutor2,
+    fake_login,
 ):
     client = setup_test
 
@@ -215,7 +169,7 @@ def test_appointment_get(
     )
 
     find_unique_users_mock.assert_called_with(
-        where={"email": fake_tutor2.email}, include=mocker.ANY
+        where={"email": "validemail4@mail.com"}, include=mocker.ANY
     )
 
     resp = client.get(f"/appointment/{fake_appointment.id}")
@@ -230,14 +184,7 @@ def test_appointment_get(
     assert resp.status_code == 200
 
     # logged in, and appointment is related to current user
-    client.post(
-        "/login",
-        json={
-            "email": "validemail2@mail.com",
-            "password": "12345678",
-            "accountType": "tutor",
-        },
-    )
+    fake_login("fake_tutor")
 
     find_unique_users_mock.assert_called_with(
         where={"email": fake_tutor.email}, include=mocker.ANY
@@ -265,6 +212,7 @@ def test_request_args(
     fake_student: User,
     fake_tutor: User,
     fake_appointment: Appointment,
+    fake_login,
 ):
     client = setup_test
 
@@ -381,14 +329,7 @@ def test_request_args(
     assert resp.json == {"error": "Tutor profile does not exist"}
     assert resp.status_code == 400
 
-    client.post(
-        "/login",
-        json={
-            "email": "validemail2@mail.com",
-            "password": "12345678",
-            "accountType": "tutor",
-        },
-    )
+    fake_login("fake_tutor")
 
     # Invalid user (tutor is logged in)
     resp = client.post(
@@ -403,14 +344,7 @@ def test_request_args(
     assert resp.status_code == 400
 
     client.post("/logout")
-    client.post(
-        "/login",
-        json={
-            "email": "validemail3@mail.com",
-            "password": "12345678",
-            "accountType": "admin",
-        },
-    )
+    fake_login("fake_admin")
 
     # Invalid user (admin is logged in)
     resp = client.post(
@@ -425,14 +359,7 @@ def test_request_args(
     assert resp.status_code == 400
 
     client.post("/logout")
-    client.post(
-        "/login",
-        json={
-            "email": "validemail@mail.com",
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
+    fake_login("fake_student")
 
     create_mock = mocker.patch("tests.conftest.AppointmentActions.create")
     create_mock.return_value = fake_appointment

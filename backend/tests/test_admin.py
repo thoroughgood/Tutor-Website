@@ -12,54 +12,22 @@ def test_admin_search_not_login(setup_test: FlaskClient):
     assert resp.json["error"] == "No user is logged in"
 
 
-def test_admin_search_student_login(
-    setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
-    fake_student,
-):
+def test_admin_search_student_login(setup_test: FlaskClient, fake_login):
     client = setup_test
 
     # login as student
-    client.post(
-        "/login",
-        json={
-            "email": "validemail@mail.com",
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_student.email}, include=mocker.ANY
-    )
+    fake_login("fake_student")
 
     resp = client.get("/admin/search")
     assert resp.status_code == 403
     assert resp.json["error"] == "Insufficient permission to search for users"
 
 
-def test_admin_search_tutor_login(
-    setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
-    fake_tutor,
-):
+def test_admin_search_tutor_login(setup_test: FlaskClient, fake_login):
     client = setup_test
 
     # login as tutor
-    client.post(
-        "/login",
-        json={
-            "email": "validemail2@mail.com",
-            "password": "12345678",
-            "accountType": "tutor",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_tutor.email}, include=mocker.ANY
-    )
+    fake_login("fake_tutor")
 
     resp = client.get("/admin/search")
     assert resp.status_code == 403
@@ -68,28 +36,16 @@ def test_admin_search_tutor_login(
 
 def test_admin_search_no_args(
     setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
     find_many_users_mock: MockType,
     fake_student,
     fake_tutor,
     fake_admin,
+    fake_login,
 ):
     client = setup_test
 
     # login as admin
-    client.post(
-        "/login",
-        json={
-            "email": "validemail3@mail.com",
-            "password": "12345678",
-            "accountType": "admin",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_admin.email}, include=mocker.ANY
-    )
+    fake_login("fake_admin")
 
     find_many_users_mock.return_value = [fake_student, fake_tutor, fake_admin]
 
@@ -116,23 +72,12 @@ def test_admin_search_id(
     fake_student,
     fake_tutor,
     fake_admin,
+    fake_login,
 ):
     client = setup_test
 
     # login as admin
-    client.post(
-        "/login",
-        json={
-            "email": "validemail3@mail.com",
-            "password": "12345678",
-            "accountType": "admin",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_admin.email}, include=mocker.ANY
-    )
-    find_unique_users_mock.reset_mock()
+    fake_login("fake_admin")
 
     # id belongs to no one
     find_many_users_mock.return_value = []
@@ -179,28 +124,16 @@ def test_admin_search_id(
 
 def test_admin_search_name(
     setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
     find_many_users_mock: MockType,
     fake_student,
     fake_tutor,
     fake_admin,
+    fake_login,
 ):
     client = setup_test
 
     # login as admin
-    client.post(
-        "/login",
-        json={
-            "email": "validemail3@mail.com",
-            "password": "12345678",
-            "accountType": "admin",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_admin.email}, include=mocker.ANY
-    )
+    fake_login("fake_admin")
 
     # invalid name
     resp = client.get("/admin/search", query_string={"name": ""})
@@ -251,28 +184,16 @@ def test_admin_search_name(
 
 def test_admin_search_email(
     setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
     find_many_users_mock: MockType,
     fake_student,
     fake_tutor,
     fake_admin,
+    fake_login,
 ):
     client = setup_test
 
     # login as admin
-    client.post(
-        "/login",
-        json={
-            "email": "validemail3@mail.com",
-            "password": "12345678",
-            "accountType": "admin",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_admin.email}, include=mocker.ANY
-    )
+    fake_login("fake_admin")
 
     # invalid email
     resp = client.get("/admin/search", query_string={"email": "invalidmail"})
@@ -323,28 +244,16 @@ def test_admin_search_email(
 
 def test_admin_search_phone_number(
     setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
     find_many_users_mock: MockType,
     fake_student,
     fake_tutor,
     fake_admin,
+    fake_login,
 ):
     client = setup_test
 
     # login as admin
-    client.post(
-        "/login",
-        json={
-            "email": "validemail3@mail.com",
-            "password": "12345678",
-            "accountType": "admin",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_admin.email}, include=mocker.ANY
-    )
+    fake_login("fake_admin")
 
     # phone number belongs to no one
     find_many_users_mock.return_value = []
@@ -395,30 +304,18 @@ def test_admin_search_phone_number(
 
 def test_admin_search_account_type(
     setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
     find_many_tutors_mock: MockType,
     find_many_students_mock: MockType,
     find_many_admins_mock: MockType,
     fake_student,
     fake_tutor,
     fake_admin,
+    fake_login,
 ):
     client = setup_test
 
     # login as admin
-    client.post(
-        "/login",
-        json={
-            "email": "validemail3@mail.com",
-            "password": "12345678",
-            "accountType": "admin",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_admin.email}, include=mocker.ANY
-    )
+    fake_login("fake_admin")
 
     # invalid account type
     resp = client.get("/admin/search", query_string={"accountType": "invalid"})
@@ -456,27 +353,14 @@ def test_admin_search_account_type(
 
 def test_admin_search_args(
     setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
     find_many_students_mock: MockType,
     fake_student,
-    fake_admin,
+    fake_login,
 ):
     client = setup_test
 
     # login as admin
-    client.post(
-        "/login",
-        json={
-            "email": "validemail3@mail.com",
-            "password": "12345678",
-            "accountType": "admin",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_admin.email}, include=mocker.ANY
-    )
+    fake_login("fake_admin")
 
     # excluding id given it's a unique attribute
     find_many_students_mock.return_value = [fake_student.studentInfo]
@@ -511,27 +395,11 @@ def test_admin_create_not_login(setup_test: FlaskClient):
     assert resp.json["error"] == "No user is logged in"
 
 
-def test_admin_create_student_login(
-    setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
-    fake_student,
-):
+def test_admin_create_student_login(setup_test: FlaskClient, fake_login):
     client = setup_test
 
     # login as student
-    client.post(
-        "/login",
-        json={
-            "email": "validemail@mail.com",
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_student.email}, include=mocker.ANY
-    )
+    fake_login("fake_student")
 
     resp = client.post(
         "admin/create",
@@ -545,27 +413,11 @@ def test_admin_create_student_login(
     assert resp.json["error"] == "Insufficient permission to create a new admin account"
 
 
-def test_admin_create_tutor_login(
-    setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
-    fake_tutor,
-):
+def test_admin_create_tutor_login(setup_test: FlaskClient, fake_login):
     client = setup_test
 
     # login as tutor
-    client.post(
-        "/login",
-        json={
-            "email": "validemail2@mail.com",
-            "password": "12345678",
-            "accountType": "tutor",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_tutor.email}, include=mocker.ANY
-    )
+    fake_login("fake_tutor")
 
     resp = client.post(
         "admin/create",
@@ -579,27 +431,12 @@ def test_admin_create_tutor_login(
     assert resp.json["error"] == "Insufficient permission to create a new admin account"
 
 
-def test_admin_create_invalid_args(
-    setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock: MockType,
-    fake_admin,
-):
+def test_admin_create_invalid_args(setup_test: FlaskClient, fake_login):
     client = setup_test
 
     # login as admin
-    client.post(
-        "/login",
-        json={
-            "email": "validemail3@mail.com",
-            "password": "12345678",
-            "accountType": "admin",
-        },
-    )
+    fake_login("fake_admin")
 
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_admin.email}, include=mocker.ANY
-    )
     # omitted name
     resp = client.post(
         "admin/create",
@@ -673,26 +510,15 @@ def test_admin_create_invalid_args(
 def test_create_admin_valid(
     setup_test: FlaskClient,
     mocker: MockerFixture,
-    find_unique_users_mock: MockType,
     find_many_admins_mock: MockType,
     fake_admin,
     fake_user,
+    fake_login,
 ):
     client = setup_test
 
     # login as admin
-    client.post(
-        "/login",
-        json={
-            "email": "validemail3@mail.com",
-            "password": "12345678",
-            "accountType": "admin",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_admin.email}, include=mocker.ANY
-    )
+    fake_login("fake_admin")
 
     user_create_mock = mocker.patch("tests.conftest.UserActions.create")
     resp = client.post(
