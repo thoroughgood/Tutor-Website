@@ -16,6 +16,7 @@ import { useState } from "react"
 import { useQuery } from "react-query"
 
 const profileService = new HTTPProfileService()
+
 export default function TutorProfile() {
   const [open, setOpen] = useState(false)
   const router = useRouter()
@@ -25,8 +26,12 @@ export default function TutorProfile() {
   const { data } = useQuery({
     queryKey: ["tutors", tutorId],
     queryFn: () => profileService.getTutorProfile(tutorId),
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    staleTime: 1000 * 10,
   })
-
+  console.log(data)
   if (!data) {
     return <LoadingSpinner />
   }

@@ -63,12 +63,6 @@ const formSchema = z.object({
     })
     .max(50),
   bio: z.string(),
-  document: z
-    .any()
-    .refine(
-      (files) => ACCEPTED_FILE_TYPES.includes(files.type) || files == "",
-      "Not accepted file type",
-    ),
   profilePicture: z
     .any()
     .refine(
@@ -119,7 +113,6 @@ export default function Edit() {
       form.setValue("phoneNumber", data.phoneNumber || "")
       form.setValue("courseOfferings", courseObj)
       form.setValue("profilePicture", "")
-      form.setValue("document", "")
     }
   }, [data, form])
   if (!data) {
@@ -139,19 +132,11 @@ export default function Edit() {
       values.courseOfferings.forEach((course) => {
         courses.push(course.name)
       })
-
       //need to manipulate profile value
       let file = ""
       if (values.profilePicture.length != 0) {
         file = (await fileToDataUrl(values.profilePicture)) as string
       }
-      let doc = ""
-      if (values.document.length != 0) {
-        doc = (await fileToDataUrl(values.document)) as string
-      }
-
-      const docResponse = await profileService.uploadDocument(doc)
-
       const tutorObj: TutorSelfEditReqBody = {
         name: values.name,
         bio: values.bio,
@@ -216,27 +201,7 @@ export default function Edit() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="document"
-                render={({ field }) => (
-                  <FormItem>
-                    <Label>Document Upload</Label>
-                    <FormControl>
-                      <Input
-                        type="file"
-                        onChange={(e) => {
-                          e.preventDefault()
-                          if (e.target.files) {
-                            field.onChange(e.target.files[0])
-                          }
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
               <FormField
                 control={form.control}
                 name="profilePicture"
