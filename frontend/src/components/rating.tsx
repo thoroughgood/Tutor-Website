@@ -1,9 +1,12 @@
 import { getErrorMessage } from "@/lib/utils"
+import { HTTPAppointmentService } from "@/service/appointmentService"
 import { HTTPProfileService } from "@/service/profileService"
 import { Star } from "lucide-react"
 import { useState } from "react"
 import toast from "react-hot-toast"
+import { useQuery } from "react-query"
 
+const appointmentService = new HTTPAppointmentService()
 const profileService = new HTTPProfileService()
 
 interface ratingInterface {
@@ -13,6 +16,11 @@ interface ratingInterface {
 export default function Rating({ appointmentId }: ratingInterface) {
   const [rating, setRating] = useState(0)
 
+  const { data } = useQuery({
+    queryKey: ["ratings", rating],
+    queryFn: () => appointmentService.getAppointment(appointmentId),
+  })
+
   const handleStarClick = async (selectedRating: number) => {
     setRating(selectedRating)
     try {
@@ -20,6 +28,10 @@ export default function Rating({ appointmentId }: ratingInterface) {
     } catch (error) {
       toast.error(getErrorMessage(error))
     }
+  }
+
+  if (data) {
+    console.log(data)
   }
 
   return (
