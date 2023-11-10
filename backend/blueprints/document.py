@@ -1,14 +1,15 @@
 from uuid import uuid4
 from flask import Blueprint, request, jsonify, session
-from prisma.models import Tutor, Document
-from jsonschemas.document_upload_schema import document_upload_schema
+from prisma.models import Document
+from prisma.errors import RecordNotFoundError
+from jsonschemas import document_upload_schema, document_delete_schema
 from helpers.views import tutor_view
 from helpers.error_handlers import ExpectedError, error_decorator, validate_decorator
 
 document = Blueprint("document", __name__)
 
 
-@document.route("", methods=["POST"])
+@document.route("/", methods=["POST"])
 @error_decorator
 @validate_decorator("json", document_upload_schema)
 def upload_document(args):
@@ -42,3 +43,22 @@ def get_document(document_id):
         raise ExpectedError("document id does not exist", 400)
 
     return jsonify({"document": doc.document})
+
+
+@document.route("/", methods=["DELETE"])
+@error_decorator
+@validate_decorator("json", document_delete_schema)
+def delete_document(args):
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 401)
+
+    try:
+        Document.prisma().delete(
+            where={"id_tutorId": {"id": args["id"], "tutorId": session["user_id"]}}
+        )
+    except RecordNotFoundError:
+        raise ExpectedError(
+            "Document doesn't belong to user or no document exists with id", 400
+        )
+
+    return jsonify({"success": True}), 200

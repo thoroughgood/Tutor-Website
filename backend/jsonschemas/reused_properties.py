@@ -58,6 +58,13 @@ name_prop = {
     }
 }
 
+message_prop = {
+    "message": {
+        "type": "string",
+        "minLength": 1,
+    }
+}
+
 location_prop = {
     "location": {
         "type": "string",
