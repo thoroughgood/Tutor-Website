@@ -64,9 +64,7 @@ def dm_info(other_id):
         include={"messages": {"order_by": {"sentTime": "desc"}}},
     )
     if direct_message is None:
-        raise ExpectedError(
-            f"Direct message between this user and '{other_id}' doesn't exist", 400
-        )
+        return jsonify({"messages": []}), 200
 
     messages = []
     notifications_to_clear = []
@@ -141,8 +139,8 @@ def dm_message(args):
     }
 
     pusher_client: Pusher = current_app.extensions["pusher"]
-    channel_info = pusher_client.channel_info(args["otherId"], ["subscription_count"])
-    if channel_info["subscription_count"] >= 1:
+    channel_info = pusher_client.channel_info(args["otherId"])
+    if channel_info["occupied"]:
         try:
             pusher_client.trigger(
                 args["otherId"],

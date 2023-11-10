@@ -207,11 +207,8 @@ def test_dm_get_invalid(
     dm_find_first_mock.assert_called()
     dm_find_first_mock.reset_mock()
 
-    assert (
-        resp.json["error"]
-        == "Direct message between this user and 'invalidId' doesn't exist"
-    )
-    assert resp.status_code == 400
+    assert resp.json["messages"] == []
+    assert resp.status_code == 200
 
 
 def test_dm_get_args(
