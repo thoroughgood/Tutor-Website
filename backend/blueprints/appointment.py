@@ -75,6 +75,15 @@ def appointment_accept(args):
             "Appointment corresponding to id does not exist or, appointment does not involve tutor",
             400,
         )
+    
+    Notification.prisma().create(
+        data= {
+            "id": str(uuid4()),
+            "forUser": {"connect": {"id": appointment.studentId}},
+            "content": f"{tutor.name} has accepted your appointment",
+            "appointment": {"connect": {"id": appointment.id}}
+        }
+    )
 
     return (
         jsonify(
@@ -131,6 +140,13 @@ def appointment_request(args):
             "tutorAccepted": False,
             "tutor": {"connect": {"id": args["tutorId"]}},
             "student": {"connect": {"id": session["user_id"]}},
+            "notification": {
+                "create": {
+                    "id": str(uuid4()),
+                    "forUser": {"connect": {"id": args["tutorId"]}},
+                    "content": f"{student.name} has requested an appointment with you"
+                }
+            }
         }
     )
 
@@ -166,6 +182,18 @@ def appointment_delete(args):
 
     if tutor.appointments is None or appointment not in tutor.appointments:
         raise ExpectedError("Logged in user is not the tutor of the appointment", 403)
+    
+    Notification.prisma().create(
+        data= {
+            "id": str(uuid4()),
+            "forUser": {"connect": {"id": appointment.studentId}},
+            "content": f"Your appointment with {tutor.name} has been deleted",
+        }
+    )
+
+    Notification.prisma().delete_many(
+        where= {"appointmentId": appointment.id}
+    )
 
     Appointment.prisma().delete(where={"id": args["id"]})
 
@@ -205,6 +233,15 @@ def appointment_modify(args):
     Appointment.prisma().update(
         where={"id": args["id"]},
         data={"startTime": args["startTime"], "endTime": args["endTime"]},
+    )
+
+    Notification.prisma().create(
+        data= {
+            "id": str(uuid4()),
+            "forUser": {"connect": {"id": appointment.studentId}},
+            "content": f"Your appointment with {tutor.name} has been modified",
+            "appointment": {"connect": {"id": appointment.id}}
+        }
     )
 
     return jsonify({"success": True}), 200
