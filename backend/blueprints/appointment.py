@@ -24,7 +24,9 @@ appointment = Blueprint("appointment", __name__)
 @appointment.route("/<appointment_id>", methods=["GET"])
 @error_decorator
 def get_appoinment(appointment_id):
-    appointment = Appointment.prisma().find_unique(where={"id": appointment_id})
+    appointment = Appointment.prisma().find_unique(
+        where={"id": appointment_id}, include={"rating": True}
+    )
     if appointment is None:
         raise ExpectedError("Given id does not correspond to an appointment", 404)
 
@@ -41,6 +43,9 @@ def get_appoinment(appointment_id):
         or appointment.studentId == session["user_id"]
     ):
         return_val["studentId"] = appointment.studentId
+
+    if "user_id" in session and appointment.studentId == session["user_id"]:
+        return_val["rating"] = appointment.rating.score if appointment.rating else None
 
     return jsonify(return_val), 200
 
