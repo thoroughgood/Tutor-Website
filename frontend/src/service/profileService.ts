@@ -61,6 +61,7 @@ export interface ProfileService {
   setOwnStudentProfile: (
     studentProfile: StudentSelfEditReqBody,
   ) => Promise<SuccessResponse>
+  rateTutor: (id: string, rating: number) => Promise<SuccessResponse>
 }
 
 export class HTTPProfileService extends HTTPService implements ProfileService {
@@ -169,9 +170,26 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
       .delete()
     return await resp.json()
   }
+  async rateTutor(
+    appointmentId: string,
+    tutorRating: number,
+  ): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/appointment/rating`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({ id: appointmentId, rating: tutorRating })
+      .post()
+    console.log(appointmentId, tutorRating)
+    return await resp.json()
+  }
 }
 
 export class MockProfileService implements ProfileService {
+  rateTutor(id: string, rating: number): Promise<SuccessResponse> {
+    throw new Error("Method not implemented.")
+  }
   private mockTutorProfile: TutorProfile = {
     id: "1337",
     name: "Daniel Nguyen",

@@ -14,6 +14,7 @@ import { toastProtectedFnCall } from "@/lib/utils"
 import LoadingButton from "./loadingButton"
 import { useState } from "react"
 import EditAppointmentForm from "./editAppointmentForm"
+import Rating from "./rating"
 
 interface AppointmentDialogProps {
   id: string
@@ -64,34 +65,41 @@ export default function AppointmentDialog({ id }: AppointmentDialogProps) {
           with{" "}
           {userRole === "tutor" ? studentProfile?.name : tutorProfile?.name}
         </DialogHeader>
-        <DialogDescription className="flex flex-col gap-2">
-          {format(appointmentData.startTime, "MMM d | h:mmaaa")} –{" "}
-          {format(appointmentData.endTime, "h:mmaaa")}
-          {userRole === "tutor" && appointmentData.tutorAccepted && (
-            <EditAppointmentForm
-              cancelFn={() => setOpen(false)}
-              submitFn={async (start, end) => {
-                return await toastProtectedFnCall(async () => {
-                  await appointmentService.modifyAppointment(id, start, end)
-                  queryClient.invalidateQueries(["appointments", id])
-                  setOpen(false)
-                })
-              }}
-              deleteFn={async () => {
-                return await toastProtectedFnCall(async () => {
-                  await appointmentService.deleteAppointment(appointmentData.id)
-                  queryClient.invalidateQueries([
-                    "tutors",
-                    appointmentData.tutorId,
-                    "appointments",
-                  ])
-                  setOpen(false)
-                })
-              }}
-              startTime={appointmentData.startTime}
-              endTime={appointmentData.endTime}
-            />
-          )}
+        <DialogDescription>
+          <div className="flex justify-center">
+            <Rating appointmentId={id} />
+          </div>
+          <div className="flex flex-col gap-2">
+            {format(appointmentData.startTime, "MMM d | h:mmaaa")} –{" "}
+            {format(appointmentData.endTime, "h:mmaaa")}
+            {userRole === "tutor" && appointmentData.tutorAccepted && (
+              <EditAppointmentForm
+                cancelFn={() => setOpen(false)}
+                submitFn={async (start, end) => {
+                  return await toastProtectedFnCall(async () => {
+                    await appointmentService.modifyAppointment(id, start, end)
+                    queryClient.invalidateQueries(["appointments", id])
+                    setOpen(false)
+                  })
+                }}
+                deleteFn={async () => {
+                  return await toastProtectedFnCall(async () => {
+                    await appointmentService.deleteAppointment(
+                      appointmentData.id,
+                    )
+                    queryClient.invalidateQueries([
+                      "tutors",
+                      appointmentData.tutorId,
+                      "appointments",
+                    ])
+                    setOpen(false)
+                  })
+                }}
+                startTime={appointmentData.startTime}
+                endTime={appointmentData.endTime}
+              />
+            )}
+          </div>
         </DialogDescription>
         {userRole === "tutor" && !appointmentData.tutorAccepted && (
           <div className="flex justify-end gap-2">
