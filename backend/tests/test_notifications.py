@@ -193,13 +193,14 @@ def test_get_notification_tutor_valid(
     # call get notifications
     #   check if tutor has notification
     
-    find_unique_users_mock.reset()
+
     find_unique_users_mock.return_value = fake_tutor
     fake_tutor.notifications = [fake_tutor_notification]
 
     resp = client.get("/notifications")
     find_unique_users_mock.assert_called_with(
-        where={"id": fake_tutor.id}
+        where={"id": fake_tutor.id},
+        include={"notifications": True}
     )
     assert resp.status_code == 200
     assert resp.json == {"notifications": [fake_tutor_notification.id]}
@@ -213,9 +214,7 @@ def test_get_notification_tutor_valid(
     resp = client.get(f"/notifications/{fake_tutor_notification.id}")
     find_unique_notification_mock.assert_called()
 
-    print(fake_tutor_notification.id)
-    test = fake_tutor_notification.id
-    notification_delete_mock.assert_called_with(where={"id": test})
+    notification_delete_mock.assert_called_with(where={"id": fake_tutor_notification.id})
 
     assert resp.status_code == 200
     assert resp.json["id"] == fake_tutor_notification.id

@@ -9,6 +9,9 @@ from prisma.errors import RecordNotFoundError
 
 ########################### APPOINTMENT ACCEPT TESTS ###########################
 
+@pytest.fixture
+def create_notification_mock(mocker: MockerFixture):
+    return mocker.patch("tests.conftest.NotificationActions.create")
 
 @pytest.fixture
 def appointment_update_mock(mocker: MockerFixture, fake_tutor, fake_appointment):
@@ -127,6 +130,7 @@ def test_appointment_accept(
     mocker: MockerFixture,
     find_unique_users_mock: MockType,
     appointment_update_mock: MockType,
+    create_notification_mock: MockType,
     fake_appointment,
     fake_tutor,
 ):
@@ -151,6 +155,8 @@ def test_appointment_accept(
         "/appointment/accept", json={"id": fake_appointment.id, "accept": True}
     )
     appointment_update_mock.assert_called()
+    create_notification_mock.assert_called()
+
 
     assert resp.status_code == 200
     assert resp.json["id"] == apt.id
@@ -464,6 +470,7 @@ def test_delete_args(
     find_unique_users_mock,
     fake_tutor2: User,
     fake_appointment: Appointment,
+    create_notification_mock: MockType,
 ):
     client = setup_test
 
@@ -502,9 +509,14 @@ def test_delete_args(
     find = mocker.patch("tests.conftest.AppointmentActions.find_unique")
     find.return_value = fake_appointment
 
+    delete_notification_mock = mocker.patch("tests.conftest.NotificationActions.delete_many")
+
     delete = mocker.patch("tests.conftest.AppointmentActions.delete")
     resp = client.delete("/appointment/", json={"id": fake_appointment.id})
     delete.assert_called()
+    create_notification_mock.assert_called()
+    delete_notification_mock.assert_called()
+
 
     assert resp.status_code == 200
     assert resp.json["success"] == True
@@ -519,6 +531,7 @@ def test_modify_args(
     find_unique_users_mock,
     fake_tutor2: User,
     fake_appointment: Appointment,
+    create_notification_mock: MockType,
 ):
     client = setup_test
 
@@ -642,6 +655,7 @@ def test_modify_args(
         },
     )
     update.assert_called()
+    create_notification_mock.assert_called()
     assert resp.json == {"success": True}
     assert resp.status_code == 200
 

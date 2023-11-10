@@ -22,13 +22,7 @@ def notifications_get():
         }
     )
 
-    #notifications_l = list(map(lambda n: n.id, user.notifications)) if user.notifications is not None else []
-    print(user.notifications)
-    if user.notifications is None:
-        notifications_l = []
-    else:
-        notifications_l = list(map(lambda n: n.id, user.notifications)) 
-
+    notifications_l = list(map(lambda n: n.id, user.notifications)) if user.notifications is not None else []
 
     return jsonify({"notifications": notifications_l})
 
