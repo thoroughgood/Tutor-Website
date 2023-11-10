@@ -10,7 +10,7 @@ export interface documentImgInterface {
 export default function DocumentImg({ documentId }: documentImgInterface) {
   //deleteOwnUserProfile needs to grab the id of the profile we are on
   const { data } = useQuery({
-    queryKey: ["documentId", documentId],
+    queryKey: ["documents", documentId],
     queryFn: () => profileService.getDocument(documentId),
   })
 
