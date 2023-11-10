@@ -142,7 +142,9 @@ function AppointmentsAsTutor() {
             ),
 
             componentProps: {
-              children: <AppointmentDialog id={appointment.id} />,
+              children: (
+                <AppointmentDialog id={appointment.id} status="accepted" />
+              ),
               className: cn(
                 "bg-slate-100/40 border border-dashed border-slate-500",
                 appointment.tutorAccepted &&
