@@ -45,7 +45,7 @@ def get_document(document_id):
     return jsonify({"document": doc.document})
 
 
-@document.route("/", methods=["GET"])
+@document.route("/", methods=["DELETE"])
 @error_decorator
 @validate_decorator("json", document_delete_schema)
 def delete_document(args):
