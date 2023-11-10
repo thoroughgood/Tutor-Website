@@ -225,7 +225,7 @@ def appointment_rating(args):
         where={"id": rating_id},
         data={
             "create": {
-                "id": str(uuid4()),
+                "id": rating_id,
                 "score": args["rating"],
                 "appointment": {"connect": {"id": args["id"]}},
                 "createdFor": {"connect": {"id": appointment.tutorId}},
