@@ -7,9 +7,11 @@ from prisma.errors import RecordNotFoundError
 
 ########################### APPOINTMENT ACCEPT TESTS ###########################
 
+
 @pytest.fixture
 def create_notification_mock(mocker: MockerFixture):
     return mocker.patch("tests.conftest.NotificationActions.create")
+
 
 @pytest.fixture
 def appointment_update_mock(mocker: MockerFixture, fake_tutor, fake_appointment):
@@ -110,7 +112,6 @@ def test_appointment_accept(
     )
     appointment_update_mock.assert_called()
     create_notification_mock.assert_called()
-
 
     assert resp.status_code == 200
     assert resp.json["id"] == apt.id
@@ -442,14 +443,15 @@ def test_delete_args(
     find = mocker.patch("tests.conftest.AppointmentActions.find_unique")
     find.return_value = fake_appointment
 
-    delete_notification_mock = mocker.patch("tests.conftest.NotificationActions.delete_many")
+    delete_notification_mock = mocker.patch(
+        "tests.conftest.NotificationActions.delete_many"
+    )
 
     delete = mocker.patch("tests.conftest.AppointmentActions.delete")
     resp = client.delete("/appointment/", json={"id": fake_appointment.id})
     delete.assert_called()
     create_notification_mock.assert_called()
     delete_notification_mock.assert_called()
-
 
     assert resp.status_code == 200
     assert resp.json["success"] == True
@@ -842,15 +844,15 @@ def test_messages_args(
     assert resp.status_code == 200
     assert resp.json["messages"] == [
         {
-            "id": fake_message2.id,
-            "sentBy": fake_message2.sentById,
-            "sentTime": fake_message2.sentTime.isoformat(),
-            "content": fake_message2.content,
-        },
-        {
             "id": fake_message.id,
             "sentBy": fake_message.sentById,
             "sentTime": fake_message.sentTime.isoformat(),
             "content": fake_message.content,
+        },
+        {
+            "id": fake_message2.id,
+            "sentBy": fake_message2.sentById,
+            "sentTime": fake_message2.sentTime.isoformat(),
+            "content": fake_message2.content,
         },
     ]
