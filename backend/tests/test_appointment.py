@@ -636,12 +636,15 @@ def test_rating_args(
         "tests.conftest.AppointmentActions.find_unique"
     )
     appointment_find_unique_mock.return_value = fake_appointment_fin
-    appointment_create_mock = mocker.patch("tests.conftest.RatingActions.create")
-    appointment_create_mock.return_value = fake_rating
+    rating_upsert_mock = mocker.patch("tests.conftest.RatingActions.upsert")
+    rating_upsert_mock.return_value = fake_rating
 
     # successful rating on an appointment
     resp = client.post(
         "/appointment/rating", json={"id": fake_appointment_fin.id, "rating": 5}
     )
+    appointment_find_unique_mock.assert_called()
+    rating_upsert_mock.assert_called()
+
     assert resp.status_code == 200
     assert resp.json["success"] == True
