@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, session, current_app
 from pusher import Pusher
-from prisma import Prisma
 from prisma.models import Appointment, Rating, Message, Notification
 from prisma.errors import RecordNotFoundError
 from jsonschemas import (
@@ -75,13 +74,13 @@ def appointment_accept(args):
             "Appointment corresponding to id does not exist or, appointment does not involve tutor",
             400,
         )
-    
+
     Notification.prisma().create(
-        data= {
+        data={
             "id": str(uuid4()),
             "forUser": {"connect": {"id": appointment.studentId}},
             "content": f"{tutor.name} has accepted your appointment",
-            "appointment": {"connect": {"id": appointment.id}}
+            "appointment": {"connect": {"id": appointment.id}},
         }
     )
 
@@ -144,9 +143,9 @@ def appointment_request(args):
                 "create": {
                     "id": str(uuid4()),
                     "forUser": {"connect": {"id": args["tutorId"]}},
-                    "content": f"{student.name} has requested an appointment with you"
+                    "content": f"{student.name} has requested an appointment with you",
                 }
-            }
+            },
         }
     )
 
@@ -182,18 +181,16 @@ def appointment_delete(args):
 
     if tutor.appointments is None or appointment not in tutor.appointments:
         raise ExpectedError("Logged in user is not the tutor of the appointment", 403)
-    
+
     Notification.prisma().create(
-        data= {
+        data={
             "id": str(uuid4()),
             "forUser": {"connect": {"id": appointment.studentId}},
             "content": f"Your appointment with {tutor.name} has been deleted",
         }
     )
 
-    Notification.prisma().delete_many(
-        where= {"appointmentId": appointment.id}
-    )
+    Notification.prisma().delete_many(where={"appointmentId": appointment.id})
 
     Appointment.prisma().delete(where={"id": args["id"]})
 
@@ -236,11 +233,11 @@ def appointment_modify(args):
     )
 
     Notification.prisma().create(
-        data= {
+        data={
             "id": str(uuid4()),
             "forUser": {"connect": {"id": appointment.studentId}},
             "content": f"Your appointment with {tutor.name} has been modified",
-            "appointment": {"connect": {"id": appointment.id}}
+            "appointment": {"connect": {"id": appointment.id}},
         }
     )
 
@@ -342,8 +339,6 @@ def appointment_message(args):
         other_id = appointment.tutorId
     else:
         other_id = appointment.studentId
-
-    # msg_id = str(uuid4())
 
     msg = {
         "id": str(uuid4()),
