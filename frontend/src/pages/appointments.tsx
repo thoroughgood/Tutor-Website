@@ -94,7 +94,7 @@ function AppointmentsAsTutor() {
     return <LoadingSpinner />
   }
   return (
-    <div className="relative flex h-full w-full flex-col gap-2 overflow-hidden p-16">
+    <div className="relative flex h-full w-full flex-col gap-2 overflow-hidden p-6 lg:p-16">
       <WeeklyCalendar
         onCalendarMouseMove={(interval) => {
           if (!isEditing || submitLoading) return

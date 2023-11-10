@@ -28,6 +28,7 @@ import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
 import {
   HTTPProfileService,
+  StudentProfile,
   StudentSelfEditReqBody,
 } from "@/service/profileService"
 import { useQuery, useQueryClient } from "react-query"
@@ -38,6 +39,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
 import DeleteModal from "@/components/deleteModal"
 import { fileToDataUrl } from "@/service/helpers"
+import ResetModal from "@/components/resetModal"
 
 const authService = new HTTPAuthService()
 
@@ -135,8 +137,14 @@ export default function Edit() {
       if (values.profilePicture.length === 0) {
         studentObj.profilePicture = null
       }
-      const id = await profileService.setOwnStudentProfile(studentObj)
-      if (id.success) {
+      let response
+      if (user?.userType === "admin") {
+        ;(studentObj as StudentProfile).id = studentId
+        response = await profileService.setOwnStudentProfile(studentObj)
+      } else {
+        response = await profileService.setOwnStudentProfile(studentObj)
+      }
+      if (response.success) {
         router.push(`/student/${studentId}/`)
       }
     } catch (error) {
@@ -222,9 +230,10 @@ export default function Edit() {
       </Card>
       <div className="p-auto relative mx-auto my-5 max-w-sm text-center">
         <Button asChild className="m-3 p-6" variant="secondary">
-          <Link href={`../${user?.userId}`}> Back </Link>
+          <Link href={`../${studentId}`}> Back </Link>
         </Button>
-        <DeleteModal profileId={studentId} />
+        <DeleteModal profileId={studentId} accountType="student" />
+        {user?.userType === "admin" && <ResetModal profileId={studentId} />}
       </div>
     </div>
   )
