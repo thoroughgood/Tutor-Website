@@ -795,8 +795,7 @@ def test_messages_args(
         "tests.conftest.AppointmentActions.find_unique"
     )
     appointment_find_unique_mock.return_value = fake_appointment_msg
-    msg_find = mocker.patch("tests.conftest.MessageActions.find_many")
-    msg_find.return_value = [fake_message2, fake_message]
+    fake_appointment_msg.messages = [fake_message2, fake_message]
 
     # successful message on an appointment
     resp = client.get(
@@ -808,15 +807,15 @@ def test_messages_args(
     assert resp.status_code == 200
     assert resp.json["messages"] == [
         {
-            "id": fake_message.id,
-            "sentBy": fake_message.sentById,
-            "sentTime": fake_message.sentTime.isoformat(),
-            "content": fake_message.content,
-        },
-        {
             "id": fake_message2.id,
             "sentBy": fake_message2.sentById,
             "sentTime": fake_message2.sentTime.isoformat(),
             "content": fake_message2.content,
+        },
+        {
+            "id": fake_message.id,
+            "sentBy": fake_message.sentById,
+            "sentTime": fake_message.sentTime.isoformat(),
+            "content": fake_message.content,
         },
     ]
