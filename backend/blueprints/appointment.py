@@ -204,7 +204,6 @@ def appointment_modify(args):
     st = data["startTime"]
     et = data["endTime"]
 
-    print("test")
     tutor = tutor_view(id=session["user_id"])
     if not tutor:
         raise ExpectedError("Logged in user is not a tutor", 404)
@@ -232,6 +231,7 @@ def appointment_modify(args):
             "id": str(uuid4()),
             "forUser": {"connect": {"id": appointment.studentId}},
             "content": f"Your appointment with {tutor.name} has been modified",
+            "appointment": {"connect": {"id": appointment.id}}
         }
     )
 

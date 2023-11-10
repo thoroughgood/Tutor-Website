@@ -108,7 +108,7 @@ model Appointment {
   student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   studentId     String
   messages      Message[]
-  notification  Notification?
+  notification  Notification[]
 
   @@unique([id, tutorId])
   @@unique([id, studentId])

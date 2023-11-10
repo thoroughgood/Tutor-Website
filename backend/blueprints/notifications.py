@@ -14,9 +14,21 @@ def notifications_get():
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
     
-    user = User.prisma().find_unique(where={"id": session["user_id"]})
+    user = User.prisma().find_unique(
+        where={"id": session["user_id"]}, 
+        include={
+            "notifications": True,
 
-    notifications_l = list(map(lambda n: n.id, user.notifications)) if user.notifications is not None else []
+        }
+    )
+
+    #notifications_l = list(map(lambda n: n.id, user.notifications)) if user.notifications is not None else []
+    print(user.notifications)
+    if user.notifications is None:
+        notifications_l = []
+    else:
+        notifications_l = list(map(lambda n: n.id, user.notifications)) 
+
 
     return jsonify({"notifications": notifications_l})
 
