@@ -365,6 +365,10 @@ def appointment_message(args):
         except (ValueError, TypeError):
             raise ExpectedError("Message format is invalid", 400)
         msg = Message.prisma().create(data=msg)
+        Appointment.prisma().update(
+            where={"id": args["id"]},
+            data={"messages": {"connect": {"id": msg.id}}},
+        )
     else:
         user = user_view(id=session["user_id"])
         Notification.prisma().create(
@@ -376,6 +380,10 @@ def appointment_message(args):
             }
         )
         msg = Message.prisma().create(data=msg)
+        Appointment.prisma().update(
+            where={"id": args["id"]},
+            data={"messages": {"connect": {"id": msg.id}}},
+        )
 
     return (
         jsonify({"id": msg.id, "sentTime": msg.sentTime.isoformat()}),

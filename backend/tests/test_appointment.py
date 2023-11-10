@@ -734,11 +734,15 @@ def test_message_args(
     pusher_channel_info_mock = mocker.patch("tests.conftest.Pusher.channel_info")
     pusher_channel_info_mock.return_value = {"occupied": True, "subscription_count": 1}
     notif_mock = mocker.patch("tests.conftest.NotificationActions.create")
+    appointment_update_mock = mocker.patch("tests.conftest.AppointmentActions.update")
+    message_mock = mocker.patch("tests.conftest.MessageActions.create")
+    message_mock.return_value = fake_message
 
     # successful message on an appointment
     resp = client.post(
         "/appointment/message", json={"id": fake_appointment.id, "message": "hi"}
     )
+    appointment_update_mock.assert_called()
     notif_mock.assert_not_called()
     pusher_channel_info_mock.assert_called()
     assert resp.status_code == 200
@@ -749,6 +753,8 @@ def test_message_args(
     resp = client.post(
         "/appointment/message", json={"id": fake_appointment.id, "message": "hi"}
     )
+    message_mock.assert_called()
+    appointment_update_mock.assert_called()
     notif_mock.assert_called()
     pusher_channel_info_mock.assert_called()
     assert resp.status_code == 200

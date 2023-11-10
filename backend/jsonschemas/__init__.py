@@ -6,6 +6,7 @@ from jsonschemas.appointment_messages_schema import appointment_messages_schema
 from jsonschemas.appointment_modify_schema import appointment_modify_schema
 from jsonschemas.appointment_accept_schema import appointment_accept_schema
 from jsonschemas.appointment_delete_schema import appointment_delete_schema
+from jsonschemas.appointments_schema import appointments_schema
 from jsonschemas.login_schema import login_schema
 from jsonschemas.register_schema import register_schema
 from jsonschemas.reset_password_schema import reset_password_schema

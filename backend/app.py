@@ -12,6 +12,7 @@ from blueprints.tutor import tutor
 from blueprints.student import student
 from blueprints.search import search_tutor
 from blueprints.appointment import appointment
+from blueprints.appointments import appointments
 from blueprints.admin import admin
 from blueprints.document import document
 from blueprints.direct_message import direct_message
@@ -71,6 +72,7 @@ app.register_blueprint(tutor, url_prefix="/tutor")
 app.register_blueprint(student, url_prefix="/student")
 app.register_blueprint(search_tutor, url_prefix="/")
 app.register_blueprint(appointment, url_prefix="/appointment")
+app.register_blueprint(appointments, url_prefix="/appointments")
 app.register_blueprint(utils, url_prefix="/utils")
 app.register_blueprint(admin, url_prefix="/admin")
 app.register_blueprint(notifications, url_prefix="/notifications")
