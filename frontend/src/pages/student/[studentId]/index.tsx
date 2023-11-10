@@ -33,19 +33,37 @@ export default function StudentProfile() {
           phoneNumber={data.phoneNumber}
           location={data.location}
         />
-        {isOwnProfile ? (
+        {isOwnProfile && (
           <Button asChild variant="secondary" className="flex grow gap-2">
-            <Link href={`${user?.userId}/edit`}>
+            <Link href={`${studentId}/edit`}>
               <User className="w-5" />
               Edit Profile
             </Link>
           </Button>
-        ) : (
+        )}
+        {user?.userType === "admin" && (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              <Button asChild variant="secondary" className="flex grow gap-2">
+                <Link href={`${studentId}/edit`}>
+                  <User className="w-5" />
+                  Edit Profile
+                </Link>
+              </Button>
+              <Button variant="secondary" className="flex grow gap-2">
+                <MessageCircle className="w-5" />
+                Message Student
+              </Button>
+            </div>
+          </>
+        )}
+        {!isOwnProfile && user?.userType !== "admin" && (
           <Button variant="secondary" className="flex grow gap-2">
             <MessageCircle className="w-5" />
             Message Student
           </Button>
         )}
+
         <Card className="mt-5">
           <CardHeader>
             <CardTitle>About me</CardTitle>

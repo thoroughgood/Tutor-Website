@@ -43,9 +43,10 @@ export default function FindUser() {
   })
   if (searchResp) {
     searchResp.userInfos.forEach((item, index) => {
-      if (item.accountType === "admin") searchResp.userInfos.splice(index, 1)
+      const acceptedTypes = ["student", "tutor"]
+      if (item.accountType !== "student" && item.accountType !== "tutor")
+        searchResp.userInfos.splice(index, 1)
     })
-    console.log(searchResp)
   }
 
   //gonna need to sort through the searchResp and somehow map account types and ids together

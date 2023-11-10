@@ -93,9 +93,6 @@ export class HTTPAuthService extends HTTPService implements AuthService {
   async checkUser(): Promise<CheckUserResponse> {
     try {
       const resp = wretch(`${this.backendURL}/utils/getuserid`)
-        // .headers({
-        //   "Access-Control-Allow-Credentials": "true",
-        // })
         .options({
           credentials: "include",
           mode: "cors",
