@@ -140,7 +140,12 @@ def fake_login(
 # such, if tests rely on removal/addition of these cases this will not work
 @pytest.fixture
 def find_unique_users_mock(
-    mocker: MockerFixture, fake_student, fake_admin, fake_tutor, fake_tutor2
+    mocker: MockerFixture,
+    fake_student,
+    fake_admin,
+    fake_tutor,
+    fake_tutor2,
+    fake_student_apt,
 ) -> MockType:
     def mocked_find_unique(**kwargs):
         # where must exist
@@ -161,6 +166,13 @@ def find_unique_users_mock(
             "email" in kwargs["where"] and kwargs["where"]["email"] == fake_tutor2.email
         ):
             return fake_tutor2
+        elif (
+            "id" in kwargs["where"] and kwargs["where"]["id"] == fake_student_apt.id
+        ) or (
+            "email" in kwargs["where"]
+            and kwargs["where"]["email"] == fake_student_apt.email
+        ):
+            return fake_student_apt
 
         return None
 
@@ -239,6 +251,15 @@ def fake_user():
 @pytest.fixture
 def fake_student(fake_user) -> models.User:
     return fake_user("validemail@mail.com", "12345678", "student")
+
+
+@pytest.fixture
+def fake_student_apt(
+    fake_user, fake_appointment_msg, fake_appointment_msg2
+) -> models.User:
+    fake_std = fake_user("validemail1@mail.com", "12345678", "student")
+    fake_std.studentInfo.appointments = [fake_appointment_msg, fake_appointment_msg2]
+    return fake_std
 
 
 @pytest.fixture
@@ -346,6 +367,23 @@ def fake_appointment_msg(fake_student, fake_tutor, fake_message, fake_message2):
         student=fake_student.studentInfo,
         studentId=fake_student.id,
         messages=[fake_message, fake_message2],
+    )
+
+    return apt
+
+
+@pytest.fixture
+def fake_appointment_msg2(fake_student, fake_tutor, fake_message):
+    apt = models.Appointment(
+        id=str(uuid4()),
+        startTime="2023-10-20T00:00:00+00:00",
+        endTime="2023-10-21T00:00:00+00:00",
+        tutorAccepted=False,
+        tutor=fake_tutor.tutorInfo,
+        tutorId=fake_tutor.id,
+        student=fake_student.studentInfo,
+        studentId=fake_student.id,
+        messages=[fake_message],
     )
 
     return apt

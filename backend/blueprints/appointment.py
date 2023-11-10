@@ -255,7 +255,7 @@ def appointment_messages(args):
 
     appointment = Appointment.prisma().find_unique(
         where={"id": args["id"]},
-        include={"messages": {"orderBy": {"sentTime": "desc"}}},
+        include={"messages": {"order_by": {"sentTime": "desc"}}},
     )
     if not appointment:
         raise ExpectedError("Appointment does not exist", 400)
@@ -265,6 +265,8 @@ def appointment_messages(args):
         and session["user_id"] != appointment.tutorId
     ):
         raise ExpectedError("User is not the tutor or student of the appointment", 403)
+
+    messages = appointment.messages
 
     return (
         jsonify(
@@ -276,7 +278,7 @@ def appointment_messages(args):
                         "sentTime": message.sentTime.isoformat(),
                         "content": message.content,
                     }
-                    for message in appointment.messages
+                    for message in messages
                 ]
             }
         ),
@@ -332,6 +334,9 @@ def appointment_message(args):
         except (ValueError, TypeError):
             raise ExpectedError("Message format is invalid", 400)
         msg = Message.prisma().create(data=msg)
+        appointment.messages = [msg] + (
+            appointment.messages if appointment.messages else []
+        )
     else:
         user = user_view(id=session["user_id"])
         Notification.prisma().create(
@@ -343,6 +348,9 @@ def appointment_message(args):
             }
         )
         msg = Message.prisma().create(data=msg)
+        appointment.messages = [msg] + (
+            appointment.messages if appointment.messages else []
+        )
 
     return (
         jsonify({"id": msg.id, "sentTime": msg.sentTime.isoformat()}),

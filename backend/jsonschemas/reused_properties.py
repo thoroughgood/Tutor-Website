@@ -137,3 +137,9 @@ message_prop = {
         "type": "string",
     }
 }
+
+sort_by_prop = {
+    "sort_by": {
+        "type": "string",
+    }
+}
