@@ -2,7 +2,7 @@ import pytest
 from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockType
 from flask.testing import FlaskClient
-from prisma.models import Appointment, User, Rating, Message, Notification
+from prisma.models import Appointment, User, Rating, Message
 from prisma.errors import RecordNotFoundError
 
 ########################### APPOINTMENT ACCEPT TESTS ###########################
@@ -601,10 +601,9 @@ def test_modify_args(
 def test_rating_args(
     setup_test: FlaskClient,
     mocker: MockerFixture,
-    find_unique_users_mock,
-    fake_student: User,
     fake_appointment_fin: Appointment,
     fake_rating: Rating,
+    fake_login,
 ):
     client = setup_test
 
@@ -636,18 +635,7 @@ def test_rating_args(
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
-    client.post(
-        "/login",
-        json={
-            "email": fake_student.email,
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_student.email}, include=mocker.ANY
-    )
+    fake_login("fake_student")
 
     # Invalid appointment id
     resp = client.post("/appointment/rating", json={"id": "123", "rating": 5})
@@ -703,10 +691,9 @@ def test_rating_args(
 def test_message_args(
     setup_test: FlaskClient,
     mocker: MockerFixture,
-    find_unique_users_mock,
-    fake_student: User,
     fake_appointment: Appointment,
     fake_message: Message,
+    fake_login,
 ):
     client = setup_test
 
@@ -731,18 +718,7 @@ def test_message_args(
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
-    client.post(
-        "/login",
-        json={
-            "email": fake_student.email,
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_student.email}, include=mocker.ANY
-    )
+    fake_login("fake_student")
 
     # Invalid appointment id
     resp = client.post("/appointment/message", json={"id": "123", "message": "hi"})
@@ -786,11 +762,10 @@ def test_message_args(
 def test_messages_args(
     setup_test: FlaskClient,
     mocker: MockerFixture,
-    find_unique_users_mock,
-    fake_student: User,
     fake_message: Message,
     fake_message2: Message,
     fake_appointment_msg: Appointment,
+    fake_login,
 ):
     client = setup_test
 
@@ -809,18 +784,7 @@ def test_messages_args(
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
-    client.post(
-        "/login",
-        json={
-            "email": fake_student.email,
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_student.email}, include=mocker.ANY
-    )
+    fake_login("fake_student")
 
     # Invalid appointment id
     resp = client.get("/appointment/messages", json={"id": "123"})
