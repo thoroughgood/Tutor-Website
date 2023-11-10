@@ -33,7 +33,6 @@ export default function Rating({ appointmentId }: ratingInterface) {
     try {
       const resp = await profileService.rateTutor(appointmentId, selectedRating)
       queryClient.invalidateQueries(["ratings", appointmentId])
-      console.log(resp)
     } catch (error) {
       toast.error(getErrorMessage(error))
     }
@@ -43,30 +42,28 @@ export default function Rating({ appointmentId }: ratingInterface) {
   //will be modified only on first call
   useEffect(() => {
     if (data) {
-      console.log("this is data.rating" + data.rating)
       setRating(data.rating as number)
     }
   }, [data])
 
   if (!data) {
     return <LoadingSpinner />
-  } else {
-    return (
-      <>
-        <div className="flex gap-1 pb-3 pl-[35%]">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Star
-              key={star}
-              onClick={() => handleStarClick(star)}
-              style={{
-                cursor: "pointer",
-                fill: star <= rating ? "gold" : "gray",
-                color: star <= rating ? "gold" : "gray",
-              }}
-            />
-          ))}
-        </div>
-      </>
-    )
   }
+  return (
+    <>
+      <div className="flex gap-1 pb-3 pl-[35%]">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            onClick={() => handleStarClick(star)}
+            style={{
+              cursor: "pointer",
+              fill: star <= rating ? "gold" : "gray",
+              color: star <= rating ? "gold" : "gray",
+            }}
+          />
+        ))}
+      </div>
+    </>
+  )
 }
