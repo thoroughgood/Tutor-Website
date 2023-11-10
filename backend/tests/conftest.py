@@ -12,8 +12,6 @@ import subprocess
 import sys
 import os
 from pathlib import Path
-
-# unused import for mocking purposes during tests
 from prisma.actions import *
 from pusher import Pusher
 
@@ -304,3 +302,50 @@ def fake_rating(fake_appointment):
     )
 
     return rating
+
+
+@pytest.fixture
+def fake_message(fake_student, fake_appointment):
+    message = models.Message(
+        id=str(uuid4()),
+        sentTime="2023-10-20T00:00:00+00:00",
+        content="Hello",
+        sentBy=fake_student.tutorInfo,
+        sentById=fake_student.id,
+        appointment=fake_appointment,
+        appointmentId=fake_appointment.id,
+    )
+
+    return message
+
+
+@pytest.fixture
+def fake_message2(fake_student, fake_appointment):
+    message = models.Message(
+        id=str(uuid4()),
+        sentTime="2023-10-21T00:00:00+00:00",
+        content="bye",
+        sentBy=fake_student.tutorInfo,
+        sentById=fake_student.id,
+        appointment=fake_appointment,
+        appointmentId=fake_appointment.id,
+    )
+
+    return message
+
+
+@pytest.fixture
+def fake_appointment_msg(fake_student, fake_tutor, fake_message, fake_message2):
+    apt = models.Appointment(
+        id=str(uuid4()),
+        startTime="2023-10-20T00:00:00+00:00",
+        endTime="2023-10-21T00:00:00+00:00",
+        tutorAccepted=False,
+        tutor=fake_tutor.tutorInfo,
+        tutorId=fake_tutor.id,
+        student=fake_student.studentInfo,
+        studentId=fake_student.id,
+        messages=[fake_message, fake_message2],
+    )
+
+    return apt
