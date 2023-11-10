@@ -162,9 +162,6 @@ def find_unique_users_mock(
         ):
             return fake_tutor2
 
-        print("-------------")
-        print(kwargs)
-        print("-------------")
         return None
 
     return mocker.patch(

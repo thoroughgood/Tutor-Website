@@ -14,3 +14,5 @@ from jsonschemas.tutor_modify_schema import tutor_modify_schema
 from jsonschemas.tutor_search_schema import tutor_search_schema
 from jsonschemas.user_search_schema import user_search_schema
 from jsonschemas.direct_message_schema import direct_message_schema
+from jsonschemas.document_upload_schema import document_upload_schema
+from jsonschemas.document_delete_schema import document_delete_schema
