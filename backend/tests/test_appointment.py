@@ -148,7 +148,9 @@ def test_appointment_get(
 
     # not logged in
     resp = client.get(f"/appointment/{fake_appointment.id}")
-    appointment_find_unique_mock.assert_called_with(where={"id": fake_appointment.id})
+    appointment_find_unique_mock.assert_called_with(
+        where={"id": fake_appointment.id}, include={"rating": True}
+    )
 
     assert resp.json["id"] == fake_appointment.id
     assert resp.json["startTime"] == fake_appointment.startTime.isoformat()
@@ -173,7 +175,9 @@ def test_appointment_get(
     )
 
     resp = client.get(f"/appointment/{fake_appointment.id}")
-    appointment_find_unique_mock.assert_called_with(where={"id": fake_appointment.id})
+    appointment_find_unique_mock.assert_called_with(
+        where={"id": fake_appointment.id}, include={"rating": True}
+    )
 
     assert resp.json["id"] == fake_appointment.id
     assert resp.json["startTime"] == fake_appointment.startTime.isoformat()
@@ -191,7 +195,9 @@ def test_appointment_get(
     )
 
     resp = client.get(f"/appointment/{fake_appointment.id}")
-    appointment_find_unique_mock.assert_called_with(where={"id": fake_appointment.id})
+    appointment_find_unique_mock.assert_called_with(
+        where={"id": fake_appointment.id}, include={"rating": True}
+    )
 
     assert resp.json["id"] == fake_appointment.id
     assert resp.json["startTime"] == fake_appointment.startTime.isoformat()
