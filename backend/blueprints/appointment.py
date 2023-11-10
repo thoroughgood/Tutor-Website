@@ -135,7 +135,7 @@ def appointment_request(args):
                 "create": {
                     "id": str(uuid4()),
                     "forUser": {"connect": {"id": args["tutorId"]}},
-                    "content": f"{session['user_id']} has requested an appointment with you"
+                    "content": f"{student.name} has requested an appointment with you"
                 }
             }
         }
@@ -182,14 +182,9 @@ def appointment_delete(args):
         }
     )
 
-    Notification.prisma().deletemany(
+    Notification.prisma().delete_many(
         where= {"appointmentId": appointment.id}
     )
-
-    # create notification and connect to student
-    # delete notification connected to appointment being deleted
-
-    # maybe have notifiction attribute as list? so notification created when accepted, modified etc
 
     Appointment.prisma().delete(where={"id": args["id"]})
 
@@ -209,6 +204,7 @@ def appointment_modify(args):
     st = data["startTime"]
     et = data["endTime"]
 
+    print("test")
     tutor = tutor_view(id=session["user_id"])
     if not tutor:
         raise ExpectedError("Logged in user is not a tutor", 404)

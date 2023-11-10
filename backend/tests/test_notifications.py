@@ -11,8 +11,16 @@ def find_unique_notification_mock(mocker: MockerFixture):
     return mocker.patch("tests.conftest.NotificationActions.find_unique")
 
 @pytest.fixture
-def update_appointment_mock(mocker: MockerFixture):
+def update_appt_mock(mocker: MockerFixture):
     return mocker.patch("tests.conftest.AppointmentActions.update")
+
+@pytest.fixture
+def create_notification_mock(mocker: MockerFixture):
+    return mocker.patch("tests.conftest.NotificationActions.create")
+
+@pytest.fixture
+def find_unique_appt_mock(mocker: MockerFixture):
+    return mocker.patch("tests.conftest.AppointmentActions.find_unique")
 
 @pytest.fixture
 def fake_student_notification(fake_student) -> Notification:
@@ -138,17 +146,16 @@ def test_get_notification_tutor_valid(
     assert resp.status_code == 200
 
     # call appointment request route
-    appointment_request_mock = mocker.patch("tests.conftest.AppointmentActions.create")
-    appointment_request_mock.return_value = fake_appointment
+    appointment_create_mock = mocker.patch("tests.conftest.AppointmentActions.create")
+    appointment_create_mock.return_value = fake_appointment
     startTime = datetime.now() + timedelta(days=1)
     endTime = datetime.now() + timedelta(days=2)
 
     fake_appointment.startTime = startTime
     fake_appointment.endTime = endTime
-    fake_appointment.tutorAccepted = True
     fake_appointment.notification = fake_tutor_notification
 
-    fake_tutor_notification.content = "{fake_student.name} has requested an appointment with you"
+    fake_tutor_notification.content = f"{fake_student.name} has requested an appointment with you"
     fake_tutor_notification.appointment = fake_appointment
     fake_tutor_notification.appointmentId = fake_appointment.id
 
@@ -161,7 +168,7 @@ def test_get_notification_tutor_valid(
         }
     )
 
-    appointment_request_mock.assert_called()
+    appointment_create_mock.assert_called()
 
     assert resp.status_code == 200
 
@@ -202,37 +209,27 @@ def test_get_notification_tutor_valid(
 
     find_unique_notification_mock.return_value = fake_tutor_notification
     notification_delete_mock = mocker.patch("tests.conftest.NotificationActions.delete")
-    resp = client.get("/notifications/{fake_tutor_notification.id}")
+
+    resp = client.get(f"/notifications/{fake_tutor_notification.id}")
     find_unique_notification_mock.assert_called()
-    notification_delete_mock.assert_called()
+
+    print(fake_tutor_notification.id)
+    test = fake_tutor_notification.id
+    notification_delete_mock.assert_called_with(where={"id": test})
 
     assert resp.status_code == 200
     assert resp.json["id"] == fake_tutor_notification.id
     assert resp.json["type"] == "appointment"
     assert resp.json["content"] == fake_tutor_notification.content
 
-    # how to test clearing of appointment
-
-    # call get notifications
-    #   check if notification has been deleted from tutor
-
-    resp = client.get("/notifications")
-    find_unique_users_mock.assert_called_with(
-        where={"id": fake_tutor.id}
-    )
-    assert resp.status_code == 200
-    assert resp.json == {"notifications": []}
-
-def test_get_notification_student_valid_appt_accept(
+def test_notification_appt_accept(
         setup_test: FlaskClient,
-        fake_student: User,
         fake_tutor: User,
         fake_appointment: Appointment,
-        fake_student_notification: Notification,
         mocker: MockerFixture,
         find_unique_users_mock: MockType,
-        find_unique_notification_mock: MockType,
-        update_appointment_mock: MockType,
+        update_appt_mock: MockType,
+        create_notification_mock: MockType,
 ):
     #  setup tutor with an unaccepted appointment
     client = setup_test
@@ -252,14 +249,96 @@ def test_get_notification_student_valid_appt_accept(
         where={"email": fake_tutor.email}, include=mocker.ANY
     )
     assert resp.status_code == 200
+    
+    update_appt_mock.return_value = fake_appointment
+    fake_appointment.tutorAccepted = True
 
     resp = client.put("/appointment/accept", json={"id": fake_appointment.id, "accept": True})
+    find_unique_users_mock.assert_called()
+    update_appt_mock.assert_called()
+    create_notification_mock.assert_called()
 
+def test_notification_appt_delete(
+        setup_test: FlaskClient,
+        fake_tutor: User,
+        fake_appointment: Appointment,
+        mocker: MockerFixture,
+        find_unique_users_mock: MockType,
+        create_notification_mock: MockType,
+        find_unique_appt_mock: MockType,
+):
+    #  setup tutor with an accepted appointment
+    client = setup_test
+    fake_appointment.tutorAccepted = True
+    fake_tutor.tutorInfo.appointments = [fake_appointment]
 
-    # tutor logs out
-    # student logs in
-    # call get notifications by id
-        # check if info is right for notification
-
+    # tutor logins and deletes appointment
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_tutor.email}, include=mocker.ANY
+    )
+    assert resp.status_code == 200
     
+    find_unique_appt_mock.return_value = fake_appointment
+    delete_notification_mock = mocker.patch("tests.conftest.NotificationActions.delete_many")
 
+    resp = client.delete("/appointment/", json={"id": fake_appointment.id})
+    find_unique_users_mock.assert_called()
+    find_unique_appt_mock.assert_called()
+    create_notification_mock.assert_called()
+    delete_notification_mock.assert_called_with(where={"appointmentId": fake_appointment.id})
+
+def test_notification_apt_modify(
+    setup_test: FlaskClient,
+        fake_tutor: User,
+        fake_appointment: Appointment,
+        mocker: MockerFixture,
+        find_unique_users_mock: MockType,
+        create_notification_mock: MockType,
+        find_unique_appt_mock: MockType,
+        update_appt_mock: MockType
+):
+    
+    #  setup tutor with an accepted appointment
+    client = setup_test
+    fake_appointment.tutorAccepted = True
+    fake_tutor.tutorInfo.appointments = [fake_appointment]
+
+    # tutor logins and modifies appointment
+    resp = client.post(
+        "/login",
+        json={
+            "email": "validemail2@mail.com",
+            "password": "12345678",
+            "accountType": "tutor",
+        },
+    )
+    find_unique_users_mock.assert_called_with(
+        where={"email": fake_tutor.email}, include=mocker.ANY
+    )
+    assert resp.status_code == 200
+
+    startTime = datetime.now() + timedelta(days=1)
+    endTime = datetime.now() + timedelta(days=2)
+
+    find_unique_appt_mock.return_value = fake_appointment
+    fake_appointment.startTime = startTime
+    fake_appointment.endTime = endTime
+
+    resp = client.put("/appointment/", json={
+        "id": fake_appointment.id,
+        "startTime": startTime.isoformat(),
+        "endTime": endTime.isoformat(),
+    })
+        
+    find_unique_users_mock.assert_called()
+    find_unique_appt_mock.assert_called()
+    update_appt_mock.assert_called()
+    create_notification_mock.assert_called()
