@@ -291,6 +291,7 @@ def appointment_messages(args):
         where={"id": args["id"]},
         include={"messages": {"orderBy": {"sentTime": "desc"}}},
     )
+
     if not appointment:
         raise ExpectedError("Appointment does not exist", 400)
 
