@@ -208,7 +208,9 @@ def appointment_rating(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
-    appointment = Appointment.prisma().find_unique(where={"id": args["id"]})
+    appointment = Appointment.prisma().find_unique(
+        where={"id": args["id"]}, include={"rating": True}
+    )
     if not appointment:
         raise ExpectedError("Appointment does not exist", 400)
 
@@ -218,18 +220,18 @@ def appointment_rating(args):
     if appointment.endTime > datetime.now(timezone.utc):
         raise ExpectedError("Appointment isn't complete yet", 400)
 
-    rating_id = str(uuid4())
-    Rating.prisma().upsert(
-        where={"id": rating_id},
-        data={
-            "create": {
-                "id": rating_id,
+    if appointment.rating is None:
+        Rating.prisma().create(
+            data={
+                "id": str(uuid4()),
                 "score": args["rating"],
                 "appointment": {"connect": {"id": args["id"]}},
                 "createdFor": {"connect": {"id": appointment.tutorId}},
-            },
-            "update": {"score": args["rating"]},
-        },
-    )
+            }
+        )
+    else:
+        Rating.prisma().update(
+            where={"id": appointment.rating.id}, data={"score": args["rating"]}
+        )
 
     return jsonify({"success": True})
