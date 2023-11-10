@@ -241,7 +241,10 @@ def appointment_messages(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
-    appointment = Appointment.prisma().find_unique(where={"id": args["id"]})
+    appointment = Appointment.prisma().find_unique(
+        where={"id": args["id"]},
+        include={"messages": {"orderBy": {"sentTime": "desc"}}},
+    )
     if not appointment:
         raise ExpectedError("Appointment does not exist", 400)
 
@@ -296,41 +299,43 @@ def appointment_message(args):
     else:
         other_id = appointment.studentId
 
-    msg = Message.prisma().create(
-        data={
-            "id": str(uuid4()),
-            "sentTime": datetime.now(),
-            "content": args["message"],
-            "sentBy": {"connect": {"id": appointment.studentId}},
-            "appointment": {"connect": {"id": args["id"]}},
-        }
-    )
+    # msg_id = str(uuid4())
+
+    msg = {
+        "id": str(uuid4()),
+        "sentTime": datetime.now(),
+        "content": args["message"],
+        "sentBy": {"connect": {"id": appointment.studentId}},
+        "appointment": {"connect": {"id": args["id"]}},
+    }
 
     pusher_client: Pusher = current_app.extensions["pusher"]
-    channel_info = pusher_client.channel_info(other_id, ["subscription_count"])
-    if channel_info["subscription_count"] >= 1:
+    channel_info = pusher_client.channel_info(other_id)
+    if channel_info["occupied"]:
         try:
             pusher_client.trigger(
                 other_id,
                 "message",
                 {
                     "fromId": session["user_id"],
-                    "content": msg.content,
-                    "sentTime": msg.sentTime.isoformat(),
+                    "content": msg["content"],
+                    "sentTime": msg["sentTime"].isoformat(),
                 },
             )
         except (ValueError, TypeError):
             raise ExpectedError("Message format is invalid", 400)
+        msg = Message.prisma().create(data=msg)
     else:
         user = user_view(id=session["user_id"])
         Notification.prisma().create(
             data={
                 "id": str(uuid4()),
                 "forUser": {"connect": {"id": other_id}},
-                "message": {"connect": {"id": msg.id}},
+                "message": {"connect": {"id": msg["id"]}},
                 "content": f"Received a direct message from {user.name}",
             }
         )
+        msg = Message.prisma().create(data=msg)
 
     return (
         jsonify({"id": msg.id, "sentTime": msg.sentTime.isoformat()}),
