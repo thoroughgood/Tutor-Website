@@ -70,11 +70,6 @@ export default function AppointmentDialog({
           {userRole === "tutor" ? studentProfile?.name : tutorProfile?.name}
         </DialogHeader>
         <DialogDescription>
-          <div className="flex justify-center">
-            {userRole === "student" && status === "completed" && (
-              <Rating appointmentId={id} />
-            )}
-          </div>
           <div className="flex flex-col gap-2">
             {format(appointmentData.startTime, "MMM d | h:mmaaa")} –{" "}
             {format(appointmentData.endTime, "h:mmaaa")}
@@ -106,6 +101,14 @@ export default function AppointmentDialog({
               />
             )}
           </div>
+          {userRole === "student" && status === "completed" && (
+            <>
+              <div>Rate your appointment with {tutorProfile?.name}</div>
+              <div className="flex-column mt-5 justify-center">
+                <Rating appointmentId={id} />
+              </div>
+            </>
+          )}
         </DialogDescription>
         {userRole === "tutor" && !appointmentData.tutorAccepted && (
           <div className="flex justify-end gap-2">

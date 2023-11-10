@@ -24,7 +24,7 @@ export default function Rating({ appointmentId }: ratingInterface) {
 
   return (
     <>
-      <div className="flex gap-1 pb-3">
+      <div className="flex gap-1 pb-3 pl-[35%]">
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
