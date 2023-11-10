@@ -18,10 +18,14 @@ import Rating from "./rating"
 
 interface AppointmentDialogProps {
   id: string
+  status: "accepted" | "requested" | "completed"
 }
 const appointmentService = new HTTPAppointmentService()
 const profileService = new HTTPProfileService()
-export default function AppointmentDialog({ id }: AppointmentDialogProps) {
+export default function AppointmentDialog({
+  id,
+  status,
+}: AppointmentDialogProps) {
   const queryClient = useQueryClient()
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [acceptLoading, setAcceptLoading] = useState(false)
@@ -67,7 +71,9 @@ export default function AppointmentDialog({ id }: AppointmentDialogProps) {
         </DialogHeader>
         <DialogDescription>
           <div className="flex justify-center">
-            <Rating appointmentId={id} />
+            {userRole === "student" && status === "completed" && (
+              <Rating appointmentId={id} />
+            )}
           </div>
           <div className="flex flex-col gap-2">
             {format(appointmentData.startTime, "MMM d | h:mmaaa")} –{" "}
