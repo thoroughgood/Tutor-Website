@@ -266,8 +266,6 @@ def appointment_messages(args):
     ):
         raise ExpectedError("User is not the tutor or student of the appointment", 403)
 
-    messages = appointment.messages
-
     return (
         jsonify(
             {
@@ -278,7 +276,7 @@ def appointment_messages(args):
                         "sentTime": message.sentTime.isoformat(),
                         "content": message.content,
                     }
-                    for message in messages
+                    for message in appointment.messages
                 ]
             }
         ),

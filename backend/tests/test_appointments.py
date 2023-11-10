@@ -83,7 +83,7 @@ def test_appointments_sortby(
     resp = client.get("/appointments/", json={"sortBy": "messageSent"})
     assert resp.status_code == 200
     assert resp.json == {
-        "appointment": [fake_appointment_msg2.id, fake_appointment_msg.id]
+        "appointments": [fake_appointment_msg.id, fake_appointment_msg2.id]
     }
 
 
