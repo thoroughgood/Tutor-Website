@@ -636,8 +636,8 @@ def test_rating_args(
         "tests.conftest.AppointmentActions.find_unique"
     )
     appointment_find_unique_mock.return_value = fake_appointment_fin
-    rating_create_mock = mocker.patch("tests.conftest.RatingActions.create")
-    rating_create_mock.return_value = fake_rating
+    rating_upsert_mock = mocker.patch("tests.conftest.RatingActions.upsert")
+    rating_upsert_mock.return_value = fake_rating
 
     # successful rating on an appointment
     resp = client.post(
@@ -645,8 +645,8 @@ def test_rating_args(
     )
     appointment_find_unique_mock.assert_called()
     appointment_find_unique_mock.reset_mock()
-    rating_create_mock.assert_called()
-    rating_create_mock.reset_mock()
+    rating_upsert_mock.assert_called()
+    rating_upsert_mock.reset_mock()
 
     assert resp.status_code == 200
     assert resp.json["success"] == True
@@ -661,18 +661,15 @@ def test_rating_args(
         tutorId=fake_appointment_fin.tutorId,
     )
     fake_appointment_fin.rating = rating
-    rating_create_mock.return_value = rating
-    rating_update_mock = mocker.patch("tests.conftest.RatingActions.update")
+    rating_upsert_mock.return_value = rating
 
     resp = client.post(
         "/appointment/rating", json={"id": fake_appointment_fin.id, "rating": 5}
     )
     appointment_find_unique_mock.assert_called()
     appointment_find_unique_mock.reset_mock()
-    rating_create_mock.assert_not_called()
-    rating_update_mock.assert_called()
-    rating_update_mock.reset_mock()
+    rating_upsert_mock.assert_called()
+    rating_upsert_mock.reset_mock()
 
     assert resp.status_code == 200
     assert resp.json["success"] == True
-

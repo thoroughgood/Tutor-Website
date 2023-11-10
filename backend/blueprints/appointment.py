@@ -220,18 +220,18 @@ def appointment_rating(args):
     if appointment.endTime > datetime.now(timezone.utc):
         raise ExpectedError("Appointment isn't complete yet", 400)
 
-    if appointment.rating is None:
-        Rating.prisma().create(
-            data={
+    rating_id = appointment.rating.id if appointment.rating else str(uuid4())
+    Rating.prisma().upsert(
+        where={"id": rating_id},
+        data={
+            "create": {
                 "id": str(uuid4()),
                 "score": args["rating"],
                 "appointment": {"connect": {"id": args["id"]}},
                 "createdFor": {"connect": {"id": appointment.tutorId}},
-            }
-        )
-    else:
-        Rating.prisma().update(
-            where={"id": appointment.rating.id}, data={"score": args["rating"]}
-        )
+            },
+            "update": {"score": args["rating"]},
+        },
+    )
 
     return jsonify({"success": True})
