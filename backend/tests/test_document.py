@@ -2,9 +2,8 @@ import pytest
 from pytest_mock import MockerFixture
 from uuid import uuid4
 from flask.testing import FlaskClient
-from prisma.models import User, Document
+from prisma.models import Document
 from prisma.errors import RecordNotFoundError
-from pytest_mock.plugin import MockType
 
 
 @pytest.fixture

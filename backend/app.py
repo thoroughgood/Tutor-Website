@@ -17,6 +17,7 @@ from blueprints.admin import admin
 from blueprints.document import document
 from blueprints.direct_message import direct_message
 from blueprints.tutorial import tutorial
+from blueprints.notifications import notifications
 from blueprints.utils import utils
 from helpers.my_request import MyRequest
 
@@ -24,15 +25,12 @@ from helpers.my_request import MyRequest
 Flask.request_class = MyRequest
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", default="secret")
-# ? Consider moving to redis in the future?
 app.config["SESSION_TYPE"] = "filesystem"
-# app.config["SESSION_COOKIE_HTTPONLY"] = False # uncomment for debugging in frontend
 app.config["SESSION_COOKIE_SAMESITE"] = "None"
 app.config["SESSION_COOKIE_SECURE"] = True
 
 # Extensions
 server_session = Session(app)
-# todo: figure cors
 cors = CORS(app, supports_credentials=True)
 
 # We'll just say these external clients are 'extensions' of flask
@@ -50,7 +48,6 @@ app.extensions["pusher"] = Pusher(
 )
 
 # add a 'super admin' if one isn't already added
-# ? Maybe remove this later for prod
 if (
     prisma.admin.count() == 0
     and prisma.admin.find_first(where={"userInfo": {"is": {"name": "SuperAdmin"}}})
@@ -78,6 +75,7 @@ app.register_blueprint(appointment, url_prefix="/appointment")
 app.register_blueprint(appointments, url_prefix="/appointments")
 app.register_blueprint(utils, url_prefix="/utils")
 app.register_blueprint(admin, url_prefix="/admin")
+app.register_blueprint(notifications, url_prefix="/notifications")
 app.register_blueprint(document, url_prefix="/document")
 app.register_blueprint(direct_message, url_prefix="/directmessage")
 app.register_blueprint(tutorial, url_prefix="/tutorial")
