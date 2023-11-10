@@ -289,7 +289,7 @@ def appointment_messages(args):
 
     appointment = Appointment.prisma().find_unique(
         where={"id": args["id"]},
-        include={"messages": {"order_by": {"sentTime": "desc"}}},
+        include={"messages": {"orderBy": {"sentTime": "desc"}}},
     )
 
     if not appointment:
