@@ -19,6 +19,4 @@ export default function DocumentImg({ documentId }: documentImgInterface) {
   } else if (data.document) {
     return <iframe src={data.document} className="w-3/10 h-96" />
   }
-
-  //need to import something to read the pdf files
 }
