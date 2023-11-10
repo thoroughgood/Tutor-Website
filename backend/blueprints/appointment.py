@@ -365,8 +365,9 @@ def appointment_message(args):
         except (ValueError, TypeError):
             raise ExpectedError("Message format is invalid", 400)
         msg = Message.prisma().create(data=msg)
-        appointment.messages = [msg] + (
-            appointment.messages if appointment.messages else []
+        Appointment.prisma().update(
+            where={"id": args["id"]},
+            data={"messages": {"connect": {"id": msg.id}}},
         )
     else:
         user = user_view(id=session["user_id"])
@@ -379,8 +380,9 @@ def appointment_message(args):
             }
         )
         msg = Message.prisma().create(data=msg)
-        appointment.messages = [msg] + (
-            appointment.messages if appointment.messages else []
+        Appointment.prisma().update(
+            where={"id": args["id"]},
+            data={"messages": {"connect": {"id": msg.id}}},
         )
 
     return (
