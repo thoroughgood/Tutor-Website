@@ -130,8 +130,6 @@ model Message {
   @@unique([id, sentById])
   @@unique([id, appointmentId])
   @@unique([id, directMessageId])
-  @@unique([sentById, appointmentId])
-  @@unique([sentById, directMessageId])
 }
 
 model DirectMessage {
@@ -161,6 +159,4 @@ model Notification {
   @@unique([id, messageId])
   @@unique([id, userId])
   @@unique([id, appointmentId])
-  @@unique([messageId, userId])
-  @@unique([appointmentId, userId])
 }
