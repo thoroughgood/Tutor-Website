@@ -42,6 +42,9 @@ def get_appoinment(appointment_id):
     ):
         return_val["studentId"] = appointment.studentId
 
+    if "user_id" in session and appointment.studentId == session["user_id"]:
+        return_val["rating"] = appointment.rating.score if appointment.rating else None
+
     return jsonify(return_val), 200
 
 

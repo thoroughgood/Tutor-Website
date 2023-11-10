@@ -57,6 +57,8 @@ def delete_document(args):
             where={"id_tutorId": {"id": args["id"], "tutorId": session["user_id"]}}
         )
     except RecordNotFoundError:
-        raise ExpectedError("Document doesn't belong to user or id doesn't exist", 400)
+        raise ExpectedError(
+            "Document doesn't belong to user or no document exists with id", 400
+        )
 
     return jsonify({"success": True}), 200
