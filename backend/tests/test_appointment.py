@@ -2,10 +2,15 @@ import pytest
 from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockType
 from flask.testing import FlaskClient
-from prisma.models import Appointment, User, Rating, Message, Notification
+from prisma.models import Appointment, User, Rating, Message
 from prisma.errors import RecordNotFoundError
 
 ########################### APPOINTMENT ACCEPT TESTS ###########################
+
+
+@pytest.fixture
+def create_notification_mock(mocker: MockerFixture):
+    return mocker.patch("tests.conftest.NotificationActions.create")
 
 
 @pytest.fixture
@@ -92,6 +97,7 @@ def test_appointment_accept_invalid_id(
 def test_appointment_accept(
     setup_test: FlaskClient,
     appointment_update_mock: MockType,
+    create_notification_mock: MockType,
     fake_appointment,
     fake_login,
 ):
@@ -105,6 +111,7 @@ def test_appointment_accept(
         "/appointment/accept", json={"id": fake_appointment.id, "accept": True}
     )
     appointment_update_mock.assert_called()
+    create_notification_mock.assert_called()
 
     assert resp.status_code == 200
     assert resp.json["id"] == apt.id
@@ -397,6 +404,7 @@ def test_delete_args(
     find_unique_users_mock,
     fake_tutor2: User,
     fake_appointment: Appointment,
+    create_notification_mock: MockType,
 ):
     client = setup_test
 
@@ -435,9 +443,15 @@ def test_delete_args(
     find = mocker.patch("tests.conftest.AppointmentActions.find_unique")
     find.return_value = fake_appointment
 
+    delete_notification_mock = mocker.patch(
+        "tests.conftest.NotificationActions.delete_many"
+    )
+
     delete = mocker.patch("tests.conftest.AppointmentActions.delete")
     resp = client.delete("/appointment/", json={"id": fake_appointment.id})
     delete.assert_called()
+    create_notification_mock.assert_called()
+    delete_notification_mock.assert_called()
 
     assert resp.status_code == 200
     assert resp.json["success"] == True
@@ -452,6 +466,7 @@ def test_modify_args(
     find_unique_users_mock,
     fake_tutor2: User,
     fake_appointment: Appointment,
+    create_notification_mock: MockType,
 ):
     client = setup_test
 
@@ -575,6 +590,7 @@ def test_modify_args(
         },
     )
     update.assert_called()
+    create_notification_mock.assert_called()
     assert resp.json == {"success": True}
     assert resp.status_code == 200
 
@@ -585,10 +601,9 @@ def test_modify_args(
 def test_rating_args(
     setup_test: FlaskClient,
     mocker: MockerFixture,
-    find_unique_users_mock,
-    fake_student: User,
     fake_appointment_fin: Appointment,
     fake_rating: Rating,
+    fake_login,
 ):
     client = setup_test
 
@@ -620,18 +635,7 @@ def test_rating_args(
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
-    client.post(
-        "/login",
-        json={
-            "email": fake_student.email,
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_student.email}, include=mocker.ANY
-    )
+    fake_login("fake_student")
 
     # Invalid appointment id
     resp = client.post("/appointment/rating", json={"id": "123", "rating": 5})
@@ -687,10 +691,9 @@ def test_rating_args(
 def test_message_args(
     setup_test: FlaskClient,
     mocker: MockerFixture,
-    find_unique_users_mock,
-    fake_student: User,
     fake_appointment: Appointment,
     fake_message: Message,
+    fake_login,
 ):
     client = setup_test
 
@@ -715,18 +718,7 @@ def test_message_args(
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
-    client.post(
-        "/login",
-        json={
-            "email": fake_student.email,
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_student.email}, include=mocker.ANY
-    )
+    fake_login("fake_student")
 
     # Invalid appointment id
     resp = client.post("/appointment/message", json={"id": "123", "message": "hi"})
@@ -742,11 +734,15 @@ def test_message_args(
     pusher_channel_info_mock = mocker.patch("tests.conftest.Pusher.channel_info")
     pusher_channel_info_mock.return_value = {"occupied": True, "subscription_count": 1}
     notif_mock = mocker.patch("tests.conftest.NotificationActions.create")
+    appointment_update_mock = mocker.patch("tests.conftest.AppointmentActions.update")
+    message_mock = mocker.patch("tests.conftest.MessageActions.create")
+    message_mock.return_value = fake_message
 
     # successful message on an appointment
     resp = client.post(
         "/appointment/message", json={"id": fake_appointment.id, "message": "hi"}
     )
+    appointment_update_mock.assert_called()
     notif_mock.assert_not_called()
     pusher_channel_info_mock.assert_called()
     assert resp.status_code == 200
@@ -757,6 +753,8 @@ def test_message_args(
     resp = client.post(
         "/appointment/message", json={"id": fake_appointment.id, "message": "hi"}
     )
+    message_mock.assert_called()
+    appointment_update_mock.assert_called()
     notif_mock.assert_called()
     pusher_channel_info_mock.assert_called()
     assert resp.status_code == 200
@@ -770,44 +768,26 @@ def test_message_args(
 def test_messages_args(
     setup_test: FlaskClient,
     mocker: MockerFixture,
-    find_unique_users_mock,
-    fake_student: User,
     fake_message: Message,
     fake_message2: Message,
     fake_appointment_msg: Appointment,
+    fake_login,
 ):
     client = setup_test
 
-    # No JSON Body
+    # Missing id, defaults to appointment/<appointment_id> route
     resp = client.get("/appointment/messages")
-    assert resp.json == {"error": "content-type was not json or data was malformed"}
-    assert resp.status_code == 415
+    assert resp.status_code == 404
 
-    # Missing id
-    resp = client.get("/appointment/messages", json={})
-    assert resp.json == {"error": "'id' was missing from field(s)"}
-    assert resp.status_code == 400
-
-    # Missing message field
-    resp = client.get("/appointment/messages", json={"id": "123"})
+    # Missing not logged in
+    resp = client.get("/appointment/123/messages")
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
-    client.post(
-        "/login",
-        json={
-            "email": fake_student.email,
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
-
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_student.email}, include=mocker.ANY
-    )
+    fake_login("fake_student")
 
     # Invalid appointment id
-    resp = client.get("/appointment/messages", json={"id": "123"})
+    resp = client.get("/appointment/123/messages")
     assert resp.json == {"error": "Appointment does not exist"}
     assert resp.status_code == 400
 
@@ -815,16 +795,10 @@ def test_messages_args(
         "tests.conftest.AppointmentActions.find_unique"
     )
     appointment_find_unique_mock.return_value = fake_appointment_msg
-    msg_find = mocker.patch("tests.conftest.MessageActions.find_many")
-    msg_find.return_value = [fake_message2, fake_message]
+    fake_appointment_msg.messages = [fake_message2, fake_message]
 
     # successful message on an appointment
-    resp = client.get(
-        "/appointment/messages",
-        json={
-            "id": fake_appointment_msg.id,
-        },
-    )
+    resp = client.get(f"/appointment/{fake_appointment_msg.id}/messages")
     assert resp.status_code == 200
     assert resp.json["messages"] == [
         {

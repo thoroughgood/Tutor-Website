@@ -2,7 +2,7 @@ from typing import TypedDict
 from flask import Blueprint, jsonify, session, current_app
 from pusher import Pusher
 from uuid import uuid4
-from prisma.models import DirectMessage, Notification, User
+from prisma.models import DirectMessage, Notification
 from datetime import datetime, MINYEAR, timezone
 from jsonschemas import direct_message_schema
 from helpers.views import user_view
