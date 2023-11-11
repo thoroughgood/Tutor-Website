@@ -27,7 +27,7 @@ def get_appointments(args):
     if user.appointments is None:
         user.appointments = []
 
-    if "sortBy" in args and args["sortBy"] == "messageSent":
+    if "sortBy" in args:
         # figure out a way to sort by msgs
         apts = sorted(
             user.appointments, key=lambda apt: apt.messages[0].sentTime, reverse=True
