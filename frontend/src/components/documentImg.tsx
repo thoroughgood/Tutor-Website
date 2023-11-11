@@ -28,7 +28,7 @@ export default function DocumentImg({ documentId }: documentImgInterface) {
     try {
       const data = await profileService.deleteDocument(documentId)
       console.log(data)
-      queryClient.invalidateQueries(["documents", documentId])
+      queryClient.invalidateQueries(["documents"])
       setDeleted(true)
     } catch (error) {
       toast.error(getErrorMessage(error))
@@ -43,7 +43,7 @@ export default function DocumentImg({ documentId }: documentImgInterface) {
       return <></>
     }
     return (
-      <div className="mt-5 flex h-1/2 w-5/6">
+      <div className="mt-5 flex h-1/2 w-5/6 shrink-0">
         <iframe
           src={data.document}
           className="h-full w-full rounded border-2 border-inherit"
