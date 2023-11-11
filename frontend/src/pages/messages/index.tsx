@@ -2,13 +2,18 @@ import MessageChannelPreview from "@/components/messageChannelPreview"
 import ToggleSwitch from "@/components/toggleSwitch"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { HTTPMessageService } from "@/service/messageService"
-import { useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { useRouter } from "next/router"
+import { useEffect, useState } from "react"
 import { useQuery } from "react-query"
 
 const messageService = new HTTPMessageService()
 export default function Messages() {
-  const [viewingAppointmentMessages, setViewingAppointmentMessages] =
-    useState(false)
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const [viewingAppointmentMessages, setViewingAppointmentMessages] = useState(
+    searchParams.get("viewing") === "appointment" || false,
+  )
   const { data: directMessageChannels } = useQuery({
     queryKey: ["directMessages"],
     queryFn: async () => await messageService.getDirectChannelList(),
@@ -24,6 +29,12 @@ export default function Messages() {
     ? appointmentChannels
     : directMessageChannels
 
+  useEffect(() => {
+    setViewingAppointmentMessages(
+      searchParams.get("viewing") === "appointment" || false,
+    )
+  }, [router.pathname, searchParams])
+
   return (
     <div className="flex h-full w-full justify-center overflow-hidden">
       <Card className="m-0 flex max-w-3xl grow flex-col overflow-hidden pt-10  md:m-16 md:pt-0">
@@ -32,9 +43,15 @@ export default function Messages() {
             toggledText="Appointment Messages"
             untoggledText="Direct Messages"
             isToggled={viewingAppointmentMessages}
-            onClick={() =>
+            onClick={() => {
               setViewingAppointmentMessages(!viewingAppointmentMessages)
-            }
+              router.push(
+                router.pathname +
+                  `?viewing=${
+                    viewingAppointmentMessages ? "direct" : "appointment"
+                  }`,
+              )
+            }}
             className="bg-muted"
           />
         </CardHeader>

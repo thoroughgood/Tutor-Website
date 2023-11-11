@@ -1,5 +1,6 @@
 import Messages, { OptimisticMessage } from "@/components/messages"
 import SmartAvatar from "@/components/smartAvatar"
+import { Button } from "@/components/ui/button"
 import useUser from "@/hooks/useUser"
 import useUserType from "@/hooks/useUserType"
 import { HTTPMessageService, Message } from "@/service/messageService"
@@ -67,7 +68,14 @@ export default function DirectMessage() {
     initialMessages && setMessages(initialMessages.toReversed())
   }, [initialMessages])
   return (
-    <div className="flex h-full w-full flex-col p-8">
+    <div className="flex h-full w-full flex-col gap-4 p-8">
+      <Button
+        variant="secondary"
+        className="w-fit justify-self-start"
+        onClick={() => router.back()}
+      >
+        Back
+      </Button>
       <Messages
         header={
           <Link
