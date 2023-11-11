@@ -21,8 +21,14 @@ interface MessageSentResp {
 interface MessageService {
   getDirectChannelList(): Promise<string[]>
   getDirectMessages(otherUserId: string): Promise<Message[]>
+  getAppointmentList(): Promise<string[]>
   sendDirectMessage(
     otherUserId: string,
+    content: string,
+  ): Promise<MessageSentResp>
+  getAppointmentMessages(appointmentId: string): Promise<Message[]>
+  sendAppointmentMessage(
+    appointmentId: string,
     content: string,
   ): Promise<MessageSentResp>
 }
@@ -67,6 +73,54 @@ export class HTTPMessageService extends HTTPService implements MessageService {
       })
       .json({
         otherId: otherUserId,
+        message: content,
+      })
+      .post()
+      .json()) as { id: string; sentTime: string }
+    return { ...resp, sentTime: new Date(resp.sentTime) }
+  }
+
+  async getAppointmentList(): Promise<string[]> {
+    const resp = (await wretch(
+      `${this.backendURL}/appointments/?sortBy=messageSent`,
+    )
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
+      .json()) as { appointments: string[] }
+    return resp.appointments
+  }
+
+  async getAppointmentMessages(appointmentId: string): Promise<Message[]> {
+    const resp = (await wretch(
+      `${this.backendURL}/appointment/${appointmentId}/messages`,
+    )
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
+      .json()) as { messages: MessageRawResp[] }
+
+    return resp.messages.map((m) => ({
+      ...m,
+      sentTime: new Date(m.sentTime),
+    }))
+  }
+
+  async sendAppointmentMessage(
+    appointmentId: string,
+    content: string,
+  ): Promise<MessageSentResp> {
+    const resp = (await wretch(`${this.backendURL}/appointment/message`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({
+        id: appointmentId,
         message: content,
       })
       .post()
@@ -127,5 +181,18 @@ export class MockMessageService implements MessageService {
       id: newMessage.id,
       sentTime: newMessage.sentTime,
     }
+  }
+  async getAppointmentList(): Promise<string[]> {
+    throw new Error("not implemented")
+  }
+
+  async sendAppointmentMessage(
+    _appointmentId: string,
+    _otherUserIdcontent: string,
+  ): Promise<MessageSentResp> {
+    throw new Error("not implemented")
+  }
+  async getAppointmentMessages(appointmentId: string): Promise<Message[]> {
+    throw new Error("not implemented")
   }
 }

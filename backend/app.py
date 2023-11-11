@@ -5,6 +5,7 @@ from flask_session import Session
 from flask_cors import CORS
 from prisma import Prisma
 from pusher import Pusher
+import logging
 import os
 
 from blueprints.auth import auth
@@ -90,3 +91,7 @@ def hello_world():
 if __name__ == "__main__":
     app.run(debug=True, port=os.getenv("PORT", default=8000), host="0.0.0.0")
     prisma.disconnect()
+else:
+    gunicorn_logger = logging.getLogger("gunicorn.error")
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)

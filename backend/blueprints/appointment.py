@@ -328,62 +328,58 @@ def appointment_message(args):
     if not appointment:
         raise ExpectedError("Appointment does not exist", 400)
 
-    if (
-        session["user_id"] != appointment.studentId
-        and session["user_id"] != appointment.tutorId
-    ):
-        raise ExpectedError("User is not the tutor or student of the appointment", 403)
-
     if session["user_id"] == appointment.studentId:
         other_id = appointment.tutorId
-    else:
+    elif session["user_id"] == appointment.tutorId:
         other_id = appointment.studentId
+    else:
+        raise ExpectedError("User is not the tutor or student of the appointment", 403)
 
-    msg = {
+    message_info = {
         "id": str(uuid4()),
         "sentTime": datetime.now(timezone.utc),
         "content": args["message"],
-        "sentBy": {"connect": {"id": appointment.studentId}},
+        "sentBy": {"connect": {"id": session["user_id"]}},
         "appointment": {"connect": {"id": args["id"]}},
     }
 
     pusher_client: Pusher = current_app.extensions["pusher"]
-    channel_info = pusher_client.channel_info(other_id)
+    channel_info = pusher_client.channel_info(args["id"])
     if channel_info["occupied"]:
         try:
             pusher_client.trigger(
-                other_id,
-                "message",
+                args["id"],
+                "appointment_message",
                 {
                     "fromId": session["user_id"],
-                    "content": msg["content"],
-                    "sentTime": msg["sentTime"].isoformat(),
+                    "content": message_info["content"],
+                    "sentTime": message_info["sentTime"].isoformat(),
                 },
             )
         except (ValueError, TypeError):
             raise ExpectedError("Message format is invalid", 400)
-        msg = Message.prisma().create(data=msg)
+        msg = Message.prisma().create(data=message_info)
         Appointment.prisma().update(
             where={"id": args["id"]},
             data={"messages": {"connect": {"id": msg.id}}},
         )
     else:
         user = user_view(id=session["user_id"])
+        msg = Message.prisma().create(data=message_info)
         Notification.prisma().create(
             data={
                 "id": str(uuid4()),
                 "forUser": {"connect": {"id": other_id}},
-                "message": {"connect": {"id": msg["id"]}},
-                "content": f"Received a direct message from {user.name}",
+                "message": {"connect": {"id": msg.id}},
+                "content": f"Received a message in appointment with {user.name}, for appointment scheduled at {appointment.startTime.isoformat()}",
             }
         )
-        msg = Message.prisma().create(data=msg)
         Appointment.prisma().update(
             where={"id": args["id"]},
             data={"messages": {"connect": {"id": msg.id}}},
         )
 
     return (
-        jsonify({"id": msg.id, "sentTime": msg.sentTime.isoformat()}),
+        jsonify({"id": message_info["id"], "sentTime": message_info["sentTime"]}),
         200,
     )
