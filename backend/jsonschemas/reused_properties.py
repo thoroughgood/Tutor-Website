@@ -58,6 +58,13 @@ name_prop = {
     }
 }
 
+message_prop = {
+    "message": {
+        "type": "string",
+        "minLength": 1,
+    }
+}
+
 location_prop = {
     "location": {
         "type": "string",
@@ -116,5 +123,24 @@ times_available_prop = {
             },
             "required": ["startTime", "endTime"],
         },
+    }
+}
+
+other_id_prop = {
+    "otherId": {
+        "type": "string",
+    }
+}
+
+message_prop = {
+    "message": {
+        "type": "string",
+    }
+}
+
+sort_by_prop = {
+    "sortBy": {
+        "type": "string",
+        "pattern": "^messageSent$",
     }
 }

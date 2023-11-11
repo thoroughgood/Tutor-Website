@@ -7,7 +7,8 @@ export class HTTPService {
     throw new Error(error.error)
   }
   constructor() {
-    this.backendURL = "http://127.0.0.1:8000"
+    this.backendURL =
+      process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000"
   }
 }
 /*

@@ -1,14 +1,19 @@
-from flask import Blueprint, jsonify, session
-from prisma.models import Appointment, Rating
-from jsonschemas.appointment_accept_schema import appointment_accept_schema
-from jsonschemas.appointment_request_schema import appointment_request_schema
-from jsonschemas.appointment_delete_schema import appointment_delete_schema
-from jsonschemas.appointment_modify_schema import appointment_modify_schema
-from jsonschemas.appointment_rating_schema import appointment_rating_schema
+from flask import Blueprint, jsonify, session, current_app
+from pusher import Pusher
+from prisma.models import Appointment, Rating, Message, Notification
+from prisma.errors import RecordNotFoundError
+from jsonschemas import (
+    appointment_accept_schema,
+    appointment_request_schema,
+    appointment_delete_schema,
+    appointment_message_schema,
+    appointment_modify_schema,
+    appointment_rating_schema,
+)
 from helpers.process_time_block import process_time_block
 from uuid import uuid4
 from datetime import datetime, timezone
-from helpers.views import student_view, tutor_view
+from helpers.views import student_view, tutor_view, user_view
 from helpers.error_handlers import (
     validate_decorator,
     ExpectedError,
@@ -20,8 +25,10 @@ appointment = Blueprint("appointment", __name__)
 
 @appointment.route("/<appointment_id>", methods=["GET"])
 @error_decorator
-def get_appoinment(appointment_id):
-    appointment = Appointment.prisma().find_unique(where={"id": appointment_id})
+def get_appointment(appointment_id):
+    appointment = Appointment.prisma().find_unique(
+        where={"id": appointment_id}, include={"rating": True}
+    )
     if appointment is None:
         raise ExpectedError("Given id does not correspond to an appointment", 404)
 
@@ -39,6 +46,9 @@ def get_appoinment(appointment_id):
     ):
         return_val["studentId"] = appointment.studentId
 
+    if "user_id" in session and appointment.studentId == session["user_id"]:
+        return_val["rating"] = appointment.rating.score if appointment.rating else None
+
     return jsonify(return_val), 200
 
 
@@ -53,18 +63,24 @@ def appointment_accept(args):
     if not tutor:
         raise ExpectedError("Must be a tutor to modify appointments", 403)
 
-    appointment = Appointment.prisma().find_first(
-        where={"id": args["id"], "tutorId": tutor.id}
-    )
-    if appointment is None:
+    try:
+        appointment = Appointment.prisma().update(
+            where={"id_tutorId": {"id": args["id"], "tutorId": tutor.id}},
+            data={"tutorAccepted": args["accept"]},
+        )
+    except RecordNotFoundError:
         raise ExpectedError(
             "Appointment corresponding to id does not exist or, appointment does not involve tutor",
             400,
         )
 
-    appointment = Appointment.prisma().update(
-        where={"id": args["id"]},
-        data={"tutorAccepted": args["accept"]},
+    Notification.prisma().create(
+        data={
+            "id": str(uuid4()),
+            "forUser": {"connect": {"id": appointment.studentId}},
+            "content": f"{tutor.name} has accepted your appointment",
+            "appointment": {"connect": {"id": appointment.id}},
+        }
     )
 
     return (
@@ -103,7 +119,7 @@ def appointment_request(args):
     if not student:
         raise ExpectedError("Profile is not a student", 400)
 
-    if student.appointments != None:
+    if student.appointments is not None:
         for appointment in student.appointments:
             if (
                 appointment.startTime <= st < appointment.endTime
@@ -122,6 +138,13 @@ def appointment_request(args):
             "tutorAccepted": False,
             "tutor": {"connect": {"id": args["tutorId"]}},
             "student": {"connect": {"id": session["user_id"]}},
+            "notification": {
+                "create": {
+                    "id": str(uuid4()),
+                    "forUser": {"connect": {"id": args["tutorId"]}},
+                    "content": f"{student.name} has requested an appointment with you",
+                }
+            },
         }
     )
 
@@ -157,6 +180,16 @@ def appointment_delete(args):
 
     if tutor.appointments is None or appointment not in tutor.appointments:
         raise ExpectedError("Logged in user is not the tutor of the appointment", 403)
+
+    Notification.prisma().create(
+        data={
+            "id": str(uuid4()),
+            "forUser": {"connect": {"id": appointment.studentId}},
+            "content": f"Your appointment with {tutor.name} has been deleted",
+        }
+    )
+
+    Notification.prisma().delete_many(where={"appointmentId": appointment.id})
 
     Appointment.prisma().delete(where={"id": args["id"]})
 
@@ -198,6 +231,15 @@ def appointment_modify(args):
         data={"startTime": args["startTime"], "endTime": args["endTime"]},
     )
 
+    Notification.prisma().create(
+        data={
+            "id": str(uuid4()),
+            "forUser": {"connect": {"id": appointment.studentId}},
+            "content": f"Your appointment with {tutor.name} has been modified",
+            "appointment": {"connect": {"id": appointment.id}},
+        }
+    )
+
     return jsonify({"success": True}), 200
 
 
@@ -208,7 +250,9 @@ def appointment_rating(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
-    appointment = Appointment.prisma().find_unique(where={"id": args["id"]})
+    appointment = Appointment.prisma().find_unique(
+        where={"id": args["id"]}, include={"rating": True}
+    )
     if not appointment:
         raise ExpectedError("Appointment does not exist", 400)
 
@@ -218,13 +262,128 @@ def appointment_rating(args):
     if appointment.endTime > datetime.now(timezone.utc):
         raise ExpectedError("Appointment isn't complete yet", 400)
 
-    Rating.prisma().create(
+    rating_id = appointment.rating.id if appointment.rating else str(uuid4())
+    Rating.prisma().upsert(
+        where={"id": rating_id},
         data={
-            "id": str(uuid4()),
-            "score": args["rating"],
-            "appointment": {"connect": {"id": args["id"]}},
-            "createdFor": {"connect": {"id": appointment.tutorId}},
-        }
+            "create": {
+                "id": rating_id,
+                "score": args["rating"],
+                "appointment": {"connect": {"id": args["id"]}},
+                "createdFor": {"connect": {"id": appointment.tutorId}},
+            },
+            "update": {"score": args["rating"]},
+        },
     )
 
-    return jsonify({"success": True})
+    return jsonify({"success": True}), 200
+
+
+@appointment.route("/<appointment_id>/messages", methods=["GET"])
+@error_decorator
+def appointment_messages(appointment_id):
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 401)
+
+    appointment = Appointment.prisma().find_unique(
+        where={"id": appointment_id},
+        include={"messages": {"orderBy": {"sentTime": "desc"}}},
+    )
+
+    if not appointment:
+        raise ExpectedError("Appointment does not exist", 400)
+
+    if (
+        session["user_id"] != appointment.studentId
+        and session["user_id"] != appointment.tutorId
+    ):
+        raise ExpectedError("User is not the tutor or student of the appointment", 403)
+
+    return (
+        jsonify(
+            {
+                "messages": [
+                    {
+                        "id": message.id,
+                        "sentBy": message.sentById,
+                        "sentTime": message.sentTime.isoformat(),
+                        "content": message.content,
+                    }
+                    for message in appointment.messages
+                ]
+            }
+        ),
+        200,
+    )
+
+
+@appointment.route("/message", methods=["POST"])
+@error_decorator
+@validate_decorator("json", appointment_message_schema)
+def appointment_message(args):
+    if "user_id" not in session:
+        raise ExpectedError("No user is logged in", 401)
+
+    appointment = Appointment.prisma().find_unique(where={"id": args["id"]})
+    if not appointment:
+        raise ExpectedError("Appointment does not exist", 400)
+
+    if (
+        session["user_id"] != appointment.studentId
+        and session["user_id"] != appointment.tutorId
+    ):
+        raise ExpectedError("User is not the tutor or student of the appointment", 403)
+
+    if session["user_id"] == appointment.studentId:
+        other_id = appointment.tutorId
+    else:
+        other_id = appointment.studentId
+
+    msg = {
+        "id": str(uuid4()),
+        "sentTime": datetime.now(timezone.utc),
+        "content": args["message"],
+        "sentBy": {"connect": {"id": appointment.studentId}},
+        "appointment": {"connect": {"id": args["id"]}},
+    }
+
+    pusher_client: Pusher = current_app.extensions["pusher"]
+    channel_info = pusher_client.channel_info(other_id)
+    if channel_info["occupied"]:
+        try:
+            pusher_client.trigger(
+                other_id,
+                "message",
+                {
+                    "fromId": session["user_id"],
+                    "content": msg["content"],
+                    "sentTime": msg["sentTime"].isoformat(),
+                },
+            )
+        except (ValueError, TypeError):
+            raise ExpectedError("Message format is invalid", 400)
+        msg = Message.prisma().create(data=msg)
+        Appointment.prisma().update(
+            where={"id": args["id"]},
+            data={"messages": {"connect": {"id": msg.id}}},
+        )
+    else:
+        user = user_view(id=session["user_id"])
+        Notification.prisma().create(
+            data={
+                "id": str(uuid4()),
+                "forUser": {"connect": {"id": other_id}},
+                "message": {"connect": {"id": msg["id"]}},
+                "content": f"Received a direct message from {user.name}",
+            }
+        )
+        msg = Message.prisma().create(data=msg)
+        Appointment.prisma().update(
+            where={"id": args["id"]},
+            data={"messages": {"connect": {"id": msg.id}}},
+        )
+
+    return (
+        jsonify({"id": msg.id, "sentTime": msg.sentTime.isoformat()}),
+        200,
+    )

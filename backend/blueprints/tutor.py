@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 from prisma.models import Tutor, Subject, User
-from jsonschemas.tutor_modify_schema import tutor_modify_schema
+from jsonschemas import tutor_modify_schema
 from helpers.process_time_block import process_time_block
 from helpers.views import tutor_view
 from helpers.admin_id_check import admin_id_check
@@ -218,7 +218,7 @@ def delete_profile():
 def get_tutor_appointments(tutor_id):
     tutor = tutor_view(id=tutor_id)
 
-    if tutor == None:
+    if tutor is None:
         raise ExpectedError("no tutor relates to the id", 404)
     your_appointments = []
     other = []

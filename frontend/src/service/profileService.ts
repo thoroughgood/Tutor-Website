@@ -56,12 +56,14 @@ export interface ProfileService {
     searchParams: TutorSearchParams,
   ) => Promise<{ tutorIds: string[] }>
   searchAll: (searchParams: AdminSearchParams) => Promise<{
-    userInfos: { id: string; accountType: "tutor" | "student" }[]
+    userInfos: { id: string; accountType: "tutor" | "student" | "admin" }[]
   }>
   getStudentProfile: (studentId: string) => Promise<StudentProfile>
   setOwnStudentProfile: (
     studentProfile: StudentSelfEditReqBody,
   ) => Promise<SuccessResponse>
+  getUserType: (userId: string) => Promise<"tutor" | "student" | "admin">
+  resetPassword: (password: string, id: string) => Promise<SuccessResponse>
 }
 
 export class HTTPProfileService extends HTTPService implements ProfileService {
@@ -88,7 +90,7 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
   }
 
   async searchAll(searchParams: AdminSearchParams): Promise<{
-    userInfos: { id: string; accountType: "tutor" | "student" }[]
+    userInfos: { id: string; accountType: "tutor" | "student" | "admin" }[]
   }> {
     const url = new URL(`${this.backendURL}/admin/search`)
     const basicParams = { ...searchParams }
@@ -148,7 +150,7 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     return resp.json()
   }
 
-  async deleteOwnTutorProfile(tutorId: string): Promise<SuccessResponse> {
+  async deleteOwnTutorProfile(): Promise<SuccessResponse> {
     const resp = wretch(`${this.backendURL}/tutor/`)
       .options({
         credentials: "include",
@@ -181,7 +183,7 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
       .put()
     return resp.json()
   }
-  async deleteOwnStudentProfile(studentId: string): Promise<SuccessResponse> {
+  async deleteOwnStudentProfile(): Promise<SuccessResponse> {
     const resp = wretch(`${this.backendURL}/student/`)
       .options({
         credentials: "include",
@@ -190,6 +192,54 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
       .json({})
       .delete()
     return await resp.json()
+  }
+
+  async getUserType(userId: string): Promise<"tutor" | "student" | "admin"> {
+    const resp = wretch(`${this.backendURL}/utils/usertype/${userId}`).get()
+    const respData = (await resp.json()) as {
+      accountType: "tutor" | "student" | "admin"
+    }
+    return respData.accountType
+  }
+
+  async resetPassword(
+    password: string,
+    profileId: string,
+  ): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/resetpassword`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({ newPassword: password, id: profileId })
+      .put()
+    return await resp.json()
+  }
+
+  async adminDeleteProfile(
+    profileId: string,
+    accountType: string,
+  ): Promise<SuccessResponse> {
+    if (accountType === "student") {
+      const resp = wretch(`${this.backendURL}/student/`)
+        .options({
+          credentials: "include",
+          mode: "cors",
+        })
+        .json({ id: profileId })
+        .delete()
+      return await resp.json()
+    } else if (accountType === "tutor") {
+      const resp = wretch(`${this.backendURL}/tutor/`)
+        .options({
+          credentials: "include",
+          mode: "cors",
+        })
+        .json({ id: profileId })
+        .delete()
+      return await resp.json()
+    }
+    return { success: false }
   }
 }
 
@@ -237,6 +287,10 @@ export class MockProfileService implements ProfileService {
     return { userInfos: [{ id: "1337", accountType: "tutor" as "tutor" }] }
   }
 
+  async resetPassword(_profileId: string) {
+    return { success: true }
+  }
+
   async setOwnTutorProfile(tutorProfile: TutorSelfEditReqBody) {
     this.mockTutorProfile = { ...tutorProfile, id: "1337" }
     return { success: true }
@@ -260,5 +314,9 @@ export class MockProfileService implements ProfileService {
       id: this.mockStudentProfile.id,
     }
     return { success: true }
+  }
+
+  async getUserType(_userId: string): Promise<"tutor" | "student" | "admin"> {
+    return "tutor"
   }
 }

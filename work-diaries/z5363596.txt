@@ -46,3 +46,8 @@ weren't hampered by sqlite's limitations. Moreover, I refactored all routes wher
 with the jsonschema validation library, which made doing so much easier. Cutting down on code in routes, and introducing
 more consistent error handling and, consistently handling same validations the same way across multiple routes. Finally,
 I started and finishing writing the `student/appointments` route and, `admin/search` and `admin/create` routes.
+
+Week 7 
+Wrote the `appointment/request` route, and `appointment/[appointmentId]` routes. Spent the rest of the time doing 
+minor refactoring, fixes and, helping the rest of the backend team in, mostly, getting into grips with the new testing
+infrastructure. 

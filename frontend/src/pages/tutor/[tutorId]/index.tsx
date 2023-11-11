@@ -22,6 +22,7 @@ export default function TutorProfile() {
   const router = useRouter()
   const { user } = useUser()
   const tutorId = router.query.tutorId as string
+  console.log(tutorId)
   const isOwnProfile = tutorId === user?.userId
   const { data } = useQuery({
     queryKey: ["tutors", tutorId],
@@ -35,7 +36,6 @@ export default function TutorProfile() {
   if (!data) {
     return <LoadingSpinner />
   }
-
   return (
     <div className="h-full w-full p-12">
       <div className="mx-auto flex max-w-xl flex-col gap-3">
@@ -49,28 +49,48 @@ export default function TutorProfile() {
           location={data.location}
         />
         <div className="grid grid-cols-2 gap-2">
-          {isOwnProfile ? (
+          {isOwnProfile && (
             <>
               <Button asChild variant="secondary" className="flex gap-2">
-                <Link className="" href={`${user?.userId}/edit`}>
+                <Link className="" href={`${tutorId}/edit`}>
                   <User className="w-5" />
                   Edit Profile
                 </Link>
               </Button>
 
-              <Button variant="default" className="flex gap-2">
-                <Calendar className="w-5" />
-                Edit Schedule
+              <Button asChild variant="default" className="flex gap-2">
+                <Link href={`/appointments`}>
+                  <Calendar className="w-5" />
+                  Edit Schedule
+                </Link>
               </Button>
             </>
-          ) : (
+          )}
+          {user?.userType === "admin" && (
             <>
+              <Button asChild variant="secondary" className="flex gap-2">
+                <Link className="" href={`${tutorId}/edit`}>
+                  <User className="w-5" />
+                  Edit Profile
+                </Link>
+              </Button>
+
               <Button variant="secondary" className="flex gap-2">
                 <MessageCircle className="w-5" />
                 Message Tutor
               </Button>
+            </>
+          )}
+          {user?.userType !== "admin" && !isOwnProfile && (
+            <>
+              <Button asChild variant="secondary" className="flex gap-2">
+                <Link href={`/messages/direct/${tutorId}`}>
+                  <MessageCircle className="w-5" />
+                  Message Tutor
+                </Link>
+              </Button>
               <Button asChild variant="default" className="flex gap-2">
-                <Link href={`/tutor/${tutorId}/schedule`}>
+                <Link href={`/tutor/${tutorId as string}/schedule`}>
                   <Calendar className="w-5" />
                   Create Appointment
                 </Link>

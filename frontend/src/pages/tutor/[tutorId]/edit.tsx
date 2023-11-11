@@ -28,6 +28,7 @@ import useUser from "@/hooks/useUser"
 import { useRouter } from "next/router"
 import {
   HTTPProfileService,
+  TutorProfile,
   TutorSelfEditReqBody,
 } from "@/service/profileService"
 import { useQuery, useQueryClient } from "react-query"
@@ -39,6 +40,7 @@ import Link from "next/link"
 import DeleteModal from "@/components/deleteModal"
 import EditOfferings from "@/components/editOfferings"
 import { fileToDataUrl } from "@/service/helpers"
+import ResetModal from "@/components/resetModal"
 
 const authService = new HTTPAuthService()
 
@@ -115,6 +117,14 @@ export default function Edit() {
       form.setValue("profilePicture", "")
     }
   }, [data, form])
+  //if the user is a tutor or student and it's not their profile they dont have access. Admins always have access
+  if (
+    (user?.userType === "tutor" || user?.userType === "student") &&
+    !isOwnProfile
+  ) {
+    return <div>You do not have access to this webpage</div>
+  }
+
   if (!data) {
     return (
       <div className="grid h-full w-full  place-content-center overflow-hidden p-16">
@@ -130,7 +140,7 @@ export default function Edit() {
 
     try {
       values.courseOfferings.forEach((course) => {
-        courses.push(course.name)
+        if (course.name !== "") courses.push(course.name)
       })
       //need to manipulate profile value
       let file = ""
@@ -158,7 +168,14 @@ export default function Edit() {
       if (values.profilePicture.length === 0) {
         tutorObj.profilePicture = null
       }
-      const response = await profileService.setOwnTutorProfile(tutorObj)
+      let response
+      if (user?.userType === "admin") {
+        ;(tutorObj as TutorProfile).id = tutorId
+        response = await profileService.setOwnTutorProfile(tutorObj)
+      } else {
+        response = await profileService.setOwnTutorProfile(tutorObj)
+      }
+
       if (response.success) {
         router.push(`/tutor/${router.query.tutorId as string}/`)
       }
@@ -251,11 +268,12 @@ export default function Edit() {
           </Form>
         </CardContent>
       </Card>
-      <div className="p-auto relative mx-auto my-5 max-w-sm text-center">
+      <div className=" p-auto relative mx-auto my-5 max-w-sm text-center">
         <Button asChild className="m-3 p-6" variant="secondary">
-          <Link href={`../${user?.userId}`}> Back </Link>
+          <Link href={`../${tutorId}`}> Back </Link>
         </Button>
-        <DeleteModal profileId={tutorId} />
+        <DeleteModal profileId={tutorId} accountType="tutor" />
+        {user?.userType === "admin" && <ResetModal profileId={tutorId} />}
       </div>
     </div>
   )
