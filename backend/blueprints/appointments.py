@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, session
+from datetime import datetime, MINYEAR
 from helpers.views import student_view, tutor_view
 from jsonschemas import appointments_schema
 from helpers.error_handlers import (
@@ -30,7 +31,11 @@ def get_appointments(args):
     if "sortBy" in args:
         # figure out a way to sort by msgs
         apts = sorted(
-            user.appointments, key=lambda apt: apt.messages[0].sentTime, reverse=True
+            user.appointments,
+            key=lambda apt: apt.messages[0].sentTime
+            if len(apt.messages) != 0
+            else datetime(MINYEAR, 1, 1),
+            reverse=True,
         )
     else:
         apts = user.appointments
