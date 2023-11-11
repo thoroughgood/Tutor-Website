@@ -62,7 +62,7 @@ export default function Login() {
         userId: id,
         userType: values.accountType,
       })
-      router.push("/dashboard")
+      router.push("/appointments")
     } catch (error) {
       toast.error(getErrorMessage(error))
     }
