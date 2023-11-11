@@ -2,6 +2,7 @@ import Messages, { OptimisticMessage } from "@/components/messages"
 import SmartAvatar from "@/components/smartAvatar"
 import useUser from "@/hooks/useUser"
 import useUserType from "@/hooks/useUserType"
+import { HTTPAppointmentService } from "@/service/appointmentService"
 import { HTTPMessageService, Message } from "@/service/messageService"
 import { HTTPProfileService } from "@/service/profileService"
 import { nanoid } from "nanoid"
@@ -12,39 +13,50 @@ import { useMutation, useQuery, useQueryClient } from "react-query"
 
 const messageService = new HTTPMessageService()
 const profileService = new HTTPProfileService()
-export default function DirectMessage() {
+const appointmentService = new HTTPAppointmentService()
+export default function AppointmentMessage() {
   const router = useRouter()
-  const otherUserId = router.query.userId as string
-  const otherUserType = useUserType(otherUserId)
+  const appointmentId = router.query.appointmentId as string
   const { user } = useUser()
   const queryClient = useQueryClient()
+  const { data: appointment } = useQuery({
+    queryFn: async () => await appointmentService.getAppointment(appointmentId),
+    queryKey: ["appointments", appointmentId],
+  })
+  const otherUserId =
+    user?.userType === "student" ? appointment?.tutorId : appointment?.studentId
+  const otherUserType = useUserType(otherUserId)
 
   const { data: otherUserProfile } = useQuery({
     queryKey: [`${otherUserType}s`, otherUserId],
     queryFn: async () => {
       if (otherUserType === "student") {
-        return await profileService.getStudentProfile(otherUserId)
+        return await profileService.getStudentProfile(otherUserId as string)
       }
-      return await profileService.getTutorProfile(otherUserId)
+      return await profileService.getTutorProfile(otherUserId as string)
     },
-    enabled: !!otherUserType,
+    enabled: !!otherUserType && !!otherUserId,
   })
 
   const { data: initialMessages } = useQuery({
-    queryKey: ["messages", "direct", user?.userId],
-    queryFn: async () => await messageService.getDirectMessages(otherUserId),
+    queryKey: ["messages", "appointment", appointmentId],
+    queryFn: async () =>
+      await messageService.getAppointmentMessages(otherUserId as string),
   })
   const { mutate: sendMessage } = useMutation({
     mutationFn: async (messageContent: string) =>
-      await messageService.sendDirectMessage(otherUserId, messageContent),
+      await messageService.sendAppointmentMessage(
+        appointmentId,
+        messageContent,
+      ),
     onMutate: async (messageContent: string) => {
       await queryClient.cancelQueries({
-        queryKey: ["messages", "direct", user?.userId],
+        queryKey: ["messages", "appointment", appointmentId],
       })
       const prevMessages = queryClient.getQueryData([
         "messages",
-        "direct",
-        user?.userId,
+        "appointment",
+        appointmentId,
       ])
       const optimisticMessage: OptimisticMessage = {
         isOptimistic: true,
@@ -52,13 +64,13 @@ export default function DirectMessage() {
         id: "tmp-" + nanoid(),
       }
       queryClient.setQueryData<(Message | OptimisticMessage)[]>(
-        ["messages", "direct", user?.userId],
+        ["messages", "appointment", appointmentId],
         (old) => [optimisticMessage, ...(old || [])],
       )
       return { prevMessages }
     },
     onSettled: () => {
-      queryClient.invalidateQueries(["messages", "direct", user?.userId])
+      queryClient.invalidateQueries(["messages", "appointment", appointmentId])
     },
   })
 
@@ -82,7 +94,7 @@ export default function DirectMessage() {
               className="h-20 w-20"
             />
             <div className="flex flex-col justify-center">
-              <h2 className="text-2xl">Direct message with</h2>
+              <h2 className="text-2xl">Appointment message with</h2>
               <h3>{otherUserProfile?.name}</h3>
             </div>
           </Link>

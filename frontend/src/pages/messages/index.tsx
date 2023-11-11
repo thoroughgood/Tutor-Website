@@ -14,6 +14,15 @@ export default function Messages() {
     queryFn: async () => await messageService.getDirectChannelList(),
     enabled: !viewingAppointmentMessages,
   })
+  const { data: appointmentChannels } = useQuery({
+    queryKey: ["appointmentMessages"],
+    queryFn: async () => await messageService.getAppointmentList(),
+    enabled: viewingAppointmentMessages,
+  })
+
+  const channels = viewingAppointmentMessages
+    ? appointmentChannels
+    : directMessageChannels
 
   return (
     <div className="flex h-full w-full justify-center overflow-hidden">
@@ -30,13 +39,13 @@ export default function Messages() {
           />
         </CardHeader>
         <CardContent className="flex flex-col gap-6 overflow-y-auto">
-          {directMessageChannels?.map((userId) => (
+          {channels?.map((channelId) => (
             <MessageChannelPreview
-              id={userId}
+              id={channelId}
               channelType={
                 viewingAppointmentMessages ? "appointment" : "direct"
               }
-              key={userId}
+              key={channelId}
             />
           ))}
         </CardContent>
