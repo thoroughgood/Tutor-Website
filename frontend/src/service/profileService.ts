@@ -8,7 +8,7 @@ interface UserProfile {
   name: string
   bio: string
   email: string
-  profilePicture: string | null
+  profilePicture?: string | null
   location: string | null
   phoneNumber: string | null
 }

@@ -166,7 +166,7 @@ export default function Edit() {
         tutorObj.location = null
       }
       if (values.profilePicture.length === 0) {
-        tutorObj.profilePicture = null
+        delete tutorObj.profilePicture
       }
       let response
       if (user?.userType === "admin") {
@@ -175,7 +175,7 @@ export default function Edit() {
       } else {
         response = await profileService.setOwnTutorProfile(tutorObj)
       }
-
+      console.log(tutorObj)
       if (response.success) {
         router.push(`/tutor/${router.query.tutorId as string}/`)
       }
