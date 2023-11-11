@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, session
-from datetime import datetime, MINYEAR
-from helpers.views import student_view, tutor_view
+from datetime import datetime, MINYEAR, timezone
 from prisma.models import User
 from jsonschemas import appointments_schema
 from helpers.error_handlers import (
@@ -60,7 +59,7 @@ def get_appointments(args):
             appointments,
             key=lambda apt: apt.messages[0].sentTime
             if len(apt.messages) != 0
-            else datetime(MINYEAR, 1, 1),
+            else datetime(MINYEAR, 1, 1, tzinfo=timezone.utc),
             reverse=True,
         )
 
