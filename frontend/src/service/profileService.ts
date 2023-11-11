@@ -117,13 +117,24 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
   }
 
   async uploadDocument(documents: string): Promise<{ id: string }> {
-    const data = wretch(`${this.backendURL}/document`)
+    const data = wretch(`${this.backendURL}/document/`)
       .options({
         credentials: "include",
         mode: "cors",
       })
       .json({ document: documents })
       .post()
+    return await data.json()
+  }
+
+  async deleteDocument(docId: string): Promise<{ id: string }> {
+    const data = wretch(`${this.backendURL}/document/`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({ id: docId })
+      .delete()
     return await data.json()
   }
 

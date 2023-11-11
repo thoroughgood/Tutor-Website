@@ -14,7 +14,6 @@ import { HTTPProfileService } from "@/service/profileService"
 import { useRouter } from "next/router"
 import DocumentImg from "./documentImg"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "./ui/form"
-import { Label } from "@radix-ui/react-label"
 import { Input } from "./ui/input"
 import { getErrorMessage } from "@/lib/utils"
 import { fileToDataUrl } from "@/service/helpers"
@@ -60,6 +59,7 @@ export default function DocumentModal({ documentIds }: documentModalInterface) {
   })
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setSubmitLoading(true)
     console.log("hey")
     console.log(values)
     try {
@@ -68,11 +68,16 @@ export default function DocumentModal({ documentIds }: documentModalInterface) {
         console.log(values.document)
         doc = (await fileToDataUrl(values.document)) as string
       }
-      const docResponse = await profileService.uploadDocument(doc)
+      if (doc != "") {
+        const docResponse = await profileService.uploadDocument(doc)
+        console.log(docResponse)
+      }
+
       queryClient.invalidateQueries(["tutors", tutorId])
     } catch (error) {
       toast.error(getErrorMessage(error))
     }
+    setSubmitLoading(false)
   }
 
   useEffect(() => {
@@ -86,13 +91,13 @@ export default function DocumentModal({ documentIds }: documentModalInterface) {
           View Documents
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[53%] max-w-5xl overflow-auto">
+      <DialogContent className="max-h-[80%] max-w-5xl overflow-auto">
         <DialogHeader>
           <DialogTitle> Documents </DialogTitle>
-          <DialogDescription className="flex flex-wrap gap-4 ">
+          <DialogDescription>
             <Form {...form}>
               <form
-                className="flex flex-col gap-4 "
+                className="flex gap-0"
                 onSubmit={form.handleSubmit(onSubmit)}
                 noValidate
               >
@@ -101,7 +106,6 @@ export default function DocumentModal({ documentIds }: documentModalInterface) {
                   name="document"
                   render={({ field }) => (
                     <FormItem>
-                      <Label>Document Upload</Label>
                       <FormControl>
                         <Input
                           type="file"
@@ -119,16 +123,19 @@ export default function DocumentModal({ documentIds }: documentModalInterface) {
                 />
                 <LoadingButton
                   role="submit"
-                  className="w-3/12"
+                  className="w-1/14"
                   isLoading={submitLoading}
                 >
-                  Submit Changes
+                  Add documents
                 </LoadingButton>
               </form>
             </Form>
-            {documentIds.map((tId) => (
-              <DocumentImg key={tId} documentId={tId} />
-            ))}
+            <hr className="mt-5" />
+            <div className="flex h-[100rem] flex-col items-center">
+              {documentIds.map((tId) => (
+                <DocumentImg key={tId} documentId={tId} />
+              ))}
+            </div>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter />
