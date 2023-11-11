@@ -139,7 +139,7 @@ export default function DocumentModal({ documentIds }: documentModalInterface) {
               </>
             )}
 
-            <div className="flex h-[100rem] flex-col items-center">
+            <div className="flex h-[30rem] flex-col items-center">
               {documentIds.map((tId) => (
                 <DocumentImg key={tId} documentId={tId} isAccount={isAccount} />
               ))}
