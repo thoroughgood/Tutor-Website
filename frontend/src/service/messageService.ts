@@ -86,7 +86,7 @@ export class HTTPMessageService extends HTTPService implements MessageService {
     const resp = (await wretch(`${this.backendURL}/appointments`)
       .addon(QueryStringAddon)
       .options({
-        credentiasl: "include",
+        credentials: "include",
         mode: "cors",
       })
       .query({
