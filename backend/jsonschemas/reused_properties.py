@@ -139,7 +139,8 @@ message_prop = {
 }
 
 sort_by_prop = {
-    "sort_by": {
+    "sortBy": {
         "type": "string",
+        "pattern": "^messageSent$",
     }
 }

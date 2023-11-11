@@ -12,7 +12,7 @@ appointments = Blueprint("appointments", __name__)
 
 @appointments.route("/", methods=["GET"])
 @error_decorator
-@validate_decorator("json", appointments_schema)
+@validate_decorator("query_string", appointments_schema)
 def get_appointments(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
