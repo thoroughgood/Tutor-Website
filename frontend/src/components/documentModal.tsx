@@ -52,6 +52,8 @@ export default function DocumentModal({ documentIds }: documentModalInterface) {
   const tutorId = router.query.tutorId as string
   const [submitLoading, setSubmitLoading] = useState(false)
   const { user, setUser } = useUser()
+  const isAccount = tutorId === user?.userId
+
   //we need to do for each item in documentIds -> render a new one given document id as a key and passing it in as a parameter
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -95,45 +97,51 @@ export default function DocumentModal({ documentIds }: documentModalInterface) {
         <DialogHeader>
           <DialogTitle> Documents </DialogTitle>
           <DialogDescription>
-            <Form {...form}>
-              <form
-                className="flex gap-0"
-                onSubmit={form.handleSubmit(onSubmit)}
-                noValidate
-              >
-                <FormField
-                  control={form.control}
-                  name="document"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          type="file"
-                          onChange={(e) => {
-                            e.preventDefault()
-                            if (e.target.files) {
-                              field.onChange(e.target.files[0])
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <LoadingButton
-                  role="submit"
-                  className="w-1/14"
-                  isLoading={submitLoading}
-                >
-                  Add documents
-                </LoadingButton>
-              </form>
-            </Form>
-            <hr className="mt-5" />
+            {isAccount && (
+              <>
+                {" "}
+                <Form {...form}>
+                  <form
+                    className="flex gap-0"
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    noValidate
+                  >
+                    <FormField
+                      control={form.control}
+                      name="document"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="file"
+                              onChange={(e) => {
+                                e.preventDefault()
+                                if (e.target.files) {
+                                  field.onChange(e.target.files[0])
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <LoadingButton
+                      role="submit"
+                      className="w-1/14"
+                      isLoading={submitLoading}
+                    >
+                      Add documents
+                    </LoadingButton>
+                  </form>
+                </Form>
+                <hr className="mt-5" />
+              </>
+            )}
+
             <div className="flex h-[100rem] flex-col items-center">
               {documentIds.map((tId) => (
-                <DocumentImg key={tId} documentId={tId} />
+                <DocumentImg key={tId} documentId={tId} isAccount={isAccount} />
               ))}
             </div>
           </DialogDescription>

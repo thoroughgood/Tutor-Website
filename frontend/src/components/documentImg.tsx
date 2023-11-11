@@ -10,9 +10,13 @@ const profileService = new HTTPProfileService()
 
 export interface documentImgInterface {
   documentId: string
+  isAccount: boolean
 }
 
-export default function DocumentImg({ documentId }: documentImgInterface) {
+export default function DocumentImg({
+  documentId,
+  isAccount,
+}: documentImgInterface) {
   //deleteOwnUserProfile needs to grab the id of the profile we are on
   const queryClient = useQueryClient()
   const [deleted, setDeleted] = useState(false)
@@ -48,9 +52,13 @@ export default function DocumentImg({ documentId }: documentImgInterface) {
           src={data.document}
           className="h-full w-full rounded border-2 border-inherit"
         />
-        <Button variant="ghost" className="h-9 w-10 p-0" onClick={deletion}>
-          <X color="red" />
-        </Button>
+        {isAccount && (
+          <>
+            <Button variant="ghost" className="h-9 w-10 p-0" onClick={deletion}>
+              <X color="red" />
+            </Button>
+          </>
+        )}
       </div>
     )
   }
