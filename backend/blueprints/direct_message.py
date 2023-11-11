@@ -34,7 +34,7 @@ def dm_all():
         dms,
         key=lambda dm: dm.messages[0].sentTime
         if len(dm.messages) != 0
-        else datetime(MINYEAR, 1, 1),
+        else datetime(MINYEAR, 1, 1, tzinfo=timezone.utc),
         reverse=True,
     )
 
