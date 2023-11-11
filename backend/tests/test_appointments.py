@@ -1,9 +1,6 @@
-import pytest
 from pytest_mock import MockerFixture
-from pytest_mock.plugin import MockType
 from flask.testing import FlaskClient
-from prisma.models import Appointment, User, Rating
-from prisma.errors import RecordNotFoundError
+from prisma.models import Appointment, User
 
 ############################## APPOINTMENTS TESTS ##################################
 
@@ -18,12 +15,7 @@ def test_appointments_no_sortby(
 ):
     client = setup_test
 
-    # No JSON Body
-    resp = client.get("/appointments/")
-    assert resp.json == {"error": "content-type was not json or data was malformed"}
-    assert resp.status_code == 415
-
-    resp = client.get("/appointments/", json={})
+    resp = client.get("/appointments/", query_string={})
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
@@ -40,7 +32,7 @@ def test_appointments_no_sortby(
         where={"email": fake_student_apt.email}, include=mocker.ANY
     )
 
-    resp = client.get("/appointments/", json={})
+    resp = client.get("/appointments/", query_string={})
     assert resp.status_code == 200
     assert resp.json == {
         "appointments": [fake_appointment_msg.id, fake_appointment_msg2.id]
@@ -57,12 +49,7 @@ def test_appointments_sortby(
 ):
     client = setup_test
 
-    # No JSON Body
-    resp = client.get("/appointments/")
-    assert resp.json == {"error": "content-type was not json or data was malformed"}
-    assert resp.status_code == 415
-
-    resp = client.get("/appointments/", json={})
+    resp = client.get("/appointments/", query_string={})
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
@@ -79,44 +66,30 @@ def test_appointments_sortby(
         where={"email": fake_student_apt.email}, include=mocker.ANY
     )
 
+    # sortBy does not equal messageSent
+    resp = client.get("/appointments/", query_string={"sortBy": "notmessageSent"})
+    assert resp.status_code == 400
+    assert (
+        resp.json["error"] == "When specified, 'sortBy' must be equal to 'messageSent'"
+    )
+
     # Invalid appointment id
-    resp = client.get("/appointments/", json={"sortBy": "messageSent"})
+    resp = client.get("/appointments/", query_string={"sortBy": "messageSent"})
     assert resp.status_code == 200
     assert resp.json == {
         "appointments": [fake_appointment_msg.id, fake_appointment_msg2.id]
     }
 
 
-def test_appointments_no_apt(
-    setup_test: FlaskClient,
-    mocker: MockerFixture,
-    find_unique_users_mock,
-    fake_student: User,
-):
+def test_appointments_no_apt(setup_test: FlaskClient, fake_login):
     client = setup_test
 
-    # No JSON Body
-    resp = client.get("/appointments/")
-    assert resp.json == {"error": "content-type was not json or data was malformed"}
-    assert resp.status_code == 415
-
-    resp = client.get("/appointments/", json={})
+    resp = client.get("/appointments/", query_string={})
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
-    client.post(
-        "/login",
-        json={
-            "email": fake_student.email,
-            "password": "12345678",
-            "accountType": "student",
-        },
-    )
+    fake_login("fake_student")
 
-    find_unique_users_mock.assert_called_with(
-        where={"email": fake_student.email}, include=mocker.ANY
-    )
-
-    resp = client.get("/appointments/", json={})
+    resp = client.get("/appointments/", query_string={})
     assert resp.status_code == 200
     assert resp.json == {"appointments": []}
