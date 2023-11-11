@@ -81,7 +81,7 @@ def test_appointments_sortby(
     }
 
 
-def test_appointments_no_apt(setup_test: FlaskClient, fake_login):
+def test_appointments_no_apt(setup_test: FlaskClient, fake_login, fake_student):
     client = setup_test
 
     resp = client.get("/appointments/", query_string={})

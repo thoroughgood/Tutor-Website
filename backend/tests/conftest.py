@@ -216,7 +216,9 @@ def fake_user():
                     studentInfo=models.Student(id=id, userInfoId=id),
                     tutorialState=True,
                 )
-                user.studentInfo = models.Student(id=id, userInfoId=id, userInfo=user)
+                user.studentInfo = models.Student(
+                    id=id, userInfoId=id, userInfo=user, appointments=[]
+                )
                 return user
             case "tutor":
                 user = models.User(
@@ -227,7 +229,9 @@ def fake_user():
                     tutorInfo=models.Tutor(id=id, userInfoId=id),
                     tutorialState=True,
                 )
-                user.tutorInfo = models.Tutor(id=id, userInfoId=id, userInfo=user)
+                user.tutorInfo = models.Tutor(
+                    id=id, userInfoId=id, userInfo=user, appointments=[]
+                )
                 return user
             case "admin":
                 user = models.User(
