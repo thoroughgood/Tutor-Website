@@ -1,5 +1,4 @@
 import { nanoid } from "nanoid"
-import QueryStringAddon from "wretch/addons/queryString"
 import { HTTPProfileService } from "./profileService"
 import { HTTPService } from "./helpers"
 import wretch from "wretch"
@@ -82,19 +81,15 @@ export class HTTPMessageService extends HTTPService implements MessageService {
   }
 
   async getAppointmentList(): Promise<string[]> {
-    console.log("get appointmnet list")
-    const resp = (await wretch(`${this.backendURL}/appointments`)
-      .addon(QueryStringAddon)
+    const resp = (await wretch(
+      `${this.backendURL}/appointments/?sortBy=messageSent`,
+    )
       .options({
         credentials: "include",
         mode: "cors",
       })
-      .query({
-        sortBy: "messageSent",
-      })
       .get()
       .json()) as { appointments: string[] }
-    console.log(resp)
     return resp.appointments
   }
 
