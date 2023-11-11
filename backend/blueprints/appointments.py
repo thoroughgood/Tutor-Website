@@ -12,7 +12,7 @@ appointments = Blueprint("appointments", __name__)
 
 @appointments.route("/", methods=["GET"])
 @error_decorator
-@validate_decorator("json", appointments_schema)
+@validate_decorator("query_string", appointments_schema)
 def get_appointments(args):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
@@ -27,7 +27,7 @@ def get_appointments(args):
     if user.appointments is None:
         user.appointments = []
 
-    if "sortBy" in args and args["sortBy"] == "messageSent":
+    if "sortBy" in args:
         # figure out a way to sort by msgs
         apts = sorted(
             user.appointments, key=lambda apt: apt.messages[0].sentTime, reverse=True

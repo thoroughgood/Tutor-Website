@@ -775,25 +775,19 @@ def test_messages_args(
 ):
     client = setup_test
 
-    # No JSON Body
+    # Missing id, defaults to appointment/<appointment_id> route
     resp = client.get("/appointment/messages")
-    assert resp.json == {"error": "content-type was not json or data was malformed"}
-    assert resp.status_code == 415
+    assert resp.status_code == 404
 
-    # Missing id
-    resp = client.get("/appointment/messages", json={})
-    assert resp.json == {"error": "'id' was missing from field(s)"}
-    assert resp.status_code == 400
-
-    # Missing message field
-    resp = client.get("/appointment/messages", json={"id": "123"})
+    # Missing not logged in
+    resp = client.get("/appointment/123/messages")
     assert resp.json == {"error": "No user is logged in"}
     assert resp.status_code == 401
 
     fake_login("fake_student")
 
     # Invalid appointment id
-    resp = client.get("/appointment/messages", json={"id": "123"})
+    resp = client.get("/appointment/123/messages")
     assert resp.json == {"error": "Appointment does not exist"}
     assert resp.status_code == 400
 
@@ -804,12 +798,7 @@ def test_messages_args(
     fake_appointment_msg.messages = [fake_message2, fake_message]
 
     # successful message on an appointment
-    resp = client.get(
-        "/appointment/messages",
-        json={
-            "id": fake_appointment_msg.id,
-        },
-    )
+    resp = client.get(f"/appointment/{fake_appointment_msg.id}/messages")
     assert resp.status_code == 200
     assert resp.json["messages"] == [
         {

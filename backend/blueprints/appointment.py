@@ -7,7 +7,6 @@ from jsonschemas import (
     appointment_request_schema,
     appointment_delete_schema,
     appointment_message_schema,
-    appointment_messages_schema,
     appointment_modify_schema,
     appointment_rating_schema,
 )
@@ -280,15 +279,14 @@ def appointment_rating(args):
     return jsonify({"success": True}), 200
 
 
-@appointment.route("/messages", methods=["GET"])
+@appointment.route("/<appointment_id>/messages", methods=["GET"])
 @error_decorator
-@validate_decorator("json", appointment_messages_schema)
-def appointment_messages(args):
+def appointment_messages(appointment_id):
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
     appointment = Appointment.prisma().find_unique(
-        where={"id": args["id"]},
+        where={"id": appointment_id},
         include={"messages": {"orderBy": {"sentTime": "desc"}}},
     )
 
