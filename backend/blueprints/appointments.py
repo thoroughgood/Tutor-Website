@@ -56,14 +56,12 @@ def get_appointments(args):
 
     if "sortBy" in args:
         # figure out a way to sort by msgs
-        apts = sorted(
+        appointments = sorted(
             appointments,
             key=lambda apt: apt.messages[0].sentTime
             if len(apt.messages) != 0
             else datetime(MINYEAR, 1, 1),
             reverse=True,
         )
-    else:
-        apts = appointments
 
-    return jsonify({"appointments": [apt.id for apt in apts]}), 200
+    return jsonify({"appointments": [apt.id for apt in appointments]}), 200

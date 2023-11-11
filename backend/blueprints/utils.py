@@ -15,10 +15,10 @@ def get_id():
             include={"adminInfo": True, "studentInfo": True, "tutorInfo": True},
         )
         if user is None:
-            return jsonify({}), 401
+            return jsonify({}), 404
         return jsonify({"id": session["user_id"], "accountType": check_type(user)}), 200
     else:
-        return jsonify({}), 401
+        return jsonify({}), 404
 
 
 @utils.route("/usertype/<user_id>", methods=["GET"])
