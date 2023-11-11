@@ -69,7 +69,7 @@ export default function Register() {
     try {
       const { id } = await authService.register(values)
       setUser({ userId: id, userType: values.accountType })
-      router.push("/dashboard")
+      router.push("/appointments")
     } catch (error) {
       toast.error(getErrorMessage(error))
     }

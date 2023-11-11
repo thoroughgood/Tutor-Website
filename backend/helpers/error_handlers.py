@@ -71,7 +71,7 @@ def error_decorator(f):
         except ValidationError as e:
             return validation_pattern_match(e)
         except:
-            current_app.logger.error("\n" + traceback.format_exc() + "\n")
+            current_app.logger.critical("\n" + traceback.format_exc() + "\n")
             return error_generator("Internal Server Error", 500)
 
     return wrapper

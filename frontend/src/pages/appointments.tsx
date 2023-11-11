@@ -3,6 +3,7 @@ import LoadingButton from "@/components/loadingButton"
 import LoadingSpinner from "@/components/loadingSpinner"
 import { Button } from "@/components/ui/button"
 import WeeklyCalendar from "@/components/weeklyCalendar"
+import useStudentAppointments from "@/hooks/useStudentAppointments"
 import useUser from "@/hooks/useUser"
 import {
   cn,
@@ -33,7 +34,65 @@ export default function Appointments() {
 }
 
 function AppointmentsAsStudent() {
-  return <div>studnetappointment</div>
+  const { requested, completed, accepted } = useStudentAppointments()
+  return (
+    <div className="h-full w-full overflow-hidden p-6">
+      <WeeklyCalendar
+        className="bg-background"
+        interactiveIntervals={[
+          ...requested.map((appointment) => ({
+            title: (
+              <>
+                Requested appointment with{" "}
+                <NameFromTutorId tutorId={appointment.tutorId} />
+              </>
+            ),
+            interval: {
+              start: appointment.startTime,
+              end: appointment.endTime,
+            },
+            componentProps: {
+              children: <AppointmentDialog id={appointment.id} />,
+              className:
+                "bg-slate-100/40 border border-dashed border-slate-500",
+            },
+          })),
+          ...completed.map((appointment) => ({
+            title: (
+              <>
+                Completed appointment with{" "}
+                <NameFromTutorId tutorId={appointment.tutorId} />
+              </>
+            ),
+            interval: {
+              start: appointment.startTime,
+              end: appointment.endTime,
+            },
+            componentProps: {
+              children: <AppointmentDialog id={appointment.id} />,
+              className: "bg-slate-200/40 border border-slate-400",
+            },
+          })),
+          ...accepted.map((appointment) => ({
+            interval: {
+              start: appointment.startTime,
+              end: appointment.endTime,
+            },
+            title: (
+              <>
+                Appointment with{" "}
+                <NameFromTutorId tutorId={appointment.tutorId} />
+              </>
+            ),
+            componentProps: {
+              children: <AppointmentDialog id={appointment.id} />,
+              className: "bg-green-300/40 border border-green-400",
+            },
+          })),
+        ]}
+      />
+    </div>
+  )
 }
 
 function AppointmentsAsTutor() {
@@ -204,6 +263,15 @@ function NameFromStudentId({ studentId }: { studentId?: string }) {
     queryKey: ["students", studentId],
     queryFn: async () => profileService.getStudentProfile(studentId as string),
     enabled: studentId !== undefined,
+  })
+  return <>{profileData?.name}</>
+}
+
+function NameFromTutorId({ tutorId }: { tutorId?: string }) {
+  const { data: profileData } = useQuery({
+    queryKey: ["tutors", tutorId],
+    queryFn: async () => profileService.getTutorProfile(tutorId as string),
+    enabled: tutorId !== undefined,
   })
   return <>{profileData?.name}</>
 }
