@@ -341,7 +341,7 @@ def appointment_message(args):
 
     msg = {
         "id": str(uuid4()),
-        "sentTime": datetime.now(),
+        "sentTime": datetime.now(timezone.utc),
         "content": args["message"],
         "sentBy": {"connect": {"id": appointment.studentId}},
         "appointment": {"connect": {"id": args["id"]}},
