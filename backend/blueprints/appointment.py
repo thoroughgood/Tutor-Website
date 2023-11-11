@@ -374,7 +374,7 @@ def appointment_message(args):
             data={
                 "id": str(uuid4()),
                 "forUser": {"connect": {"id": other_id}},
-                "message": {"connect": {"id": msg["id"]}},
+                "message": {"connect": {"id": msg.id}},
                 "content": f"Received a direct message from {user.name}",
             }
         )
