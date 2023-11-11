@@ -41,7 +41,7 @@ export default function AppointmentMessage() {
   const { data: initialMessages } = useQuery({
     queryKey: ["messages", "appointment", appointmentId],
     queryFn: async () =>
-      await messageService.getAppointmentMessages(otherUserId as string),
+      await messageService.getAppointmentMessages(appointmentId),
   })
   const { mutate: sendMessage } = useMutation({
     mutationFn: async (messageContent: string) =>
