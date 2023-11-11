@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 from flask.testing import FlaskClient
 from prisma.models import User, Message, DirectMessage
@@ -112,7 +112,7 @@ def test_dm_all_args(
             messages=[
                 Message(
                     id=str(uuid4()),
-                    sentTime=datetime.now(),
+                    sentTime=datetime.now(timezone.utc),
                     content="msg",
                     sentBy=fake_student,
                     sentById=fake_student.id,
@@ -140,7 +140,7 @@ def test_dm_all_args(
             messages=[
                 Message(
                     id=str(uuid4()),
-                    sentTime=datetime.now() - timedelta(days=1),
+                    sentTime=datetime.now(timezone.utc) - timedelta(days=1),
                     content="msg",
                     sentBy=fake_student,
                     sentById=fake_student.id,
@@ -157,7 +157,7 @@ def test_dm_all_args(
             messages=[
                 Message(
                     id=str(uuid4()),
-                    sentTime=datetime.now(),
+                    sentTime=datetime.now(timezone.utc),
                     content="msg",
                     sentBy=fake_student,
                     sentById=fake_student.id,
@@ -243,7 +243,7 @@ def test_dm_get_args(
     # with messages
     message1 = Message(
         id=str(uuid4()),
-        sentTime=datetime.now(),
+        sentTime=datetime.now(timezone.utc),
         content="msg",
         sentBy=fake_student,
         sentById=fake_student.id,
@@ -251,7 +251,7 @@ def test_dm_get_args(
 
     message2 = Message(
         id=str(uuid4()),
-        sentTime=datetime.now() + timedelta(days=1),
+        sentTime=datetime.now(timezone.utc) + timedelta(days=1),
         content="another msg",
         sentBy=fake_tutor,
         sentById=fake_tutor.id,
