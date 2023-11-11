@@ -57,7 +57,7 @@ export default function ProfileHeader({
               <div>
                 <Star fill="gold" color="gold" className="w-4" />
               </div>
-              <div>{Math.round(rating * 100) / 100}/5</div>
+              <div>{Math.round(rating * 10) / 10}/5</div>
             </div>
           </FaintIconText>
         )}

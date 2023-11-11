@@ -248,6 +248,7 @@ export class MockProfileService implements ProfileService {
     email: "daniel.nguyen.s173@gmail.com",
     profilePicture: null,
     location: "Sydney",
+    rating: 1,
     phoneNumber: "0411111111",
     courseOfferings: ["COMP2041", "COMP6080"],
     timesAvailable: [

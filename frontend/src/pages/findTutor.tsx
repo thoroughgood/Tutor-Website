@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils"
 import { HTTPProfileService } from "@/service/profileService"
 import { addMinutes } from "date-fns"
-import { Loader2, MapPin, User } from "lucide-react"
+import { Loader2, MapPin, Star, User } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useQuery } from "react-query"
 import { useDebounce } from "usehooks-ts"
@@ -85,6 +85,12 @@ export default function FindTutor() {
             placeholder="Location"
           >
             <MapPin className="h-5 w-5" />
+          </IconInput>
+          <IconInput
+            onChange={(e) => setRating(Number(e.currentTarget.value))}
+            placeholder="Rating"
+          >
+            <Star className="h-5 w-5" />
           </IconInput>
 
           <input

@@ -16,7 +16,6 @@ export default function TutorProfile() {
   const router = useRouter()
   const { user } = useUser()
   const tutorId = router.query.tutorId as string
-  console.log(tutorId)
   const isOwnProfile = tutorId === user?.userId
   const { data } = useQuery({
     queryKey: ["tutors", tutorId],

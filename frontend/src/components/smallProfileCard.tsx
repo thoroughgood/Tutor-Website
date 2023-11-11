@@ -53,7 +53,7 @@ export default function SmallProfileCard({
                       <Star fill="gold" color="gold" className="w-4" />
                     </div>
                     <div>
-                      {Math.round((data as TutorProfile).rating * 100) / 100}/5
+                      {Math.round((data as TutorProfile).rating * 10) / 10}/5
                     </div>
                   </div>
                 )}
