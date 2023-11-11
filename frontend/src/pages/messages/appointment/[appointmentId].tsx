@@ -1,10 +1,12 @@
 import Messages, { OptimisticMessage } from "@/components/messages"
 import SmartAvatar from "@/components/smartAvatar"
+import useAppointmentQuery from "@/hooks/useAppointmentQuery"
 import useUser from "@/hooks/useUser"
 import useUserType from "@/hooks/useUserType"
 import { HTTPAppointmentService } from "@/service/appointmentService"
 import { HTTPMessageService, Message } from "@/service/messageService"
 import { HTTPProfileService } from "@/service/profileService"
+import { format } from "date-fns"
 import { nanoid } from "nanoid"
 import Link from "next/link"
 import { useRouter } from "next/router"
@@ -19,10 +21,7 @@ export default function AppointmentMessage() {
   const appointmentId = router.query.appointmentId as string
   const { user } = useUser()
   const queryClient = useQueryClient()
-  const { data: appointment } = useQuery({
-    queryFn: async () => await appointmentService.getAppointment(appointmentId),
-    queryKey: ["appointments", appointmentId],
-  })
+  const { data: appointment } = useAppointmentQuery(appointmentId)
   const otherUserId =
     user?.userType === "student" ? appointment?.tutorId : appointment?.studentId
   const otherUserType = useUserType(otherUserId)
@@ -96,6 +95,12 @@ export default function AppointmentMessage() {
             <div className="flex flex-col justify-center">
               <h2 className="text-2xl">Appointment message with</h2>
               <h3>{otherUserProfile?.name}</h3>
+              {appointment?.startTime && appointment.endTime && (
+                <h4 className="text-sm text-muted-foreground">
+                  {format(appointment?.startTime, "MMM do p")} to{" "}
+                  {format(appointment?.endTime, "p")}
+                </h4>
+              )}
             </div>
           </Link>
         }
