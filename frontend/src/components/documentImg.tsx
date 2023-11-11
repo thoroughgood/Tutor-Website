@@ -43,7 +43,7 @@ export default function DocumentImg({ documentId }: documentImgInterface) {
       return <></>
     }
     return (
-      <div className="mt-5 flex h-1/2 w-5/6 flex-grow">
+      <div className="mt-5 flex h-1/2 w-5/6">
         <iframe
           src={data.document}
           className="h-full w-full rounded border-2 border-inherit"
