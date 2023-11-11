@@ -4,7 +4,7 @@ from multiprocessing import cpu_count
 # see https://docs.gunicorn.org/en/stable/settings.html for more
 
 wsgi_app = "wsgi:app"
-workers = (2 * cpu_count()) + 1
+workers = 2
 threads = 2
 worker_class = "gthread"
 loglevel = "critical"
