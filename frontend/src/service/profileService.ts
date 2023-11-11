@@ -14,6 +14,7 @@ interface UserProfile {
 }
 
 export interface TutorProfile extends UserProfile {
+  rating: number
   courseOfferings: string[]
   timesAvailable: {
     startTime: string

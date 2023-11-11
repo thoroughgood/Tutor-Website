@@ -33,6 +33,7 @@ export default function TutorProfile() {
           className="mx-auto max-w-xl"
           name={data.name}
           accountType="Tutor"
+          rating={data.rating}
           email={data.email}
           profilePicture={data.profilePicture}
           phoneNumber={data.phoneNumber}
