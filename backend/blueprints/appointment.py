@@ -369,6 +369,7 @@ def appointment_message(args):
         )
     else:
         user = user_view(id=session["user_id"])
+        msg = Message.prisma().create(data=msg)
         Notification.prisma().create(
             data={
                 "id": str(uuid4()),
@@ -377,7 +378,6 @@ def appointment_message(args):
                 "content": f"Received a direct message from {user.name}",
             }
         )
-        msg = Message.prisma().create(data=msg)
         Appointment.prisma().update(
             where={"id": args["id"]},
             data={"messages": {"connect": {"id": msg.id}}},
