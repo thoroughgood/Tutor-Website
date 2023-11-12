@@ -42,3 +42,20 @@ Attended standups, pairr programmed with Terry Thoroughgood and worked through m
 frontend tickets. 
 Refactored weekly schedule calendar to be more extensible through inversion of control. 
 Created various calendar and appointment elements and functionality through new calendar system. 
+
+Week 8
+Attended standups.
+I continued refining the frontend, focusing on polishing the user experience.
+Collaborated with Daniel Wang to solidify the functionalities corresponding to the search filters. 
+Practised client demo meeting and had a sucessful demo to both tutor and client. They were both happy with progress.
+
+Week 9
+Attended standups.
+This week was dedicated to consolidating the sprint 3 features. 
+Worked closely with the team to ensure the integration of the backend functionalities with the frontend components was seamless. 
+Encountered many backend bugs, however fixed them swiftly with the help of Daniel Wang.
+
+Week 10
+Attended stantups.
+Prepared for client demo and tutor demo. The project is mostly complete with a few bugs here and there.
+Working with backend team to iron out backend bugs.
