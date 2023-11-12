@@ -60,3 +60,13 @@ Attended and discussed opinions and thoughts on retrospective
 Started writing code for appointment messages and message
 Started writing code for appointments
 Attempted to use postman to test out code
+
+Week 9
+Attended most standups
+Attended pre-demo preparation meeting
+Submitted code on messages and message
+Submitted code on appointments get
+Write tests for both code
+Made some bug fixes
+Discussed new implementations to the code
+Discussed final report
