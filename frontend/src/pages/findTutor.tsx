@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { HTTPProfileService } from "@/service/profileService"
-import { addMinutes } from "date-fns"
+import { addMinutes, format } from "date-fns"
 import { Loader2, MapPin, User } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useQuery } from "react-query"
@@ -67,20 +67,22 @@ export default function FindTutor() {
     setFilterText("")
   }
   return (
-    <div className="flex h-full w-full flex-col justify-center gap-10 p-16 md:justify-start">
+    <div className="flex h-full w-full flex-col justify-center gap-10 p-10 md:justify-start">
       {/* Basic Inputs */}
-      <div className="flex flex-col gap-2 rounded-md bg-secondary p-5 shadow-md">
+      <div className="flex flex-col gap-2 rounded-md border p-5 shadow-md">
         <h1 className="text-2xl text-secondary-foreground">
           Search For A Tutor
         </h1>
         <div className="flex w-full flex-col gap-2 md:flex-row">
           <IconInput
+            value={name}
             onChange={(e) => setName(e.currentTarget.value)}
             placeholder="Name"
           >
             <User className="h-5 w-5" />
           </IconInput>
           <IconInput
+            value={location}
             onChange={(e) => setLocation(e.currentTarget.value)}
             placeholder="Location"
           >
@@ -95,6 +97,9 @@ export default function FindTutor() {
                 "text-foreground": startTime !== null,
               },
             )}
+            value={
+              startTime !== null ? format(startTime, "yyyy-MM-dd hh:mm") : ""
+            }
             onChange={(e) => {
               const newTime =
                 e.currentTarget.value === ""
@@ -161,7 +166,22 @@ export default function FindTutor() {
             ))}
           </div>
         )}
+        <Button
+          className="w-fit"
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            setName("")
+            setLocation("")
+            setStartTime(null)
+            setEndTime(null)
+            setCourseOfferings(null)
+          }}
+        >
+          × Clear All Filters
+        </Button>
       </div>
+
       {/* Tutor search results */}
       <div className="flex flex-wrap justify-center gap-5 overflow-y-auto p-2">
         {isLoading ? (
