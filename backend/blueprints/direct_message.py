@@ -97,7 +97,7 @@ class MessageInfo(TypedDict, total=True):
 def dm_create_message(
     dm_id: str, sender_id: str, receiver_id: str, message_info: MessageInfo
 ):
-    # ? Upsert can and will fail when a http race occur:
+    # ! Upsert can and will fail when it's called multiple times due to a race condition:
     # https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#unique-key-constraint-errors-on-upserts
     # https://github.com/prisma/prisma/issues/3242
     try:
