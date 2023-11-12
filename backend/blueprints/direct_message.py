@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, session, current_app
 from pusher import Pusher
 from uuid import uuid4
 from prisma.models import DirectMessage, Notification
+from prisma.errors import UniqueViolationError
 from datetime import datetime, MINYEAR, timezone
 from jsonschemas import direct_message_schema
 from helpers.views import user_view
@@ -96,18 +97,27 @@ class MessageInfo(TypedDict, total=True):
 def dm_create_message(
     dm_id: str, sender_id: str, receiver_id: str, message_info: MessageInfo
 ):
-    DirectMessage.prisma().upsert(
-        where={"id": dm_id},
-        data={
-            "create": {
-                "id": dm_id,
-                "fromUser": {"connect": {"id": sender_id}},
-                "otherUser": {"connect": {"id": receiver_id}},
-                "messages": {"create": message_info},
+    # ! Upsert can and will fail when it's called multiple times due to a race condition:
+    # https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#unique-key-constraint-errors-on-upserts
+    # https://github.com/prisma/prisma/issues/3242
+    try:
+        DirectMessage.prisma().upsert(
+            where={"id": dm_id},
+            data={
+                "create": {
+                    "id": dm_id,
+                    "fromUser": {"connect": {"id": sender_id}},
+                    "otherUser": {"connect": {"id": receiver_id}},
+                    "messages": {"create": message_info},
+                },
+                "update": {"messages": {"create": message_info}},
             },
-            "update": {"messages": {"create": message_info}},
-        },
-    )
+        )
+    except UniqueViolationError:
+        # attempt to update with the message when the upsert fails
+        DirectMessage.prisma().update(
+            where={"id": dm_id}, data={"messages": {"create": message_info}}
+        )
 
 
 @direct_message.route("/", methods=["POST"])
