@@ -26,6 +26,7 @@ export default function StudentProfile() {
     <div className="h-full w-full p-12">
       <div className="mx-auto flex max-w-xl flex-col items-stretch gap-3">
         <ProfileHeader
+          rating={0}
           name={data.name}
           accountType="Student"
           email={data.email}
