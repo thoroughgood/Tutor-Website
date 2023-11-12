@@ -48,6 +48,16 @@ more consistent error handling and, consistently handling same validations the s
 I started and finishing writing the `student/appointments` route and, `admin/search` and `admin/create` routes.
 
 Week 7 
-Wrote the `appointment/request` route, and `appointment/[appointmentId]` routes. Spent the rest of the time doing 
+Wrote the `/appointment/request` route, and `/appointment/[appointmentId]` routes. Spent the rest of the time doing 
 minor refactoring, fixes and, helping the rest of the backend team in, mostly, getting into grips with the new testing
 infrastructure. 
+
+Week 8
+After demo, spent some time organising jira tickets, stories etc. so everyone can get started with the third sprint. Did some
+minor updates/refactoring before the third sprint started, mostly pertaining to new models/tables we would need for this sprint
+e.g. Notifications and messages. Moreover, started some work on direct message routes.
+
+Week 9
+Finished writing direct message routes, `/document` delete route. Then, spent time squashing bugs, doing slight
+refactors to adhere to api specs and frontend requirements and, helping the rest of the backend
+team with finishing their routes.
