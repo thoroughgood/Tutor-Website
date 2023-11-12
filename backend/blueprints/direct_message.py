@@ -140,6 +140,7 @@ def dm_message(args):
 
     pusher_client: Pusher = current_app.extensions["pusher"]
     channel_info = pusher_client.channel_info(args["otherId"])
+    dm_create_message(dm_id, session["user_id"], args["otherId"], message_info)
     if channel_info["occupied"]:
         try:
             pusher_client.trigger(
@@ -154,10 +155,7 @@ def dm_message(args):
         except (ValueError, TypeError):
             raise ExpectedError("Message format is invalid", 400)
 
-        dm_create_message(dm_id, session["user_id"], args["otherId"], message_info)
     else:
-        dm_create_message(dm_id, session["user_id"], args["otherId"], message_info)
-
         user = user_view(id=session["user_id"])
         Notification.prisma().create(
             data={

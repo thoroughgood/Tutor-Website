@@ -1,3 +1,4 @@
+import { NameFromTutorId } from "@/components/NameFromId"
 import AppointmentDialog from "@/components/appointmentDialog"
 import EditAppointmentForm from "@/components/editAppointmentForm"
 import LoadingSpinner from "@/components/loadingSpinner"
@@ -9,20 +10,18 @@ import {
   DialogHeader,
 } from "@/components/ui/dialog"
 import WeeklyCalendar from "@/components/weeklyCalendar"
+import useStudentAppointments from "@/hooks/useStudentAppointments"
+import useTutorAppointments from "@/hooks/useTutorAppointments"
 import useUser from "@/hooks/useUser"
+import useUserProfile from "@/hooks/useUserProfile"
 import { toastProtectedFnCall } from "@/lib/utils"
-import {
-  Appointment,
-  HTTPAppointmentService,
-} from "@/service/appointmentService"
-import { HTTPProfileService } from "@/service/profileService"
-import { uniq } from "lodash"
+import { HTTPAppointmentService } from "@/service/appointmentService"
+import { TutorProfile } from "@/service/profileService"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useState } from "react"
-import { useQueries, useQuery, useQueryClient } from "react-query"
+import { useQueryClient } from "react-query"
 
-const profileService = new HTTPProfileService()
 const appointmentService = new HTTPAppointmentService()
 export default function Schedule() {
   const queryClient = useQueryClient()
@@ -36,77 +35,13 @@ export default function Schedule() {
   if (isOwnSchedule) {
     router.push("/appointments")
   }
-  const { data: scheduleData } = useQuery({
-    queryKey: ["tutors", tutorId, "schedule"],
-    queryFn: async () => {
-      const { timesAvailable } = await profileService.getTutorProfile(tutorId)
-      return timesAvailable.map((ta) => ({
-        start: new Date(ta.startTime),
-        end: new Date(ta.endTime),
-      }))
-    },
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    refetchOnWindowFocus: false,
-  })
+  const { profileData } = useUserProfile(tutorId) as {
+    profileData: TutorProfile
+  }
+  const { requested, accepted, completed } = useStudentAppointments()
+  const { other } = useTutorAppointments(tutorId)
 
-  const { data: profileData } = useQuery({
-    queryKey: ["tutors", tutorId],
-    queryFn: async () => {
-      const tutorProfile = await profileService.getTutorProfile(tutorId)
-      return tutorProfile
-    },
-  })
-
-  const { data: studentAppointmentIds } = useQuery({
-    queryKey: ["student", user?.userId, "appointments"],
-    queryFn: () => appointmentService.getOwnStudentAppointments(),
-  })
-
-  const reqAppointmentsQueries = useQueries(
-    studentAppointmentIds?.requested.map((id) => ({
-      queryKey: ["appointments", id],
-      queryFn: async () => appointmentService.getAppointment(id),
-    })) || [],
-  )
-  const acceptedAppointmentQueries = useQueries(
-    studentAppointmentIds?.accepted.map((id) => ({
-      queryKey: ["appointments", id],
-      queryFn: async () => appointmentService.getAppointment(id),
-    })) || [],
-  )
-  const completedAppointmentQueries = useQueries(
-    studentAppointmentIds?.completed.map((id) => ({
-      queryKey: ["appointments", id],
-      queryFn: async () => appointmentService.getAppointment(id),
-    })) || [],
-  )
-
-  const tutorIds = uniq(
-    (
-      [
-        ...reqAppointmentsQueries,
-        ...acceptedAppointmentQueries,
-        ...completedAppointmentQueries,
-      ]
-        .map((query) => query.data)
-        .filter((data) => data !== undefined) as Appointment[]
-    ).map((appointment) => appointment.tutorId),
-  )
-
-  const userProfilesQueries = useQueries(
-    tutorIds.map((id) => ({
-      queryKey: ["tutors", id],
-      queryFn: async () => profileService.getTutorProfile(id),
-    })),
-  )
-
-  const userNameMap = new Map<string, string>()
-  userProfilesQueries.forEach(
-    (query) => query.data && userNameMap.set(query.data.id, query.data.name),
-  )
-
-  if (!profileData || !scheduleData) {
+  if (!profileData) {
     return <LoadingSpinner />
   }
 
@@ -135,16 +70,16 @@ export default function Schedule() {
           setClickedStartTime(clickedDate)
         }}
         interactiveIntervals={[
-          ...((
-            reqAppointmentsQueries
-              .map((query) => query.data)
-              .filter((data) => data !== undefined) as Appointment[]
-          ).map((appointment) => ({
+          ...requested.map((appointment) => ({
             interval: {
               start: appointment.startTime,
               end: appointment.endTime,
             },
-            title: `Requested with ${userNameMap.get(appointment.tutorId)}`,
+            title: (
+              <>
+                Requested with <NameFromTutorId tutorId={appointment.tutorId} />
+              </>
+            ),
             componentProps: {
               children: (
                 <AppointmentDialog id={appointment.id} status="requested" />
@@ -153,17 +88,18 @@ export default function Schedule() {
                 "bg-slate-100/40 border border-dashed border-slate-500",
               onClick: (e: React.SyntheticEvent) => e.stopPropagation(),
             },
-          })) || []),
-          ...((
-            acceptedAppointmentQueries
-              .map((query) => query.data)
-              .filter((data) => data !== undefined) as Appointment[]
-          ).map((appointment) => ({
+          })),
+          ...accepted.map((appointment) => ({
             interval: {
               start: appointment.startTime,
               end: appointment.endTime,
             },
-            title: `Appointment with ${userNameMap.get(appointment.tutorId)}`,
+            title: (
+              <>
+                Appointment with{" "}
+                <NameFromTutorId tutorId={appointment.tutorId} />
+              </>
+            ),
             componentProps: {
               children: (
                 <AppointmentDialog id={appointment.id} status="accepted" />
@@ -171,19 +107,19 @@ export default function Schedule() {
               className: "bg-green-300/40 border border-green-400",
               onClick: (e: React.SyntheticEvent) => e.stopPropagation(),
             },
-          })) || []),
-          ...((
-            completedAppointmentQueries
-              .map((query) => query.data)
-              .filter((data) => data !== undefined) as Appointment[]
-          ).map((appointment) => ({
+          })),
+          ...completed.map((appointment) => ({
             interval: {
               start: appointment.startTime,
               end: appointment.endTime,
             },
-            title: `Completed appointment with ${userNameMap.get(
-              appointment.tutorId,
-            )}`,
+
+            title: (
+              <>
+                Completed appointment with{" "}
+                <NameFromTutorId tutorId={appointment.tutorId} />
+              </>
+            ),
             componentProps: {
               children: (
                 <AppointmentDialog id={appointment.id} status="completed" />
@@ -191,13 +127,25 @@ export default function Schedule() {
               className: "bg-slate-200/40 border border-slate-400",
               onClick: (e: React.SyntheticEvent) => e.stopPropagation(),
             },
-          })) || []),
-          ...(scheduleData?.map((interval) => ({
-            interval,
+          })),
+          ...profileData?.timesAvailable.map(({ startTime, endTime }) => ({
+            interval: {
+              start: new Date(startTime),
+              end: new Date(endTime),
+            },
             componentProps: {
               className: "bg-white -z-10 text-white/0",
             },
-          })) || []),
+          })),
+          ...other.map((appointment) => ({
+            interval: {
+              start: appointment.startTime,
+              end: appointment.endTime,
+            },
+            componentProps: {
+              className: "bg-red-100 -z-10 text-white/0",
+            },
+          })),
         ]}
       />
       <Dialog

@@ -3,7 +3,6 @@ import Image from "next/image"
 import { Button } from "./ui/button"
 import {
   Calendar,
-  FileQuestion,
   LogOut,
   Menu,
   MessageSquare,
@@ -80,10 +79,6 @@ function TutorLinks() {
       <SidebarLink href="/appointments">
         <Calendar />
         Appointments
-      </SidebarLink>
-      <SidebarLink href="/requests">
-        <FileQuestion />
-        Requests
       </SidebarLink>
       <SidebarLink href="/messages">
         <MessageSquare />
