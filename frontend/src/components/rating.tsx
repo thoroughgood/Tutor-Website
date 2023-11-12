@@ -15,7 +15,7 @@ interface ratingInterface {
 }
 
 export default function Rating({ appointmentId }: ratingInterface) {
-  const [rating, setRating] = useState<number>(0)
+  const [rating, setRating] = useState<number>(1)
   const queryClient = useQueryClient()
 
   const { data } = useQuery({

@@ -34,7 +34,7 @@ export default function FindTutor() {
     const allParams = {
       name: name === "" ? null : name,
       location: location === "" ? null : location,
-      rating: rating === "" ? null : rating,
+      rating: rating,
       courseOfferings,
       timeRange: {
         startTime,
@@ -90,7 +90,18 @@ export default function FindTutor() {
             type="number"
             min={1}
             max={5}
-            onChange={(e) => setRating(Number(e.currentTarget.value))}
+            onChange={(e) => {
+              if (e.currentTarget.value === "") {
+                setRating(null)
+              } else {
+                const min = 1
+                const max = 5
+                const clamp = (num: number, min: number, max: number) =>
+                  Math.min(Math.max(num, 0), max)
+                const rating = clamp(Number(e.currentTarget.value), min, max)
+                setRating(rating)
+              }
+            }}
             placeholder="Rating"
           >
             <Star className="h-5 w-5" />
