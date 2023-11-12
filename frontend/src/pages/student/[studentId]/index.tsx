@@ -23,8 +23,8 @@ export default function StudentProfile() {
     return <LoadingSpinner />
   }
   return (
-    <div className="h-full w-full p-12">
-      <div className="mx-auto flex max-w-xl flex-col items-stretch gap-3">
+    <div className="h-full w-full overflow-auto p-12">
+      <div className="mx-auto flex max-w-xl flex-col items-stretch gap-3 overflow-auto">
         <ProfileHeader
           rating={0}
           name={data.name}

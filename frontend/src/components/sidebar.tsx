@@ -11,7 +11,7 @@ import {
   User,
 } from "lucide-react"
 import { cn, toastProtectedFnCall } from "@/lib/utils"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { HTTPAuthService } from "@/service/authService"
 import { useRouter } from "next/router"
@@ -21,6 +21,9 @@ export default function Sidebar() {
   const router = useRouter()
   const { user, setUser } = useUser()
   const [isExpanded, setIsExpanded] = useState(false)
+  useEffect(() => {
+    setIsExpanded(false)
+  }, [router.pathname])
   return (
     <div>
       <Button
