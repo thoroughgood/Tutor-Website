@@ -164,6 +164,7 @@ export default function Edit() {
       if (values.profilePicture.length === 0) {
         tutorObj.profilePicture = null
       }
+
       let response
       if (user?.userType === "admin") {
         ;(tutorObj as TutorProfile).id = tutorId

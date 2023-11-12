@@ -7,7 +7,7 @@ interface ProfileHeaderProps {
   className?: string
   name: string
   accountType: string
-  rating: number
+  rating?: number
   location: string | null
   phoneNumber: string | null
   email: string | null
