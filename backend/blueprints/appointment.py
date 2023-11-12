@@ -345,6 +345,7 @@ def appointment_message(args):
 
     pusher_client: Pusher = current_app.extensions["pusher"]
     channel_info = pusher_client.channel_info(args["id"])
+    msg = Message.prisma().create(data=message_info)
     if channel_info["occupied"]:
         try:
             pusher_client.trigger(
@@ -358,14 +359,12 @@ def appointment_message(args):
             )
         except (ValueError, TypeError):
             raise ExpectedError("Message format is invalid", 400)
-        msg = Message.prisma().create(data=message_info)
         Appointment.prisma().update(
             where={"id": args["id"]},
             data={"messages": {"connect": {"id": msg.id}}},
         )
     else:
         user = user_view(id=session["user_id"])
-        msg = Message.prisma().create(data=message_info)
         Notification.prisma().create(
             data={
                 "id": str(uuid4()),
