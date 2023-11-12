@@ -24,6 +24,7 @@ import {
 } from "./ui/dropdown-menu"
 import { MoreVertical } from "lucide-react"
 import Link from "next/link"
+import Rating from "./rating"
 
 interface AppointmentDialogProps {
   id: string

@@ -15,8 +15,9 @@ interface ratingInterface {
 }
 
 export default function Rating({ appointmentId }: ratingInterface) {
-  const [rating, setRating] = useState<number>(1)
+  const [rating, setRating] = useState(1)
   const queryClient = useQueryClient()
+  console.log(rating)
 
   const { data } = useQuery({
     queryKey: ["ratings", appointmentId],
@@ -28,6 +29,7 @@ export default function Rating({ appointmentId }: ratingInterface) {
     // Set enabled to false to prevent automatic fetching
   })
 
+  console.log(data)
   const handleStarClick = async (selectedRating: number) => {
     setRating(selectedRating)
     try {
@@ -42,7 +44,7 @@ export default function Rating({ appointmentId }: ratingInterface) {
   //will be modified only on first call
   useEffect(() => {
     if (data) {
-      setRating(data.rating as number)
+      if (data.rating !== null) setRating(data.rating as number)
     }
   }, [data])
 
