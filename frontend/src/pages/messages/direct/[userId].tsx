@@ -10,6 +10,7 @@ import Link from "next/link"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "react-query"
+import Pusher from "pusher-js"
 
 const messageService = new HTTPMessageService()
 const profileService = new HTTPProfileService()
@@ -19,6 +20,20 @@ export default function DirectMessage() {
   const otherUserType = useUserType(otherUserId)
   const { user } = useUser()
   const queryClient = useQueryClient()
+  useEffect(() => {
+    const pusherClient = new Pusher(
+      process.env.NEXT_PUBLIC_PUSHER_KEY as string,
+      {
+        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER as string,
+      },
+    )
+    const channel = pusherClient.subscribe(user?.userId as string)
+    channel.bind("direct_message", () => {
+      queryClient.invalidateQueries(["messages", "direct", user?.userId])
+    })
+
+    return () => channel.unsubscribe()
+  }, [queryClient, user?.userId])
 
   const { data: otherUserProfile } = useQuery({
     queryKey: [`${otherUserType}s`, otherUserId],
