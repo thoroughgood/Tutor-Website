@@ -54,10 +54,8 @@ export default function ResetModal({ profileId }: resetModalInterface) {
   //deleteOwnUserProfile needs to grab the id of the profile we are on
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    console.log(profileId)
     setSubmitLoading(true)
     try {
-      console.log(values)
       const response = await profileService.resetPassword(
         values.newPassword,
         profileId,
