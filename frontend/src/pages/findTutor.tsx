@@ -21,7 +21,7 @@ const profileService = new HTTPProfileService()
 export default function FindTutor() {
   const [name, setName] = useState<string>("")
   const [location, setLocation] = useState<string>("")
-  const [rating, setRating] = useState<null | number>(null)
+  const [rating, setRating] = useState<string>("")
   const [courseOfferings, setCourseOfferings] = useState<null | string[]>(null)
   const [startTime, setStartTime] = useState<null | Date>(null)
   const [endTime, setEndTime] = useState<null | Date>(null)
@@ -34,7 +34,7 @@ export default function FindTutor() {
     const allParams = {
       name: name === "" ? null : name,
       location: location === "" ? null : location,
-      rating: rating,
+      rating: Number(rating) || null,
       courseOfferings,
       timeRange: {
         startTime,
@@ -89,31 +89,15 @@ export default function FindTutor() {
             <MapPin className="h-5 w-5" />
           </IconInput>
           <IconInput
+            value={rating}
             onChange={(e) => {
-              const re = /^[0-9]{1}/
-
-              if (e.currentTarget.value.length === 2) {
-                const oldValue = e.currentTarget.value.split("")
-                const newValue = oldValue
-                  .slice(0, 2)
-                  .reverse()
-                  .concat(oldValue.slice(2).join(""))
-                e.currentTarget.value = newValue[0]
-              }
-
-              if (e.currentTarget.value === "") {
-                setRating(null)
-              } else if (e.currentTarget.value.match(re)) {
-                const min = 1
-                const max = 5
-                const clamp = (num: number, min: number, max: number) =>
-                  Math.min(Math.max(num, 1), max)
-                const rating = clamp(Number(e.currentTarget.value), min, max)
-                e.currentTarget.value = String(rating)
-                setRating(rating)
-              } else {
-                e.currentTarget.value = ""
-                setRating(1)
+              e.preventDefault()
+              if (
+                (Number(e.currentTarget.value) >= 1 &&
+                  Number(e.currentTarget.value) <= 5) ||
+                e.currentTarget.value === ""
+              ) {
+                setRating(e.currentTarget.value)
               }
             }}
             placeholder="Rating"
@@ -215,7 +199,7 @@ export default function FindTutor() {
       </div>
 
       {/* Tutor search results */}
-      <div className="flex flex-wrap justify-center gap-5 overflow-y-auto p-2">
+      <div className="flex grow flex-wrap items-start justify-center gap-5 overflow-y-auto p-2">
         {isLoading ? (
           <Loader2 className="animate-spin" />
         ) : (

@@ -12,13 +12,11 @@ import { HTTPProfileService } from "@/service/profileService"
 import { Calendar, MessageCircle, User } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/router"
-import { useState } from "react"
 import { useQuery } from "react-query"
 
 const profileService = new HTTPProfileService()
 
 export default function TutorProfile() {
-  const [open, setOpen] = useState(false)
   const router = useRouter()
   const { user } = useUser()
   const tutorId = router.query.tutorId as string
@@ -36,8 +34,8 @@ export default function TutorProfile() {
     return <LoadingSpinner />
   }
   return (
-    <div className="h-full w-full p-12">
-      <div className="mx-auto flex max-w-xl flex-col gap-3">
+    <div className="h-full w-full overflow-auto p-12">
+      <div className="mx-auto flex max-w-xl flex-col gap-3 overflow-auto">
         <ProfileHeader
           className="mx-auto max-w-xl"
           name={data.name}
