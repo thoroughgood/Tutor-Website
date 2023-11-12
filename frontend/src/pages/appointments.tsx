@@ -52,7 +52,9 @@ function AppointmentsAsStudent() {
               end: appointment.endTime,
             },
             componentProps: {
-              children: <AppointmentDialog id={appointment.id} />,
+              children: (
+                <AppointmentDialog id={appointment.id} status="requested" />
+              ),
               className:
                 "bg-slate-100/40 border border-dashed border-slate-500",
             },
@@ -69,7 +71,9 @@ function AppointmentsAsStudent() {
               end: appointment.endTime,
             },
             componentProps: {
-              children: <AppointmentDialog id={appointment.id} />,
+              children: (
+                <AppointmentDialog id={appointment.id} status="completed" />
+              ),
               className: "bg-slate-200/40 border border-slate-400",
             },
           })),
@@ -85,7 +89,9 @@ function AppointmentsAsStudent() {
               </>
             ),
             componentProps: {
-              children: <AppointmentDialog id={appointment.id} />,
+              children: (
+                <AppointmentDialog id={appointment.id} status="accepted" />
+              ),
               className: "bg-green-300/40 border border-green-400",
             },
           })),
@@ -201,7 +207,9 @@ function AppointmentsAsTutor() {
             ),
 
             componentProps: {
-              children: <AppointmentDialog id={appointment.id} />,
+              children: (
+                <AppointmentDialog id={appointment.id} status="accepted" />
+              ),
               className: cn(
                 "bg-slate-100/40 border border-dashed border-slate-500",
                 appointment.tutorAccepted &&

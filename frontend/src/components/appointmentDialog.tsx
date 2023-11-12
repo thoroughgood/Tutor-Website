@@ -24,13 +24,18 @@ import {
 } from "./ui/dropdown-menu"
 import { MoreVertical } from "lucide-react"
 import Link from "next/link"
+import Rating from "./rating"
 
 interface AppointmentDialogProps {
   id: string
+  status: "accepted" | "requested" | "completed"
 }
 const appointmentService = new HTTPAppointmentService()
 const profileService = new HTTPProfileService()
-export default function AppointmentDialog({ id }: AppointmentDialogProps) {
+export default function AppointmentDialog({
+  id,
+  status,
+}: AppointmentDialogProps) {
   const queryClient = useQueryClient()
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [acceptLoading, setAcceptLoading] = useState(false)
@@ -97,33 +102,48 @@ export default function AppointmentDialog({ id }: AppointmentDialogProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </DialogHeader>
-        <DialogDescription className="flex flex-col gap-2">
-          {format(appointmentData.startTime, "MMM d | h:mmaaa")} –{" "}
-          {format(appointmentData.endTime, "h:mmaaa")}
-          {userRole === "tutor" && appointmentData.tutorAccepted && (
-            <EditAppointmentForm
-              cancelFn={() => setOpen(false)}
-              submitFn={async (start, end) => {
-                return await toastProtectedFnCall(async () => {
-                  await appointmentService.modifyAppointment(id, start, end)
-                  queryClient.invalidateQueries(["appointments", id])
-                  setOpen(false)
-                })
-              }}
-              deleteFn={async () => {
-                return await toastProtectedFnCall(async () => {
-                  await appointmentService.deleteAppointment(appointmentData.id)
-                  queryClient.invalidateQueries([
-                    "tutors",
-                    appointmentData.tutorId,
-                    "appointments",
-                  ])
-                  setOpen(false)
-                })
-              }}
-              startTime={appointmentData.startTime}
-              endTime={appointmentData.endTime}
-            />
+        <DialogDescription>
+          <div className="flex flex-col gap-2">
+            {format(appointmentData.startTime, "MMM d | h:mmaaa")} –{" "}
+            {format(appointmentData.endTime, "h:mmaaa")}
+            {userRole === "tutor" && appointmentData.tutorAccepted && (
+              <EditAppointmentForm
+                cancelFn={() => setOpen(false)}
+                submitFn={async (start, end) => {
+                  return await toastProtectedFnCall(async () => {
+                    await appointmentService.modifyAppointment(id, start, end)
+                    queryClient.invalidateQueries(["appointments", id])
+                    setOpen(false)
+                  })
+                }}
+                deleteFn={async () => {
+                  return await toastProtectedFnCall(async () => {
+                    await appointmentService.deleteAppointment(
+                      appointmentData.id,
+                    )
+                    queryClient.invalidateQueries([
+                      "tutors",
+                      appointmentData.tutorId,
+                      "appointments",
+                    ])
+                    setOpen(false)
+                  })
+                }}
+                startTime={appointmentData.startTime}
+                endTime={appointmentData.endTime}
+              />
+            )}
+          </div>
+          {userRole === "student" && status === "completed" && (
+            <>
+              <hr className="my-5" />
+              <div className="flex justify-center">
+                Rate your appointment with {tutorProfile?.name}
+              </div>
+              <div className="flex-column mt-1 justify-center">
+                <Rating appointmentId={id} />
+              </div>
+            </>
           )}
         </DialogDescription>
         {userRole === "tutor" && !appointmentData.tutorAccepted && (

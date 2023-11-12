@@ -81,7 +81,9 @@ export default function Schedule() {
               </>
             ),
             componentProps: {
-              children: <AppointmentDialog id={appointment.id} />,
+              children: (
+                <AppointmentDialog id={appointment.id} status="requested" />
+              ),
               className:
                 "bg-slate-100/40 border border-dashed border-slate-500",
               onClick: (e: React.SyntheticEvent) => e.stopPropagation(),
@@ -99,7 +101,9 @@ export default function Schedule() {
               </>
             ),
             componentProps: {
-              children: <AppointmentDialog id={appointment.id} />,
+              children: (
+                <AppointmentDialog id={appointment.id} status="accepted" />
+              ),
               className: "bg-green-300/40 border border-green-400",
               onClick: (e: React.SyntheticEvent) => e.stopPropagation(),
             },
@@ -117,7 +121,9 @@ export default function Schedule() {
               </>
             ),
             componentProps: {
-              children: <AppointmentDialog id={appointment.id} />,
+              children: (
+                <AppointmentDialog id={appointment.id} status="completed" />
+              ),
               className: "bg-slate-200/40 border border-slate-400",
               onClick: (e: React.SyntheticEvent) => e.stopPropagation(),
             },

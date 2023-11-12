@@ -156,6 +156,7 @@ export default function Edit() {
         phoneNumber: values.phoneNumber,
         courseOfferings: courses,
         timesAvailable: data.timesAvailable,
+        rating: data.rating,
         documentIds: data.documentIds,
       }
 
@@ -168,6 +169,7 @@ export default function Edit() {
       if (values.profilePicture.length === 0) {
         delete tutorObj.profilePicture
       }
+
       let response
       if (user?.userType === "admin") {
         ;(tutorObj as TutorProfile).id = tutorId

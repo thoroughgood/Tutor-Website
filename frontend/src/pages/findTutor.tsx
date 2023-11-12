@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils"
 import { HTTPProfileService } from "@/service/profileService"
 import { addMinutes, format } from "date-fns"
-import { Loader2, MapPin, User } from "lucide-react"
+import { Loader2, MapPin, Star, User } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useQuery } from "react-query"
 import { useDebounce } from "usehooks-ts"
@@ -34,7 +34,7 @@ export default function FindTutor() {
     const allParams = {
       name: name === "" ? null : name,
       location: location === "" ? null : location,
-      rating,
+      rating: rating,
       courseOfferings,
       timeRange: {
         startTime,
@@ -87,6 +87,38 @@ export default function FindTutor() {
             placeholder="Location"
           >
             <MapPin className="h-5 w-5" />
+          </IconInput>
+          <IconInput
+            onChange={(e) => {
+              const re = /^[0-9]{1}/
+
+              if (e.currentTarget.value.length === 2) {
+                const oldValue = e.currentTarget.value.split("")
+                const newValue = oldValue
+                  .slice(0, 2)
+                  .reverse()
+                  .concat(oldValue.slice(2).join(""))
+                e.currentTarget.value = newValue[0]
+              }
+
+              if (e.currentTarget.value === "") {
+                setRating(null)
+              } else if (e.currentTarget.value.match(re)) {
+                const min = 1
+                const max = 5
+                const clamp = (num: number, min: number, max: number) =>
+                  Math.min(Math.max(num, 1), max)
+                const rating = clamp(Number(e.currentTarget.value), min, max)
+                e.currentTarget.value = String(rating)
+                setRating(rating)
+              } else {
+                e.currentTarget.value = ""
+                setRating(1)
+              }
+            }}
+            placeholder="Rating"
+          >
+            <Star className="h-5 w-5" />
           </IconInput>
 
           <input

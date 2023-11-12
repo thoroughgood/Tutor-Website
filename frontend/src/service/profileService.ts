@@ -14,6 +14,7 @@ interface UserProfile {
 }
 
 export interface TutorProfile extends UserProfile {
+  rating: number
   courseOfferings: string[]
   timesAvailable: {
     startTime: string
@@ -62,6 +63,7 @@ export interface ProfileService {
   setOwnStudentProfile: (
     studentProfile: StudentSelfEditReqBody,
   ) => Promise<SuccessResponse>
+  rateTutor: (id: string, rating: number) => Promise<SuccessResponse>
   getUserType: (userId: string) => Promise<"tutor" | "student" | "admin">
   resetPassword: (password: string, id: string) => Promise<SuccessResponse>
 }
@@ -252,9 +254,26 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     }
     return { success: false }
   }
+  async rateTutor(
+    appointmentId: string,
+    tutorRating: number,
+  ): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/appointment/rating`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({ id: appointmentId, rating: tutorRating })
+      .post()
+    console.log(appointmentId, tutorRating)
+    return await resp.json()
+  }
 }
 
 export class MockProfileService implements ProfileService {
+  rateTutor(id: string, rating: number): Promise<SuccessResponse> {
+    throw new Error("Method not implemented.")
+  }
   private mockTutorProfile: TutorProfile = {
     id: "1337",
     name: "Daniel Nguyen",
@@ -262,6 +281,7 @@ export class MockProfileService implements ProfileService {
     email: "daniel.nguyen.s173@gmail.com",
     profilePicture: null,
     location: "Sydney",
+    rating: 1,
     phoneNumber: "0411111111",
     courseOfferings: ["COMP2041", "COMP6080"],
     timesAvailable: [
