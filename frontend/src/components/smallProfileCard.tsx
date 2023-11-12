@@ -47,16 +47,17 @@ export default function SmallProfileCard({
                 {data.name}
               </h2>
               <div className="flex items-center gap-4">
-                {(data as TutorProfile) && (
-                  <div className="mt-1 flex flex-row gap-1">
-                    <div>
-                      <Star fill="gold" color="gold" className="w-4" />
+                {accountType === "tutor" &&
+                  (data as TutorProfile).rating > 0 && (
+                    <div className="mt-1 flex flex-row gap-1">
+                      <div>
+                        <Star fill="gold" color="gold" className="w-4" />
+                      </div>
+                      <div>
+                        {Math.round((data as TutorProfile).rating * 10) / 10}/5
+                      </div>
                     </div>
-                    <div>
-                      {Math.round((data as TutorProfile).rating * 10) / 10}/5
-                    </div>
-                  </div>
-                )}
+                  )}
                 <Badge
                   variant="outline"
                   className="mt-1 border-muted-foreground px-3 py-1 text-xs text-muted-foreground"

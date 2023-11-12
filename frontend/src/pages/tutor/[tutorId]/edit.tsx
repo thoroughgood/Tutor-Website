@@ -153,6 +153,7 @@ export default function Edit() {
         phoneNumber: values.phoneNumber,
         courseOfferings: courses,
         timesAvailable: data.timesAvailable,
+        rating: data.rating,
       }
 
       if (values.phoneNumber.length === 0) {
