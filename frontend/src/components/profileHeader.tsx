@@ -51,7 +51,7 @@ export default function ProfileHeader({
         >
           {accountType.toUpperCase()}
         </Badge>
-        {rating && (
+        {accountType === "Tutor" && (rating as number) >= 0 && (
           <FaintIconText>
             <div className="mt-1 flex flex-row gap-1">
               <div>

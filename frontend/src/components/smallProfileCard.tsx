@@ -48,7 +48,7 @@ export default function SmallProfileCard({
               </h2>
               <div className="flex items-center gap-4">
                 {accountType === "tutor" &&
-                  (data as TutorProfile).rating > 0 && (
+                  (data as TutorProfile).rating >= 0 && (
                     <div className="mt-1 flex flex-row gap-1">
                       <div>
                         <Star fill="gold" color="gold" className="w-4" />
