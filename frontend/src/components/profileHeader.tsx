@@ -10,7 +10,7 @@ interface ProfileHeaderProps {
   location: string | null
   phoneNumber: string | null
   email: string | null
-  profilePicture: string | null
+  profilePicture?: string | null
 }
 /**
  * Reusable componenet for student/tutor profiles
