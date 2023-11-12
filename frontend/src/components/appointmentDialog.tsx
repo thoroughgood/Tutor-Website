@@ -43,8 +43,6 @@ export default function AppointmentDialog({
   const { data: appointmentData } = useQuery({
     queryKey: ["appointments", id],
     queryFn: async () => appointmentService.getAppointment(id),
-    refetchOnWindowFocus: false,
-    enabled: false,
   })
   const { data: tutorProfile } = useQuery({
     queryKey: ["tutors", appointmentData?.tutorId],
