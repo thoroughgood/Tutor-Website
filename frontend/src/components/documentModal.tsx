@@ -93,7 +93,7 @@ export default function DocumentModal({ documentIds }: documentModalInterface) {
           View Documents
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[80%] max-w-5xl overflow-auto">
+      <DialogContent className="max-h-[95%] max-w-5xl overflow-auto pb-10">
         <DialogHeader>
           <DialogTitle> Documents </DialogTitle>
           <DialogDescription>
@@ -139,7 +139,7 @@ export default function DocumentModal({ documentIds }: documentModalInterface) {
               </>
             )}
 
-            <div className="flex h-[30rem] flex-col items-center">
+            <div className="flex h-[60rem] flex-col items-center">
               {documentIds.map((tId) => (
                 <DocumentImg key={tId} documentId={tId} isAccount={isAccount} />
               ))}
