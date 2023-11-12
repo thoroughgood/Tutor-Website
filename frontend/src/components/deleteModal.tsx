@@ -36,7 +36,6 @@ export default function DeleteModal({
   //deleteOwnUserProfile needs to grab the id of the profile we are on
 
   const deleteProfile = async () => {
-    console.log(profileId)
     setSubmitLoading(true)
     try {
       if (user?.userType !== "admin") {

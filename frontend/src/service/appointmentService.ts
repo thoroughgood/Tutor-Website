@@ -9,6 +9,7 @@ export interface Appointment {
   studentId?: string // undefined if no access to appointment
   tutorId: string
   tutorAccepted: boolean
+  rating: number | null
 }
 
 interface AppointmentResp extends Omit<Appointment, "startTime" | "endTime"> {

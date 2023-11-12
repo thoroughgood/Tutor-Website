@@ -1,38 +1,46 @@
+import DocumentModal from "@/components/documentModal"
 import HeaderSeparator from "@/components/headerSeparator"
 import LoadingSpinner from "@/components/loadingSpinner"
 import ProfileHeader from "@/components/profileHeader"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
 import useUser from "@/hooks/useUser"
 import { HTTPProfileService } from "@/service/profileService"
+
 import { Calendar, MessageCircle, User } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useQuery } from "react-query"
 
 const profileService = new HTTPProfileService()
+
 export default function TutorProfile() {
   const router = useRouter()
   const { user } = useUser()
   const tutorId = router.query.tutorId as string
-  console.log(tutorId)
   const isOwnProfile = tutorId === user?.userId
   const { data } = useQuery({
     queryKey: ["tutors", tutorId],
     queryFn: () => profileService.getTutorProfile(tutorId),
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    staleTime: 1000 * 10,
   })
-
+  console.log(data)
   if (!data) {
     return <LoadingSpinner />
   }
   return (
-    <div className="h-full w-full p-12">
-      <div className="mx-auto flex max-w-xl flex-col gap-3">
+    <div className="h-full w-full overflow-auto p-12">
+      <div className="mx-auto flex max-w-xl flex-col gap-3 overflow-auto">
         <ProfileHeader
           className="mx-auto max-w-xl"
           name={data.name}
           accountType="Tutor"
+          rating={data.rating}
           email={data.email}
           profilePicture={data.profilePicture}
           phoneNumber={data.phoneNumber}
@@ -104,6 +112,7 @@ export default function TutorProfile() {
             <div className="whitespace-pre-wrap">{data.bio}</div>
           </CardContent>
         </Card>
+        <DocumentModal documentIds={data.documentIds} />
       </div>
     </div>
   )

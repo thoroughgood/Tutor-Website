@@ -4,7 +4,6 @@ import { Button } from "./ui/button"
 import {
   Bell,
   Calendar,
-  FileQuestion,
   LogOut,
   Menu,
   MessageSquare,
@@ -14,7 +13,7 @@ import {
   X,
 } from "lucide-react"
 import { cn, toastProtectedFnCall } from "@/lib/utils"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { HTTPAuthService } from "@/service/authService"
 import { useRouter } from "next/router"
@@ -40,6 +39,9 @@ export default function Sidebar() {
     },
   })
 
+  useEffect(() => {
+    setIsExpanded(false)
+  }, [router.pathname])
   return (
     <div>
       <Button
@@ -131,10 +133,6 @@ function TutorLinks() {
       <SidebarLink href="/appointments">
         <Calendar />
         Appointments
-      </SidebarLink>
-      <SidebarLink href="/requests">
-        <FileQuestion />
-        Requests
       </SidebarLink>
       <SidebarLink href="/messages">
         <MessageSquare />
