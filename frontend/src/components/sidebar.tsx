@@ -82,12 +82,12 @@ export default function Sidebar() {
               className="flex justify-start gap-2 text-muted-foreground"
             >
               <Bell className="h-4" />
-              {data?.notifications.length === 0 && (
+              Notifications
+              {data && data?.notifications.length > 0 && (
                 <div className=" flex h-4 w-4   items-center justify-center rounded-sm bg-red-400 text-xs text-white">
                   {data.notifications.length}
                 </div>
               )}
-              Notifications
             </Button>
           </PopoverTrigger>
           <PopoverContent className="relative left-56 top-10 max-h-[30rem] w-[20rem] overflow-auto shadow-lg">
