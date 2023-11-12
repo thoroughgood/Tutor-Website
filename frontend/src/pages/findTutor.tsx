@@ -34,7 +34,7 @@ export default function FindTutor() {
     const allParams = {
       name: name === "" ? null : name,
       location: location === "" ? null : location,
-      rating,
+      rating: rating === "" ? null : rating,
       courseOfferings,
       timeRange: {
         startTime,
@@ -87,6 +87,9 @@ export default function FindTutor() {
             <MapPin className="h-5 w-5" />
           </IconInput>
           <IconInput
+            type="number"
+            min={1}
+            max={5}
             onChange={(e) => setRating(Number(e.currentTarget.value))}
             placeholder="Rating"
           >
