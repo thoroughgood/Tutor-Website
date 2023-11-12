@@ -66,10 +66,6 @@ export interface ProfileService {
   rateTutor: (id: string, rating: number) => Promise<SuccessResponse>
   getUserType: (userId: string) => Promise<"tutor" | "student" | "admin">
   resetPassword: (password: string, id: string) => Promise<SuccessResponse>
-  getNotifications: () => Promise<{ notifications: string[] }>
-  getNotification: (
-    NotificationID: string,
-  ) => Promise<{ id: string; type: string; content: string }>
 }
 
 export class HTTPProfileService extends HTTPService implements ProfileService {
@@ -258,32 +254,6 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     }
     return { success: false }
   }
-
-  async getNotification(NotificationID: string): Promise<{
-    id: string
-    type: string
-    content: string
-  }> {
-    const resp = wretch(`${this.backendURL}/notifications/${NotificationID}`)
-      .options({
-        credentials: "include",
-        mode: "cors",
-      })
-      .get()
-    return await resp.json()
-  }
-
-  async getNotifications(): Promise<{
-    notifications: string[]
-  }> {
-    const resp = wretch(`${this.backendURL}/notifications/`)
-      .options({
-        credentials: "include",
-        mode: "cors",
-      })
-      .get()
-    return await resp.json()
-  }
   async rateTutor(
     appointmentId: string,
     tutorRating: number,
@@ -301,9 +271,9 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
 }
 
 export class MockProfileService implements ProfileService {
-  rateTutor: (id: string, rating: number) => Promise<SuccessResponse>
-  getNotifications: () => Promise<{ notifications: string[] }>
-  getNotification: (NotificationID: string) => Promise<{ id: string; type: string; content: string }>
+  rateTutor(id: string, rating: number): Promise<SuccessResponse> {
+    throw new Error("Method not implemented.")
+  }
   private mockTutorProfile: TutorProfile = {
     id: "1337",
     name: "Daniel Nguyen",
