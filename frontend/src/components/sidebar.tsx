@@ -2,6 +2,7 @@ import useUser from "@/hooks/useUser"
 import Image from "next/image"
 import { Button } from "./ui/button"
 import {
+  Bell,
   Calendar,
   LogOut,
   Menu,
@@ -9,18 +10,35 @@ import {
   Plus,
   Search,
   User,
+  X,
 } from "lucide-react"
 import { cn, toastProtectedFnCall } from "@/lib/utils"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { HTTPAuthService } from "@/service/authService"
 import { useRouter } from "next/router"
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
+import NotificationBox from "./notificationBox"
+import { useQuery } from "react-query"
+import { HTTPProfileService } from "@/service/profileService"
+
+const profileService = new HTTPProfileService()
 
 export default function Sidebar() {
   const authService = new HTTPAuthService()
   const router = useRouter()
   const { user, setUser } = useUser()
   const [isExpanded, setIsExpanded] = useState(false)
+  const [display, setDisplay] = useState("hidden")
+  const [open, setOpen] = useState(false)
+
+  const { data } = useQuery({
+    queryKey: ["notifications", user?.userId],
+    queryFn: async () => {
+      return await profileService.getNotifications()
+    },
+  })
+
   useEffect(() => {
     setIsExpanded(false)
   }, [router.pathname])
@@ -54,6 +72,39 @@ export default function Sidebar() {
             <AdminLinks />
           )}
         </div>
+        <Popover
+          open={open}
+          onOpenChange={(open) => {
+            setOpen(open)
+          }}
+        >
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              className="flex justify-start gap-2 text-muted-foreground"
+            >
+              <Bell className="h-4" />
+              Notifications
+              {data && data?.notifications.length > 0 && (
+                <div className=" flex h-4 w-4   items-center justify-center rounded-sm bg-red-400 text-xs text-white">
+                  {data.notifications.length}
+                </div>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="relative left-56 top-10 max-h-[30rem] w-[20rem] overflow-auto shadow-lg">
+            <Button
+              variant="ghost"
+              className="h-2 w-2"
+              onClick={() => {
+                setOpen(false)
+              }}
+            >
+              <X className="absolute right-1 top-1 p-1 text-muted-foreground" />
+            </Button>
+            <NotificationBox />
+          </PopoverContent>
+        </Popover>
 
         <Button
           variant="ghost"

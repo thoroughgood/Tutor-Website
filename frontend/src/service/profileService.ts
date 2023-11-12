@@ -268,6 +268,32 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     console.log(appointmentId, tutorRating)
     return await resp.json()
   }
+
+  async getNotification(NotificationID: string): Promise<{
+    id: string
+    type: string
+    content: string
+  }> {
+    const resp = wretch(`${this.backendURL}/notifications/${NotificationID}`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
+    return await resp.json()
+  }
+
+  async getNotifications(): Promise<{
+    notifications: string[]
+  }> {
+    const resp = wretch(`${this.backendURL}/notifications/`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
+    return await resp.json()
+  }
 }
 
 export class MockProfileService implements ProfileService {
