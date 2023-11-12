@@ -229,7 +229,7 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     type: string
     content: string
   }> {
-    const resp = wretch(`${this.backendURL}/notifications/${NotificationID}/`)
+    const resp = wretch(`${this.backendURL}/notifications/${NotificationID}`)
       .options({
         credentials: "include",
         mode: "cors",
