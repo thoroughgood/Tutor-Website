@@ -15,7 +15,14 @@ export class HTTPService {
  *FileToDataURL referenced from COMP6080 22T2 lecture slides courtesy of Hayden Smith
  */
 export function fileToDataUrl(file: File) {
-  const validFileTypes = ["image/jpeg", "image/png", "image/jpg"]
+  const validFileTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/jpg",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ]
   const valid = validFileTypes.find((type) => type === file.type)
   // Bad data, let's walk away.
   if (!valid) {

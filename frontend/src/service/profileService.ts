@@ -8,7 +8,7 @@ interface UserProfile {
   name: string
   bio: string
   email: string
-  profilePicture: string | null
+  profilePicture?: string | null
   location: string | null
   phoneNumber: string | null
 }
@@ -20,6 +20,7 @@ export interface TutorProfile extends UserProfile {
     startTime: string
     endTime: string
   }[]
+  documentIds: string[]
 }
 
 export interface StudentProfile extends UserProfile {}
@@ -104,6 +105,38 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
         mode: "cors",
       })
       .get()
+    return await data.json()
+  }
+
+  async getDocument(docId: string): Promise<{ document: string }> {
+    const data = wretch(`${this.backendURL}/document/${docId}`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
+    return await data.json()
+  }
+
+  async uploadDocument(documents: string): Promise<{ id: string }> {
+    const data = wretch(`${this.backendURL}/document/`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({ document: documents })
+      .post()
+    return await data.json()
+  }
+
+  async deleteDocument(docId: string): Promise<{ id: string }> {
+    const data = wretch(`${this.backendURL}/document/`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({ id: docId })
+      .delete()
     return await data.json()
   }
 
@@ -265,6 +298,7 @@ export class MockProfileService implements ProfileService {
       //   endTime: addHours(new Date(), 38).toISOString(),
       // },
     ],
+    documentIds: [],
   }
 
   private mockStudentProfile: StudentProfile = {
