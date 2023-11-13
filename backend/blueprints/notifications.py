@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, session
 from prisma.models import User, Notification
 from helpers.error_handlers import (
-    validate_decorator,
     ExpectedError,
     error_decorator,
 )
@@ -21,6 +20,9 @@ def notifications_get():
             "notifications": True,
         },
     )
+
+    if user is None:
+        raise ExpectedError("User does not exist", 400)
 
     notifications_l = (
         list(map(lambda n: n.id, user.notifications))
