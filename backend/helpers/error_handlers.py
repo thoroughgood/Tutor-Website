@@ -54,6 +54,10 @@ def validation_pattern_match(error: ValidationError) -> Tuple[Response, int]:
         ] | [*_, "properties", "rating", "pattern"]:
             # Error will need to be changed if the boundaries of rating ever change
             return error_generator("rating must be between 1 to 5, inclusive", 400)
+        case [*_, "properties", "sortBy", "pattern"]:
+            return error_generator(
+                "When specified, 'sortBy' must be equal to 'messageSent'", 400
+            )
 
 
 def error_decorator(f):
@@ -67,7 +71,7 @@ def error_decorator(f):
         except ValidationError as e:
             return validation_pattern_match(e)
         except:
-            current_app.logger.error("\n" + traceback.format_exc() + "\n")
+            current_app.logger.critical("\n" + traceback.format_exc() + "\n")
             return error_generator("Internal Server Error", 500)
 
     return wrapper

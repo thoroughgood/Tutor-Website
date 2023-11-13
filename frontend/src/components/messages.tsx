@@ -34,7 +34,7 @@ export default function Messages({
           <div
             key={m.id}
             className={cn(
-              "mr-8 inline self-start rounded border bg-secondary p-2 px-3 text-secondary-foreground",
+              "mr-8 inline self-start break-all rounded border bg-secondary p-2 px-3 text-secondary-foreground",
               ("isOptimistic" in m || user?.userId === m.sentBy) &&
                 "ml-8 mr-0 self-end bg-primary text-primary-foreground",
               "isOptimistic" in m && "opacity-50",

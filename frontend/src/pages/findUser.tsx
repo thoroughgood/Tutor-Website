@@ -86,7 +86,7 @@ export default function FindUser() {
         </div>
       </div>
       {/* Admin search results */}
-      <div className="flex flex-wrap justify-center gap-5">
+      <div className="flex flex-wrap justify-center gap-5 overflow-y-auto p-2">
         {isLoading ? (
           <Loader2 className="animate-spin" />
         ) : (

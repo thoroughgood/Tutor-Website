@@ -2,7 +2,8 @@ from typing import TypedDict
 from flask import Blueprint, jsonify, session, current_app
 from pusher import Pusher
 from uuid import uuid4
-from prisma.models import DirectMessage, Notification, User
+from prisma.models import DirectMessage, Notification
+from prisma.errors import UniqueViolationError
 from datetime import datetime, MINYEAR, timezone
 from jsonschemas import direct_message_schema
 from helpers.views import user_view
@@ -34,7 +35,7 @@ def dm_all():
         dms,
         key=lambda dm: dm.messages[0].sentTime
         if len(dm.messages) != 0
-        else datetime(MINYEAR, 1, 1),
+        else datetime(MINYEAR, 1, 1, tzinfo=timezone.utc),
         reverse=True,
     )
 
@@ -96,18 +97,27 @@ class MessageInfo(TypedDict, total=True):
 def dm_create_message(
     dm_id: str, sender_id: str, receiver_id: str, message_info: MessageInfo
 ):
-    DirectMessage.prisma().upsert(
-        where={"id": dm_id},
-        data={
-            "create": {
-                "id": dm_id,
-                "fromUser": {"connect": {"id": sender_id}},
-                "otherUser": {"connect": {"id": receiver_id}},
-                "messages": {"create": message_info},
+    # ! Upsert can and will fail when it's called multiple times due to a race condition:
+    # https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#unique-key-constraint-errors-on-upserts
+    # https://github.com/prisma/prisma/issues/3242
+    try:
+        DirectMessage.prisma().upsert(
+            where={"id": dm_id},
+            data={
+                "create": {
+                    "id": dm_id,
+                    "fromUser": {"connect": {"id": sender_id}},
+                    "otherUser": {"connect": {"id": receiver_id}},
+                    "messages": {"create": message_info},
+                },
+                "update": {"messages": {"create": message_info}},
             },
-            "update": {"messages": {"create": message_info}},
-        },
-    )
+        )
+    except UniqueViolationError:
+        # attempt to update with the message when the upsert fails
+        DirectMessage.prisma().update(
+            where={"id": dm_id}, data={"messages": {"create": message_info}}
+        )
 
 
 @direct_message.route("/", methods=["POST"])
@@ -140,6 +150,7 @@ def dm_message(args):
 
     pusher_client: Pusher = current_app.extensions["pusher"]
     channel_info = pusher_client.channel_info(args["otherId"])
+    dm_create_message(dm_id, session["user_id"], args["otherId"], message_info)
     if channel_info["occupied"]:
         try:
             pusher_client.trigger(
@@ -154,10 +165,7 @@ def dm_message(args):
         except (ValueError, TypeError):
             raise ExpectedError("Message format is invalid", 400)
 
-        dm_create_message(dm_id, session["user_id"], args["otherId"], message_info)
     else:
-        dm_create_message(dm_id, session["user_id"], args["otherId"], message_info)
-
         user = user_view(id=session["user_id"])
         Notification.prisma().create(
             data={

@@ -8,17 +8,19 @@ interface UserProfile {
   name: string
   bio: string
   email: string
-  profilePicture: string | null
+  profilePicture?: string | null
   location: string | null
   phoneNumber: string | null
 }
 
 export interface TutorProfile extends UserProfile {
+  rating: number
   courseOfferings: string[]
   timesAvailable: {
     startTime: string
     endTime: string
   }[]
+  documentIds: string[]
 }
 
 export interface StudentProfile extends UserProfile {}
@@ -61,6 +63,7 @@ export interface ProfileService {
   setOwnStudentProfile: (
     studentProfile: StudentSelfEditReqBody,
   ) => Promise<SuccessResponse>
+  rateTutor: (id: string, rating: number) => Promise<SuccessResponse>
   getUserType: (userId: string) => Promise<"tutor" | "student" | "admin">
   resetPassword: (password: string, id: string) => Promise<SuccessResponse>
 }
@@ -102,6 +105,38 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
         mode: "cors",
       })
       .get()
+    return await data.json()
+  }
+
+  async getDocument(docId: string): Promise<{ document: string }> {
+    const data = wretch(`${this.backendURL}/document/${docId}`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
+    return await data.json()
+  }
+
+  async uploadDocument(documents: string): Promise<{ id: string }> {
+    const data = wretch(`${this.backendURL}/document/`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({ document: documents })
+      .post()
+    return await data.json()
+  }
+
+  async deleteDocument(docId: string): Promise<{ id: string }> {
+    const data = wretch(`${this.backendURL}/document/`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({ id: docId })
+      .delete()
     return await data.json()
   }
 
@@ -219,9 +254,52 @@ export class HTTPProfileService extends HTTPService implements ProfileService {
     }
     return { success: false }
   }
+  async rateTutor(
+    appointmentId: string,
+    tutorRating: number,
+  ): Promise<SuccessResponse> {
+    const resp = wretch(`${this.backendURL}/appointment/rating`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .json({ id: appointmentId, rating: tutorRating })
+      .post()
+    console.log(appointmentId, tutorRating)
+    return await resp.json()
+  }
+
+  async getNotification(NotificationID: string): Promise<{
+    id: string
+    type: string
+    content: string
+  }> {
+    const resp = wretch(`${this.backendURL}/notifications/${NotificationID}`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
+    return await resp.json()
+  }
+
+  async getNotifications(): Promise<{
+    notifications: string[]
+  }> {
+    const resp = wretch(`${this.backendURL}/notifications/`)
+      .options({
+        credentials: "include",
+        mode: "cors",
+      })
+      .get()
+    return await resp.json()
+  }
 }
 
 export class MockProfileService implements ProfileService {
+  rateTutor(id: string, rating: number): Promise<SuccessResponse> {
+    throw new Error("Method not implemented.")
+  }
   private mockTutorProfile: TutorProfile = {
     id: "1337",
     name: "Daniel Nguyen",
@@ -229,6 +307,7 @@ export class MockProfileService implements ProfileService {
     email: "daniel.nguyen.s173@gmail.com",
     profilePicture: null,
     location: "Sydney",
+    rating: 1,
     phoneNumber: "0411111111",
     courseOfferings: ["COMP2041", "COMP6080"],
     timesAvailable: [
@@ -245,6 +324,7 @@ export class MockProfileService implements ProfileService {
       //   endTime: addHours(new Date(), 38).toISOString(),
       // },
     ],
+    documentIds: [],
   }
 
   private mockStudentProfile: StudentProfile = {

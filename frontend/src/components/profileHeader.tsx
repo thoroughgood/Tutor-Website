@@ -1,4 +1,4 @@
-import { Mail, MapPin, Phone } from "lucide-react"
+import { Mail, MapPin, Phone, Star } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Badge } from "./ui/badge"
 import { cn } from "@/lib/utils"
@@ -7,10 +7,11 @@ interface ProfileHeaderProps {
   className?: string
   name: string
   accountType: string
+  rating: number
   location: string | null
   phoneNumber: string | null
   email: string | null
-  profilePicture: string | null
+  profilePicture?: string | null
 }
 /**
  * Reusable componenet for student/tutor profiles
@@ -19,6 +20,7 @@ interface ProfileHeaderProps {
 export default function ProfileHeader({
   name,
   accountType,
+  rating,
   location,
   phoneNumber,
   email,
@@ -49,7 +51,17 @@ export default function ProfileHeader({
         >
           {accountType.toUpperCase()}
         </Badge>
-        <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 md:justify-start">
+        {accountType === "Tutor" && (rating as number) >= 0 && (
+          <FaintIconText>
+            <div className="mt-1 flex flex-row gap-1">
+              <div>
+                <Star fill="gold" color="gold" className="w-4" />
+              </div>
+              <div>{Math.round(rating * 10) / 10}/5</div>
+            </div>
+          </FaintIconText>
+        )}
+        <div className="mt-1 flex flex-wrap justify-center gap-x-4 gap-y-1 md:justify-start">
           {location && (
             <FaintIconText>
               <MapPin />
@@ -67,7 +79,7 @@ export default function ProfileHeader({
               <Mail />
               {email}
             </FaintIconText>
-          )}
+          )}{" "}
         </div>
       </div>
     </div>

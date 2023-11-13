@@ -8,6 +8,10 @@ import SmartAvatar from "./smartAvatar"
 import { prettySentence } from "@/lib/utils"
 import Link from "next/link"
 import useUserType from "@/hooks/useUserType"
+import useUser from "@/hooks/useUser"
+import useAppointmentQuery from "@/hooks/useAppointmentQuery"
+import useUserProfile from "@/hooks/useUserProfile"
+import { format } from "date-fns"
 
 interface MessageChannelPreviewProps {
   id: string
@@ -19,18 +23,61 @@ export default function MessageChannelPreview({
   id,
   channelType,
 }: MessageChannelPreviewProps) {
-  const userType = useUserType(id)
+  if (channelType === "direct") {
+    return <DirectChannelPreview userId={id} />
+  }
+  return <AppointmentChannelPreview appointmentId={id} />
+}
+
+function AppointmentChannelPreview({
+  appointmentId,
+}: {
+  appointmentId: string
+}) {
+  const { user } = useUser()
+  const { data: appointment } = useAppointmentQuery(appointmentId)
+  const { profileData: tutorProfile } = useUserProfile(appointment?.tutorId)
+  const { profileData: studentProfile } = useUserProfile(appointment?.studentId)
+  const otherProfile =
+    user?.userId === appointment?.tutorId ? studentProfile : tutorProfile
+  return (
+    <Link
+      href={`/messages/appointment/${appointmentId}`}
+      className="flex gap-4"
+    >
+      <SmartAvatar
+        className="h-20 w-20"
+        profilePicture={otherProfile?.profilePicture}
+        name={otherProfile?.name}
+        loading={!otherProfile}
+      />
+      <div className="flex flex-col justify-center">
+        <h4>{otherProfile?.name}</h4>
+        <h5 className="text-sm text-muted-foreground">
+          {appointment?.startTime && appointment.endTime && (
+            <>
+              {format(appointment?.startTime, "MMM do p")} to{" "}
+              {format(appointment?.endTime, "p")}
+            </>
+          )}
+        </h5>
+      </div>
+    </Link>
+  )
+}
+
+function DirectChannelPreview({ userId }: { userId: string }) {
+  const userType = useUserType(userId)
   const { data: profileData } = useQuery<StudentProfile | TutorProfile>({
-    queryKey: [`${userType}s`, id],
+    queryKey: [`${userType}s`, userId],
     queryFn: async () =>
       userType === "tutor"
-        ? await profileService.getTutorProfile(id)
-        : await profileService.getStudentProfile(id),
+        ? await profileService.getTutorProfile(userId)
+        : await profileService.getStudentProfile(userId),
     enabled: !!userType,
   })
-
   return (
-    <Link href={`/messages/${channelType}/${id}`} className="flex gap-4">
+    <Link href={`/messages/direct/${userId}`} className="flex gap-4">
       <SmartAvatar
         className="h-20 w-20"
         profilePicture={profileData?.profilePicture}

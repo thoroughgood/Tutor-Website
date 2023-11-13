@@ -41,3 +41,13 @@ to the retrospective B. Making sure we are keeping up with the things we planned
 I managed to create a lot of progress this week, finishing off the admin create route, and also the user search route. Admin edit/delete was almost 
 done and able to be pushed to main, however there was a small bug discovered before our demonstration. Bug is rectified
 but won't be able to show this off in our demo.
+
+Week 8:
+This week, we presented our demo to frank, which he was happy with. I was more busy this week as I also had an assignment due on Thursday, so I didnt do any work
+until the weekend. On the weekend I did end up catching up on my final sprint 2 wokr that I hadn't been able to complete by the demo, which included the admin version
+of editing profiles and being able to delete them as well. We have had less standup meetings this week as we just came out of our sprint 2 and everybody is taking a bit of a break after the week 7 crunch
+
+Week 9:
+There was a lot more to do for me this week, as it leads into our final project demo in week 10. I ended up working on implementing the document upload
+and the ability to rate tutors after their appointment has been completed, and the notifications for the user. We started having more standups leading up to week 10 to keep everyone on track and make sure that we're all progressing as expected. 
+Week 10:

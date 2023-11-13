@@ -51,6 +51,11 @@ const ACCEPTED_IMAGE_TYPES = [
   "image/webp",
 ]
 
+const ACCEPTED_FILE_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]
 //null if the string value is empty
 const formSchema = z.object({
   name: z
@@ -137,13 +142,11 @@ export default function Edit() {
       values.courseOfferings.forEach((course) => {
         if (course.name !== "") courses.push(course.name)
       })
-
       //need to manipulate profile value
       let file = ""
       if (values.profilePicture.length != 0) {
         file = (await fileToDataUrl(values.profilePicture)) as string
       }
-
       const tutorObj: TutorSelfEditReqBody = {
         name: values.name,
         bio: values.bio,
@@ -153,6 +156,8 @@ export default function Edit() {
         phoneNumber: values.phoneNumber,
         courseOfferings: courses,
         timesAvailable: data.timesAvailable,
+        rating: data.rating,
+        documentIds: data.documentIds,
       }
 
       if (values.phoneNumber.length === 0) {
@@ -162,8 +167,9 @@ export default function Edit() {
         tutorObj.location = null
       }
       if (values.profilePicture.length === 0) {
-        tutorObj.profilePicture = null
+        delete tutorObj.profilePicture
       }
+
       let response
       if (user?.userType === "admin") {
         ;(tutorObj as TutorProfile).id = tutorId
@@ -171,7 +177,7 @@ export default function Edit() {
       } else {
         response = await profileService.setOwnTutorProfile(tutorObj)
       }
-
+      console.log(tutorObj)
       if (response.success) {
         router.push(`/tutor/${router.query.tutorId as string}/`)
       }
@@ -214,6 +220,7 @@ export default function Edit() {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="profilePicture"

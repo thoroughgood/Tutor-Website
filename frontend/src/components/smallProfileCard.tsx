@@ -5,7 +5,7 @@ import {
   TutorProfile,
 } from "@/service/profileService"
 import { Badge } from "./ui/badge"
-import { MapPin } from "lucide-react"
+import { MapPin, Star } from "lucide-react"
 import HeaderSeparator from "./headerSeparator"
 import Link from "next/link"
 import { Skeleton } from "./ui/skeleton"
@@ -47,12 +47,24 @@ export default function SmallProfileCard({
                 {data.name}
               </h2>
               <div className="flex items-center gap-4">
+                {accountType === "tutor" &&
+                  (data as TutorProfile).rating >= 0 && (
+                    <div className="mt-1 flex flex-row gap-1">
+                      <div>
+                        <Star fill="gold" color="gold" className="w-4" />
+                      </div>
+                      <div>
+                        {Math.round((data as TutorProfile).rating * 10) / 10}/5
+                      </div>
+                    </div>
+                  )}
                 <Badge
                   variant="outline"
                   className="mt-1 border-muted-foreground px-3 py-1 text-xs text-muted-foreground"
                 >
                   {accountType.toUpperCase()}
                 </Badge>
+
                 {data.location && (
                   <div className="flex gap-1 text-muted-foreground">
                     <MapPin className="w-6" />

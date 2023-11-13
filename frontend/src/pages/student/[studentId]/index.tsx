@@ -23,9 +23,10 @@ export default function StudentProfile() {
     return <LoadingSpinner />
   }
   return (
-    <div className="h-full w-full p-12">
-      <div className="mx-auto flex max-w-xl flex-col items-stretch gap-3">
+    <div className="h-full w-full overflow-auto p-12">
+      <div className="mx-auto flex max-w-xl flex-col items-stretch gap-3 overflow-auto">
         <ProfileHeader
+          rating={0}
           name={data.name}
           accountType="Student"
           email={data.email}
@@ -50,17 +51,21 @@ export default function StudentProfile() {
                   Edit Profile
                 </Link>
               </Button>
-              <Button variant="secondary" className="flex grow gap-2">
-                <MessageCircle className="w-5" />
-                Message Student
+              <Button asChild variant="secondary" className="flex grow gap-2">
+                <Link href={`/messages/direct/${studentId}`}>
+                  <MessageCircle className="w-5" />
+                  Message Student
+                </Link>
               </Button>
             </div>
           </>
         )}
         {!isOwnProfile && user?.userType !== "admin" && (
-          <Button variant="secondary" className="flex grow gap-2">
-            <MessageCircle className="w-5" />
-            Message Student
+          <Button asChild variant="secondary" className="flex grow gap-2">
+            <Link href={`/messages/direct/${studentId}`}>
+              <MessageCircle className="w-5" />
+              Message Student
+            </Link>
           </Button>
         )}
 
