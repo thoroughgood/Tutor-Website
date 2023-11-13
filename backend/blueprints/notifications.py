@@ -22,6 +22,9 @@ def notifications_get():
         }
     )
 
+    if user is None:
+        raise ExpectedError("User does not exist", 400)
+
     notifications_l = list(map(lambda n: n.id, user.notifications)) if user.notifications is not None else []
 
     return jsonify({"notifications": notifications_l})
