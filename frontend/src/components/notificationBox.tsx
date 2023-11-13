@@ -26,8 +26,10 @@ export default function NotificationBox() {
     queryFn: async () => {
       return await profileService.getNotifications()
     },
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
   })
-  console.log(data)
   if (!data) {
     return <LoadingSpinner />
   } else if (data.notifications.length === 0) {
@@ -40,8 +42,6 @@ export default function NotificationBox() {
     return (
       <div className="-mt-2">
         <div className="flex justify-center">Notifications</div>
-        <hr />
-
         <div className="flex flex-col items-center p-1">
           {data.notifications.map((tId) => (
             <Notification

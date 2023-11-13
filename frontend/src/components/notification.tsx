@@ -2,8 +2,8 @@ import { HTTPProfileService } from "@/service/profileService"
 import { useQuery, useQueryClient } from "react-query"
 import { useState } from "react"
 import useUser from "@/hooks/useUser"
-import LoadingSpinner from "./loadingSpinner"
 import { Calendar, MessageSquare } from "lucide-react"
+import { Skeleton } from "./ui/skeleton"
 const profileService = new HTTPProfileService()
 
 export interface NotificationInterface {
@@ -28,7 +28,7 @@ export default function Notification({
   })
   if (data) {
     return (
-      <div className="border-gray-20 mb-1 border-b-2 bg-gray-50">
+      <div className="mb-1 flex gap-2 border border-b-2 p-2 shadow">
         {data.type === "message" ? (
           <MessageSquare className="mt-1 text-muted-foreground" />
         ) : (
@@ -38,6 +38,6 @@ export default function Notification({
       </div>
     )
   } else {
-    return <LoadingSpinner />
+    return <Skeleton className="h-12 w-full" />
   }
 }
