@@ -18,6 +18,26 @@ search_tutor = Blueprint("search_tutor", __name__)
 @error_decorator
 @validate_decorator("query_string", tutor_search_schema)
 def tutor_search(args):
+    """Returns a list of tutors which information matches all that is provided.
+
+    Query Params:
+        name (str): The name of the tutor to search for (optional)
+        location (str): The location of the tutor to search for (optional)
+        rating (int): The minimum rating of the tutor to search for (optional)
+        courseOfferings (list of str): The course offerings of the tutor to search for (optional)
+        timeRange (dict): The time range of the tutor to search for (optional)
+            - startTime (str): The start time of the time range
+            - endTime (str): The end time of the time range
+
+    Returns:
+        tutorIds (list of str): list of tutor ids
+
+    Raises:
+        ExpectedError: if timeRange field is not a valid JSON
+        ExpectedError: timeRange argument missing fields
+        ExpectedError: if courseOfferings field is not a valid JSON
+
+    """
     # * Note: timesAvailable should never overlap and is assumed not to
     tutors = Tutor.prisma().find_many(
         include={

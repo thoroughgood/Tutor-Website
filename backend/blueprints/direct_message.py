@@ -19,6 +19,20 @@ direct_message = Blueprint("direct_message", __name__)
 @direct_message.route("/all", methods=["GET"])
 @error_decorator
 def dm_all():
+    """Retrieves all ids of other users the session user has messaged or received
+    a message from, sorted by most recently messaged/received from.
+
+    Args:
+
+    Returns:
+        (json): dictionary containing:
+            - otherIds (list of str): list of ids of other users the session user
+            has messaged or received
+
+    Raises:
+        ExpectedError: If the user is not logged in
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -52,6 +66,24 @@ def dm_all():
 @direct_message.route("/<other_id>", methods=["GET"])
 @error_decorator
 def dm_info(other_id):
+    """Retrieves the direct messages of a session user with another user given
+    their Id in the order of sentTime descending.
+
+    Query Params:
+        other_id (int): The id of the other user
+
+    Returns:
+        (json): dictionary containing:
+            - messages (list): list of dictionaries containing:
+                - id (str): id of the message
+                - sentBy (str): id of the user who sent the message
+                - sentTime (str): time the message was sent
+                - content (str): content of the message
+
+    Raises:
+        ExpectedError: If the user is not logged in
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -97,6 +129,18 @@ class MessageInfo(TypedDict, total=True):
 def dm_create_message(
     dm_id: str, sender_id: str, receiver_id: str, message_info: MessageInfo
 ):
+    """Creates a message in a direct message conversation between two users
+
+    Args:
+        dm_id (str): id of the direct message conversation
+        sender_id (str): id of the user who sent the message
+        receiver_id (str): id of the user who received the message
+        message_info (MessageInfo): the information of the message
+
+    Returns:
+        void
+
+    """
     # ! Upsert can and will fail when it's called multiple times due to a race condition:
     # https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#unique-key-constraint-errors-on-upserts
     # https://github.com/prisma/prisma/issues/3242
@@ -124,6 +168,23 @@ def dm_create_message(
 @error_decorator
 @validate_decorator("json", direct_message_schema)
 def dm_message(args):
+    """Send a direct message to another user given their Id
+
+    Args:
+        otherId (str): The id of the other user
+        message (str): The content of the message
+
+    Returns:
+        (json): dictionary containing:
+            - id (str): id of the message
+            - sentTime (str): time the message was sent
+
+    Raises:
+        ExpectedError: If the user is not logged in
+        ExpectedError: If the otherId does not correspond to an user
+        ExpectedError: If the message format is invalid
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 

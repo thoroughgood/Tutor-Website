@@ -16,6 +16,23 @@ student = Blueprint("student", __name__)
 @student.route("/<student_id>", methods=["GET"])
 @error_decorator
 def get_profile(student_id):
+    """Get the profile of a student
+
+    Args:
+        student_id (str): The id of the student to get the profile of
+
+    Returns:
+        id (str): The id of the student
+        name (str): The name of the student
+        bio (str): The bio of the student
+        profilePicture (str): The profile picture of the student
+        location (str): The location of the student
+        phoneNumber (str): The phone number of the student
+
+    Raises:
+        ExpectedError: If the student profile does not exist
+
+    """
     student = student_view(id=student_id)
 
     if not student:
@@ -40,6 +57,26 @@ def get_profile(student_id):
 @error_decorator
 @validate_decorator("json", student_modify_schema)
 def modify_profile(args):
+    """Modify a profile of a student
+
+    Args:
+        id (str): The id of the student to modify (optional)
+        name (str): The name of the student (optional)
+        bio (str): The bio of the student (optional)
+        email (str): The email of the student (optional)
+        profilePicture (str): The profile picture of the student (optional)
+        location (str): The location of the student (optional)
+        phoneNumber (str): The phone number of the student (optional)
+
+    Returns:
+        success (bool): True
+
+    Raises:
+        ExpectedError: If the user is not logged in
+        ExpectedError: If the user is not an admin
+        ExpectedError: If the student profile does not exist
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
     mod_id = admin_id_check(args)
@@ -77,6 +114,20 @@ def modify_profile(args):
 @student.route("/", methods=["DELETE"])
 @error_decorator
 def delete_profile():
+    """Delete a student
+
+    Args:
+        id (str): The id of the student to delete (admin)
+
+    Returns:
+        success (bool): True
+
+    Raises:
+        ExpectedError: If the user is not logged in
+        ExpectedError: If the user is not an admin
+        ExpectedError: If the student profile does not exist
+
+    """
     args = request.get_json()
 
     if "user_id" not in session:
@@ -97,6 +148,20 @@ def delete_profile():
 @student.route("/appointments", methods=["GET"])
 @error_decorator
 def get_appointment_lists():
+    """Gets the list of appointments the current student has requested, the tutor accepted, and completed
+
+    Args:
+
+    Returns:
+        requested (list of str): a list of appointment ids that are requested
+        accepted (list of str): a list of appointment ids that are accepted
+        completed (list of str): a list of appointment ids that are completed
+
+    Raises:
+        ExpectedError: If the user is not logged in
+        ExpectedError: If the user is not a student
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 

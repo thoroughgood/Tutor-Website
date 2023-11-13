@@ -15,6 +15,13 @@ tutor = Blueprint("tutor", __name__)
 
 
 def addingSubjects(course_offerings, tutor):
+    """Adds the subjects to the tutor's course offerings
+
+    Args:
+        course_offerings (list of str): the list of subjects to add
+        tutor (User): the tutor to add the subjects to
+
+    """
     # tutor is adding/deleting subjects
     # wipe previous stuff, if there is any
     Tutor.prisma().update(
@@ -48,6 +55,16 @@ def addingSubjects(course_offerings, tutor):
 
 
 def addingTimes(times_available, tutor):
+    """Adds the availabilities  to the tutor's time schedule
+
+    Args:
+        times_available (list of str): the list of times available
+        tutor (User): the tutor to add the availabilities  to
+
+    Raises:
+        ExpectedError: If the times_available are overlapping
+
+    """
     # tutor is adding/deleting timesAvailable
     # wipe previous stuff, if there is any
     Tutor.prisma().update(
@@ -86,6 +103,28 @@ def addingTimes(times_available, tutor):
 @tutor.route("/<tutor_id>", methods=["GET"])
 @error_decorator
 def get_profile(tutor_id):
+    """Get the profile of a tutor
+
+    Args:
+        tutor_id (str): The id of the tutor to get
+
+    Returns:
+        id (str): The id of the tutor to modify (optional)
+        name (str): The name of the tutor (optional)
+        bio (str): The bio of the tutor (optional)
+        email (str): The email of the tutor (optional)
+        profilePicture (str): The profile picture of the tutor (optional)
+        location (str): The location of the tutor (optional)
+        phoneNumber (str): The phone number of the tutor (optional)
+        courseOfferings (list of str): The course offerings of the tutor (optional)
+        timesAvailable (list of dict): The times available of the tutor (optional)
+            - startTime (str): The start time of the tutor
+            - endTime (str): The end time of the tutor
+
+    Raises:
+        ExpectedError: If the times_available are overlapping
+
+    """
     tutor = tutor_view(id=tutor_id)
     if tutor is None:
         raise ExpectedError("Profile does not exist", 404)
@@ -139,6 +178,29 @@ def get_profile(tutor_id):
 @error_decorator
 @validate_decorator("json", tutor_modify_schema)
 def modify_profile(args):
+    """Modify a profile of a tutor
+
+    Args:
+        id (str): The id of the tutor to modify (optional)
+        name (str): The name of the tutor (optional)
+        bio (str): The bio of the tutor (optional)
+        email (str): The email of the tutor (optional)
+        profilePicture (str): The profile picture of the tutor (optional)
+        location (str): The location of the tutor (optional)
+        phoneNumber (str): The phone number of the tutor (optional)
+        courseOfferings (list of str): The course offerings of the tutor (optional)
+        timesAvailable (list of dict): The times available of the tutor (optional)
+            - startTime (str): The start time of the tutor
+            - endTime (str): The end time of the tutor
+
+    Returns:
+        success (bool): True
+
+    Raises:
+        ExpectedError: If the user is not logged in
+        ExpectedError: If the tutor profile does not exist
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 400)
 
@@ -185,6 +247,19 @@ def modify_profile(args):
 @tutor.route("/", methods=["DELETE"])
 @error_decorator
 def delete_profile():
+    """Delete a tutor
+
+    Args:
+        id (str): The id of the tutor to delete (admin)
+
+    Returns:
+        success (bool): True
+
+    Raises:
+        ExpectedError: If the user is not logged in
+        ExpectedError: If the tutor profile does not exist
+
+    """
     args = request.get_json()
 
     if "user_id" not in session:
@@ -216,6 +291,19 @@ def delete_profile():
 @tutor.route("/<tutor_id>/appointments", methods=["GET"])
 @error_decorator
 def get_tutor_appointments(tutor_id):
+    """Get appointments of the current tutor.
+
+    Args:
+        tutor_id (str): The id of the tutor
+
+    Returns:
+        yourAppointments (list of str): the list of appointments of the tutor
+        other (list of str): the list of appointments of the tutor
+
+    Raises:
+        ExpectedError: No tutor related to the id
+
+    """
     tutor = tutor_view(id=tutor_id)
 
     if tutor is None:
