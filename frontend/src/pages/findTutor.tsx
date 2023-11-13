@@ -73,7 +73,7 @@ export default function FindTutor() {
         <h1 className="text-2xl text-secondary-foreground">
           Search For A Tutor
         </h1>
-        <div className="flex w-full flex-col gap-2 md:flex-row">
+        <div className="flex w-full flex-col flex-wrap gap-2 md:flex-row">
           <IconInput
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
