@@ -19,13 +19,14 @@ import { HTTPAuthService } from "@/service/authService"
 import { useRouter } from "next/router"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import NotificationBox from "./notificationBox"
-import { useQuery } from "react-query"
+import { useQuery, useQueryClient } from "react-query"
 import { HTTPProfileService } from "@/service/profileService"
 
 const profileService = new HTTPProfileService()
 
 export default function Sidebar() {
   const authService = new HTTPAuthService()
+  const queryClient = useQueryClient()
   const router = useRouter()
   const { user, setUser } = useUser()
   const [isExpanded, setIsExpanded] = useState(false)
@@ -37,7 +38,24 @@ export default function Sidebar() {
     queryFn: async () => {
       return await profileService.getNotifications()
     },
+    refetchInterval: 3000,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    enabled: !open,
   })
+
+  // useEffect(() => {
+  //   if (!open) {
+  //     const timeout = setTimeout(() => {
+  //       queryClient.invalidateQueries(["notifications"])
+  //     }, 3000)
+  //     return () => {
+  //       queryClient.cancelQueries(["notifications"])
+  //       clearTimeout(timeout)
+  //     }
+  //   }
+  // }, [queryClient, open])
 
   useEffect(() => {
     setIsExpanded(false)

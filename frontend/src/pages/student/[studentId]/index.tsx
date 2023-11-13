@@ -51,17 +51,21 @@ export default function StudentProfile() {
                   Edit Profile
                 </Link>
               </Button>
-              <Button variant="secondary" className="flex grow gap-2">
-                <MessageCircle className="w-5" />
-                Message Student
+              <Button asChild variant="secondary" className="flex grow gap-2">
+                <Link href={`/messages/direct/${studentId}`}>
+                  <MessageCircle className="w-5" />
+                  Message Student
+                </Link>
               </Button>
             </div>
           </>
         )}
         {!isOwnProfile && user?.userType !== "admin" && (
-          <Button variant="secondary" className="flex grow gap-2">
-            <MessageCircle className="w-5" />
-            Message Student
+          <Button asChild variant="secondary" className="flex grow gap-2">
+            <Link href={`/messages/direct/${studentId}`}>
+              <MessageCircle className="w-5" />
+              Message Student
+            </Link>
           </Button>
         )}
 
