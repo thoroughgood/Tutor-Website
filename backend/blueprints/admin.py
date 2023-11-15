@@ -19,6 +19,26 @@ admin = Blueprint("admin", __name__)
 @error_decorator
 @validate_decorator("query_string", user_search_schema)
 def user_search(args):
+    """Returns a list of users which information matches all that is provided.
+
+    Query Params:
+        id (str): The id of the user to search for (optional)
+        name (str): The name of the user to search for (optional)
+        email (str): The email of the user to search for (optional)
+        phoneNumber (str): The phone number of the user to search for (optional)
+        accountType (str): The account type of the user to search for (optional)
+
+    Returns:
+        userInfos (list of dict): list of user information dictionaries containing:
+            - id (str): The id of the user
+            - accountType (str): The account type of the user
+
+    Raises:
+        ExpectedError: If the user is not logged in
+        ExpectedError: If the user is not an admin
+        ExpectedError: If the user does not exist
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -93,6 +113,21 @@ def user_search(args):
 @error_decorator
 @validate_decorator("json", admin_create_schema)
 def admin_create(args):
+    """Creates a new admin account
+
+    Args:
+        name (str): The name of the new admin
+        email (str): The email of the new admin
+        password (str): The password of the new admin
+
+    Returns:
+        id (str): The id of the newly created admin
+
+    Raises:
+        ExpectedError: If the user is not logged in
+        ExpectedError: If the user is not an admin
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 

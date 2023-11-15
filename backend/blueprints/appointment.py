@@ -26,6 +26,24 @@ appointment = Blueprint("appointment", __name__)
 @appointment.route("/<appointment_id>", methods=["GET"])
 @error_decorator
 def get_appointment(appointment_id):
+    """Get a pre-existing appointment given the id of the appointment
+
+    Args:
+        appointment_id (int): the id of the appointment
+
+    Returns:
+        id (str): id of the appointment
+        startTime (str): start time of the appointment
+        endTime (str): end time of the appointment
+        studentId (str): id of the student
+        tutorId (str): id of the tutor
+        tutorAccepted (bool): whether the tutor has accepted the appointment
+        rating (int): rating of the appointment (if the user is the student)
+
+    Raises:
+        ExpectedError: if the appointment id does not match an appointment
+
+    """
     appointment = Appointment.prisma().find_unique(
         where={"id": appointment_id}, include={"rating": True}
     )
@@ -56,6 +74,24 @@ def get_appointment(appointment_id):
 @error_decorator
 @validate_decorator("json", appointment_accept_schema)
 def appointment_accept(args):
+    """A tutor accepts or rejects an appointment
+
+    Args:
+        id (str): The id of the appointment to accept
+        accept (bool): Whether to accept or reject the appointment
+
+    Returns:
+        id (str): the id of the appointment
+        startTime (str): the start time of the appointment
+        endTime (str): the end time of the appointment
+        studentId (str): the id of the student in the appointment
+        tutorId (str): the id of the tutor in the appointment
+        tutorAccepted (bool): whether the tutor accept of denys the appointment request
+
+    Raises:
+        ExpectedError: id does not match to an appointment or does not involve the logged in tutor
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -102,6 +138,28 @@ def appointment_accept(args):
 @error_decorator
 @validate_decorator("json", appointment_request_schema)
 def appointment_request(args):
+    """Student requests a tutor for an appointment.
+
+    Args:
+        startTime (str): the start time of the appointment
+        endTime (str): the end time of the appointment
+        tutorId (str): the id of the tutor of the appointment
+
+    Returns:
+        id (str): the id of the appointment
+        startTime (str): the start time of the appointment
+        endTime (str): the end time of the appointment
+        studentId (str): the id of the student in the appointment
+        tutorId (str): the id of the tutor in the appointment
+        tutorAccepted (bool): whether the tutor accept of denys the appointment request
+
+    Raises:
+        ExpectedError: if the user is not logged in
+        ExpectedError: if the user is not a student
+        ExpectedError: if the tutor profile does not exist
+        ExpectedError: if the tutor does not exist or if the student already has an appointment at that time
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -167,6 +225,21 @@ def appointment_request(args):
 @error_decorator
 @validate_decorator("json", appointment_delete_schema)
 def appointment_delete(args):
+    """A tutor can delete an appointment
+
+    Args:
+        id (str): the id of the appointment wanting to delete
+
+    Returns:
+        success (bool): True
+
+    Raises:
+        ExpectedError: if the user is not logged in
+        ExpectedError: if the user is not a tutor
+        ExpectedError: appointment does not exist
+        ExpectedError: logged in user is not the tutor of the appointment
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -200,6 +273,25 @@ def appointment_delete(args):
 @error_decorator
 @validate_decorator("json", appointment_modify_schema)
 def appointment_modify(args):
+    """A tutor can modify a pre-existing appointment
+
+    Args:
+        id (str): the id of the appointment wanting to modify
+        startTime (str): the new start time of the appointment
+        endTime (str): the new end time of the appointment
+
+    Returns:
+        success (bool): True
+
+    Raises:
+        ExpectedError: if the user is not logged in
+        ExpectedError: logged in user is not a tutor
+        ExpectedError: appointment does not exist
+        ExpectedError: logged in user is not the tutor of the appointment
+        ExpectedError: appointment overlaps with another appointment
+
+    """
+
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -247,6 +339,22 @@ def appointment_modify(args):
 @error_decorator
 @validate_decorator("json", appointment_rating_schema)
 def appointment_rating(args):
+    """Rate an appointment given its Id
+
+    Args:
+        id (str): the id of the appointment
+        rating (int): the rating of the appointment
+
+    Returns:
+        success (bool): True
+
+    Raises:
+        ExpectedError: if user is not logged in
+        ExpectedError: appointment does not exist
+        ExpectedError: user is not the student of the appointment
+        ExpectedError: appointment is not complete yet
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -282,6 +390,24 @@ def appointment_rating(args):
 @appointment.route("/<appointment_id>/messages", methods=["GET"])
 @error_decorator
 def appointment_messages(appointment_id):
+    """Returns all messages of an appointment given its Id, in the order of sentTime descending.
+
+    Args:
+        appointment_id (int): the id of the appointment
+
+    Returns:
+        messages (list): list of dictionaries containing:
+            - id (str): id of the message
+            - sentBy (str): id of the user who sent the message
+            - sentTime (str): time the message was sent
+            - content (str): content of the message
+
+    Raises:
+        ExpectedError: if the user is not logged in
+        ExpectedError: appointment does not exist
+        ExpectedError: user is not the tutor or student of the appointment
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -321,6 +447,23 @@ def appointment_messages(appointment_id):
 @error_decorator
 @validate_decorator("json", appointment_message_schema)
 def appointment_message(args):
+    """Sends a message to an appointment given its id.
+
+    Args:
+        id (str): the id of the appointment
+        message (str): the content of the message
+
+    Returns:
+        id (str): the id of the message sent
+        sentTime (str): the time the message was sent
+
+    Raises:
+        ExpectedError: if the user is not logged in
+        ExpectedError: appointment does not exist
+        ExpectedError: user is not the tutor or student of the appointment
+        ExpectedError: invalid message format
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 

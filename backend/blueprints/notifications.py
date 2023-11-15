@@ -11,6 +11,16 @@ notifications = Blueprint("notifications", __name__)
 @notifications.route("/", methods=["GET"])
 @error_decorator
 def notifications_get():
+    """Return all current waiting notifications of the session user.ns/[notificationId]
+
+    Returns:
+        notifications (list of str): the list of notifications
+
+    Raises:
+        ExpectedError: If the user is not logged in
+        ExpectedError: If the user does not exist
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -36,6 +46,22 @@ def notifications_get():
 @notifications.route("/<notificationId>", methods=["GET"])
 @error_decorator
 def notifications_get_by_id(notificationId):
+    """Returns the details of a notification by its id.
+
+    Args:
+        notificationId (str): id of the notification
+
+    Returns:
+        id (str): the id of the notification
+        type (str): the type of the notification
+        content (str): the content of the notification
+
+    Raises:
+        ExpectedError: If the user is not logged in
+        ExpectedError: If the id does not correspond to a notification
+        ExpectedError: If the notification is not for this user
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 

@@ -17,6 +17,21 @@ auth = Blueprint("auth", __name__)
 @error_decorator
 @validate_decorator("json", register_schema)
 def register(args):
+    """Register a user as a tutor or student
+
+    Args:
+        accountType (str): The type of account to create
+        name (str): The name of the user
+        password (str): The password of the user
+        email (str): The email of the user
+
+    Returns:
+        id (str): The id of the user
+
+    Raises:
+        ExpectedError: If the user already exists
+
+    """
     user = user_view(email=args["email"])
     if user:
         raise ExpectedError("user already exists with this email", 400)
@@ -48,6 +63,20 @@ def register(args):
 @error_decorator
 @validate_decorator("json", login_schema)
 def login(args):
+    """Login a pre-existing user as a tutor or student
+
+    Args:
+        accountType (str): The type of account to create
+        password (str): The password of the user
+        email (str): The email of the user
+
+    Returns:
+        id (str): The id of the user
+
+    Raises:
+        ExpectedError: If the user credentials are invalid
+
+    """
     match args["accountType"]:
         case "student":
             user = student_view(email=args["email"])
@@ -68,6 +97,12 @@ def login(args):
 @auth.route("/logout", methods=["POST"])
 @error_decorator
 def logout():
+    """Logout a currently active user
+
+    Returns:
+        success (bool): True
+
+    """
     if "user_id" in session:
         session.pop("user_id")
     return jsonify({"success": True}), 200
@@ -77,6 +112,22 @@ def logout():
 @error_decorator
 @validate_decorator("json", reset_password_schema)
 def resetpassword(args):
+    """Changes a user’s password
+
+    Args:
+        id (str): The id of the user
+        newPassword (str): The new password of the user
+
+    Returns:
+        success (bool): True
+
+    Raises:
+        ExpectedError: If the user is not logged in
+        ExpectedError: If the user is not an admin
+        ExpectedError: If the user does not exist
+        ExpectedError: If the new password is the same as the old password
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 

@@ -13,6 +13,19 @@ document = Blueprint("document", __name__)
 @error_decorator
 @validate_decorator("json", document_upload_schema)
 def upload_document(args):
+    """Uploads a document to tutor, returns the generated id for it if successful.
+
+    Args:
+        document (str): The document to upload
+
+    Returns:
+        id (str): The id of the document
+
+    Raises:
+        ExpectedError: If the user is not logged in
+        ExpectedError: If the user is not a tutor
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -37,6 +50,18 @@ def upload_document(args):
 @document.route("/<document_id>", methods=["GET"])
 @error_decorator
 def get_document(document_id):
+    """Gets the document with the given id.
+
+    Args:
+        document_id (str): The id of the document to get
+
+    Returns:
+        document (str): The document
+
+    Raises:
+        ExpectedError: If the document id does not exist
+
+    """
     doc = Document.prisma().find_unique(where={"id": document_id})
 
     if doc is None:
@@ -49,6 +74,19 @@ def get_document(document_id):
 @error_decorator
 @validate_decorator("json", document_delete_schema)
 def delete_document(args):
+    """Deletes a document given its id
+
+    Args:
+        id (str): The id of the document to get
+
+    Returns:
+        success (bool): True
+
+    Raises:
+        ExpectedError: If the user is not logged in
+        ExpectedError: If the document id does not exist
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 

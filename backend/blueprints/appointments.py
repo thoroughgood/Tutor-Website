@@ -15,6 +15,19 @@ appointments = Blueprint("appointments", __name__)
 @error_decorator
 @validate_decorator("query_string", appointments_schema)
 def get_appointments(args):
+    """Gets the list of all appointments the session user is involved in.
+
+    Query Params:
+        sortBy (str): sorting method for the messages
+
+    Returns:
+        appointments (list of str): list of appointment ids
+
+    Raises:
+        ExpectedError: if the user is not logged in
+        ExpectedError: if the user is not a student or tutor
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 

@@ -11,6 +11,15 @@ tutorial = Blueprint("tutorial", __name__)
 @tutorial.route("/complete", methods=["POST"])
 @error_decorator
 def tutorial_complete():
+    """Sets the session user to have completed the tutorial.
+
+    Returns:
+        Response with status code 204
+
+    Raises:
+        ExpectedError: No user is logged in
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
@@ -25,6 +34,15 @@ def tutorial_complete():
 @tutorial.route("/", methods=["GET"])
 @error_decorator
 def tutorial_get():
+    """Returns if the session user has completed the tutorial
+
+    Returns:
+        completed (bool): if the user has completed the tutorial
+
+    Raises:
+        ExpectedError: No user is logged in
+
+    """
     if "user_id" not in session:
         raise ExpectedError("No user is logged in", 401)
 
