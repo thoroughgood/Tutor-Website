@@ -1,7 +1,6 @@
 # capstone-project-3900m16athecarrothead
 
-Setup
-Python Setup
+## Setup Python Setup
 
 You'll need to generate a secret key to put inside a .env file (that you can create yourself) in the root of the backend directory. Generate a secret key using the python3 repl.
 
@@ -37,26 +36,33 @@ PUSHER_SECRET=secret
 PUSHER_CLUSTER=cluster
 ```
 
-Working with the database
+### Working with the database
 For any subsequent changes to the schema, you should run prisma db push if you're prototyping changes and nothing is concrete yet. If you're confident that a change you're making is important and you want to upload it to version control, run prisma migrate dev.
 Running the server
 Running ./runBackend in your terminal will boot the flask application with multiple workers as a web server through gunicorn using config settings in gunicorn.conf.py in the root of the backend directory. Otherwise, you can run the server by first activating the virtual environment by running source .venv/bin/activate whilst in the backend directory, then running python3 app.py in your terminal to run it in debug mode with a single worker. This is helpful for when working in a dev environment, and you need to debug or test code.
-Frontend setup
-Requirements
-NodeJS
-NPM
-Environment Setup
-To setup the frontend, the following environment variables are required
+
+## Frontend setup
+### Requirements
+> NodeJS
+> NPM
+
+### Environment Setup
+To setup the frontend, the following environment variables are required in `.env.local`
 ```
 NEXT_PUBLIC_BACKEND_URL
 NEXT_PUBLIC_PUSHER_KEY
 NEXT_PUBLIC_PUSHER_CLUSTER
 ```
-Installation
+
+### Installation
 To use the frontend server, make ensure that all dependencies are installed using npm install in the frontend directory.
 
-Running the server
+### Running the server
 To run the development server use npm run dev. To build and start a production instance of the server run npm run build followed by npm run start. Note that during the build process all files must be linted according to .eslintrc.json.
 
-Deployed project
+## Makefile
+Once all environment variables have been created (frontend and backend). The application can be run using `make` in the root project directory.
+
+
+## Deployed project
 To view a deployed version of the project, visit https://mute-idea-production.up.railway.app/login
