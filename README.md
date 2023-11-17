@@ -1,5 +1,26 @@
 # capstone-project-3900m16athecarrothead
 
+## Makefile
+Once all environment variables have been created (frontend and backend). The application can be run using `make` in the root project directory. Example environemnt variables are provided in `frontend/.env.local.example` and `backend/.env.example`
+
+Follow the below steps to setup your proper environment. 
+Example environments:
+- `backend/.env`
+```
+DATABASE_URL=tobemodified
+PUSHER_APP_ID=tobemodified
+PUSHER_CLUSTER=tobemodified
+PUSHER_KEY=tobemodified
+PUSHER_SECRET=tobemodified
+```
+- `frontend/.env.local`
+```
+NEXT_PUBLIC_BACKEND_URL=tobemodified
+NEXT_PUBLIC_PUSHER_CLUSTER=tobemodified
+NEXT_PUBLIC_PUSHER_KEY=tobemodified
+```
+
+
 ## Setup Python Setup
 
 You'll need to generate a secret key to put inside a .env file (that you can create yourself) in the root of the backend directory. Generate a secret key using the python3 repl.
@@ -60,8 +81,7 @@ To use the frontend server, make ensure that all dependencies are installed usin
 ### Running the server
 To run the development server use npm run dev. To build and start a production instance of the server run npm run build followed by npm run start. Note that during the build process all files must be linted according to .eslintrc.json.
 
-## Makefile
-Once all environment variables have been created (frontend and backend). The application can be run using `make` in the root project directory. Example environemnt variables are provided in `frontend/.env.local.example` and `backend/.env.example`
+
 
 
 ## Deployed project
