@@ -61,7 +61,7 @@ To use the frontend server, make ensure that all dependencies are installed usin
 To run the development server use npm run dev. To build and start a production instance of the server run npm run build followed by npm run start. Note that during the build process all files must be linted according to .eslintrc.json.
 
 ## Makefile
-Once all environment variables have been created (frontend and backend). The application can be run using `make` in the root project directory.
+Once all environment variables have been created (frontend and backend). The application can be run using `make` in the root project directory. Example environemnt variables are provided in `frontend/.env.local.example` and `backend/.env.example`
 
 
 ## Deployed project
