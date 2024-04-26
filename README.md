@@ -1,4 +1,4 @@
-# capstone-project-3900m16athecarrothead
+# capstone-project-thecarrothead
 
 ## Makefile
 Once all environment variables have been created (frontend and backend). The application can be run using `make` in the root project directory. Example environemnt variables are provided in `frontend/.env.local.example` and `backend/.env.example`
